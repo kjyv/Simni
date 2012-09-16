@@ -1,0 +1,137 @@
+body {
+    width: 1200px;
+}
+
+input[type="range"] {
+    width: 200px;
+}
+
+.vertical-range {
+    -webkit-appearance: slider-vertical;
+    width: 20px !important;
+    height: 200px;
+}
+
+.vertical-range-box {
+    float: left;
+    width: 70px;
+}
+
+#map_state_to_mode_panel {
+    margin-top: 1em;
+    margin-bottom: 1em;
+    float: left;
+}
+
+#mode_graph {
+    /*margin-left: 120px;*/
+    float: left;
+}
+
+#state_to_mode_presets {
+    float: left;
+    margin-top: 1em;
+}
+
+#left-side {
+    float: left;
+    width: 800px;
+}
+
+#bottom-panel {
+    width: 790px;
+    float: left;
+}
+
+#controls {
+    float:left;
+    width: 435px;
+}
+
+#phase_space_plot {
+    width:300px;
+    height:300px;
+    margin-right:10px;
+    margin-bottom: 10px;
+    float:left;
+    background-color:lightgrey;
+}
+
+#motor_torque_plot {
+    margin-bottom: 10px;
+    width:300px;
+    height:300px;
+    float:left;
+    background-color:lightgrey;
+}
+
+#state_to_mode_mapping {
+    float:left;
+    margin-bottom: 10px;
+    width:300px;
+    height:300px;
+}
+
+#state_to_mode_mapping svg {
+    position: absolute;
+}
+
+/* d3 styles */
+svg {
+  font: 10px sans-serif;
+}
+
+.line {
+  fill: none;
+  stroke: black;
+  stroke-width: 1;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.axis {
+  shape-rendering: crispEdges;
+}
+
+.axis line {
+  stroke: #ddd;
+  stroke-width: .5px;
+}
+
+rect.extent {
+  fill: #000;
+  /*fill-opacity: .125;*/
+  stroke: #fff;
+}
+
+rect.frame {
+  fill: #fff;
+  fill-opacity: .7;
+  stroke: #aaa;
+}
+
+circle {
+  fill: #ccc;
+  fill-opacity: .5;
+}
+
+
+.contraction {
+    fill: orange;
+}
+
+.release {
+    fill: red;
+}
+.support {
+    fill: blue;
+}
+.hold {
+    fill: green;
+}
+
+

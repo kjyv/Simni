@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+   <head>
+        <title>CSL Playground</title>
+        <script src="libs/Stats.js"></script>
+        <script src="libs/jquery.min.js"></script>
+        <script src="libs/jquery.hotkeys.js"></script>
+        <!-- <script src="libs/jquery.jqplot.js"></script> -->
+        <!-- <script src="libs/jqplot.cursor.min.js"></script> -->
+        <!-- <script src="libs/jqplot.highlighter.min.js"></script> -->
+        <script type="text/javascript" src="libs/jsxgraphcore.js"></script>
+        <script src="libs/d3.v2.js"></script>
+        <script src="libs/Box2dWeb-2.1.a.3.js"></script>
+        <script src="main.js"></script>
+        <link rel="stylesheet" type="text/css" href="libs/jquery.jqplot.css" />
+        <link rel="stylesheet" type="text/css" href="libs/jsxgraph.css" />
+        <link rel="stylesheet" type="text/css" href="simulator.css" />
+    </head>
+    <body>
+        <div id="left-side">
+            <canvas id="canvas" width="750" height="400" style="float:left;"></canvas>
+            <div id="bottom-panel">
+                <div id="controls">
+                    <select id="pendulum_style">
+                        <option value="1" selected="selected">Single Pendulum</option>
+                        <option value="2">Double Pendulum</option>
+                    </select><br/>
+                    <script type="text/coffeescript">
+                        $ ->
+                            $("#pendulum_style").on 'change', ->
+                                if physics.lower_joint and physics.lower_joint.csl_active
+                                    $("#toggle_csl").click()
+
+                                #first remove old joints and bodies
+                                removeJoint = (joint) ->
+                                    if joint
+                                        physics.world.DestroyJoint joint
+                                        joint = null
+                                    
+                                removeBody = (body) ->
+                                    if body
+                                        physics.world.DestroyBody body
+                                        body = null
+
+                                removeJoint physics.upper_joint
+                                removeBody physics.pend2
+                                removeJoint physics.lower_joint
+                                removeBody physics.pend
+
+                                #create new objects for selected pendulum kind
+                                style = $(this).val()
+
+                                if style is "1"
+                                    physics.pend_style = 1
+                                    physics.createSimplePendulum()
+              
+                                    #get initial gi/gf from current mode setting
+                                    map_mode physics.lower_joint
+
+
+                                else if style is "2"
+                                    physics.pend_style = 2
+
+                                    physics.createDoublePendulum()
+                                    map_mode physics.lower_joint
+                                    map_mode physics.upper_joint
+
+                            $("#pendulum_style").trigger('change')
+
+                    </script>
+                    <button id="toggle_pause" class="toggle-button" onClick="physics.run = !physics.run">pause/run simulation [p]</button> 
+                    <button id="next_step" onClick="physics.step = true">next step(s) [n]</button><br/>            
+                    <button id="toggle_csl" class="toggle-button">toggle CSL [t]</button>
+                    <script type="text/coffeescript">
+                        $ ->
+                            $("#toggle_csl").on 'click', ->
+                                physics.toggleCSL physics.pend, physics.lower_joint
+                                if physics.upper_joint
+                                    physics.toggleCSL physics.pend2, physics.upper_joint
+                    </script>
+                    <button id="apply_torque" onClick="physics.pend.ApplyTorque(0.01)">apply torque (+0.01)</button> 
+                    <button id="add_box" onClick="physics.createBox()">create box</button><br/>
+                    <br/>
+         
+                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.050" step="0.001" onchange="set_friction(parseFloat(this.value))" />
+                    <span id="friction_val">0.050</span><br/>
+
+                    <label for="stiction_param">stiction</label> <input id="stiction_param" type="range" min="0" max="5" value="0.6" step="0.1" onchange="set_stiction(parseFloat(this.value))" />
+                    <span id="stiction_val">0.100</span><br/>            
+                    
+                    <label for="stiction_epsilon">stiction plateau</label> <input id="stiction_epsilon" type="range" min="0.005" max="0.2" value="0.006" step="0.001" onchange="set_stiction_vel(parseFloat(this.value))" />
+                    <span id="stiction_epsilon_val">0.010</span><br/><br/>
+
+
+                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="0.8" style="width:60px;"/>
+                    <label for="gf_param_upper">g<sub>f</sub></label> <input id="gf_param_upper" type="text" value="1.03" style="width:60px;"/>
+                    <label for="gb_param_upper">g<sub>b</sub></label> <input id="gb_param_upper" type="text" value="0" style="width:60px;"/>
+                    <label for="gain_param_upper">gain</label> <input id="gain_param_upper" type="text" value="1" style="width:60px;"/>
+                    <button id="set_csl_params_upper">set</button> <br/>
+                    <script>
+                        $(document).ready(function(){
+                            $("#set_csl_params_upper").on("click", function(){
+                                physics.upper_joint.gi = parseFloat($("#gi_param_upper").val())
+                                physics.upper_joint.gf = parseFloat($("#gf_param_upper").val())
+                                physics.upper_joint.gb = parseFloat($("#gb_param_upper").val())
+                                physics.upper_joint.gain = parseFloat($("#gain_param_upper").val())
+                            })
+                        })
+                    </script>
+
+                    <label for="mode_param_upper">csl mode upper</label> <input id="mode_param_upper" type="range" min="-2" max="3" value="1.2" step="0.005" onchange="if(physics.upper_joint){map_mode(physics.upper_joint)}" />
+                    <span id="mode_val_upper"></span> <span id="csl_mode_name_upper">contraction</span><br/>
+
+
+                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="2" style="width:60px;"/>
+                    <label for="gf_param_lower">g<sub>f</sub></label> <input id="gf_param_lower" type="text" value="1.015" style="width:60px;"/>
+                    <label for="gb_param_lower">g<sub>b</sub></label> <input id="gb_param_lower" type="text" value="0" style="width:60px;"/>
+                    <label for="gain_param_lower">gain</label> <input id="gain_param_lower" type="text" value="1" style="width:60px;"/>
+                    <button id="set_csl_params_lower">set</button> <br/>
+                    <script>
+                        $(document).ready(function(){
+                            $("#set_csl_params_lower").on("click", function(){
+                                physics.lower_joint.gi = parseFloat($("#gi_param_lower").val())
+                                physics.lower_joint.gf = parseFloat($("#gf_param_lower").val())
+                                physics.lower_joint.gb = parseFloat($("#gb_param_lower").val())
+                                physics.lower_joint.gain = parseFloat($("#gain_param_lower").val())
+                            })
+                        })
+                    </script>
+                    
+                    <label for="mode_param_lower">csl mode lower</label> <input id="mode_param_lower" type="range" min="-2" max="3" value="1.01" step="0.005" onchange="map_mode(physics.lower_joint)" />
+                    <span id="mode_val_lower"></span> <span id="csl_mode_name_lower">contraction</span><br/>
+                </div>
+
+                <div id="map_state_to_mode_panel">
+                    <label for="map_state_to_mode">map state to mode [m]</label><input type="checkbox" id="map_state_to_mode"><br/>
+                    mode = w<sub>0</sub> &middot; U + w<sub>1</sub> &middot; &phi;' + w<sub>2</sub><br/>
+                    <div class="vertical-range-box">
+                        <input type="checkbox" id="w0_abs"><br>
+                        <label for="w0">w<sub>0</sub></label><span id="w0_val">=197</span><br/>
+                        <input type="range" step="1" id="w0" min="-5000" max="5000" class="vertical-range" value="197">
+                    </div>
+                    <div class="vertical-range-box">
+                        <input type="checkbox" id="w1_abs"><br>
+                        <label for="w1">w<sub>1</sub></label><span id="w1_val">=39.5</span><br/>
+                        <input type="range" step="1" id="w1" min="-5000" max="5000" class="vertical-range" value="39.5">
+                    </div>
+                    <div class="vertical-range-box">
+                        &lt;- abs <br/>
+                        <label for="w2">w<sub>2</sub></label><span id="w2_val">=0.2</span><br/>
+                        <input type="range" step="0.01" id="w2" min="-2" max="2" class="vertical-range" value="0.2">
+                    </div>
+                    <script>
+                        $(document).ready(function(){
+                            $("#map_state_to_mode_panel input[type=range]").each(function(index){
+                                $("<button>").insertAfter($(this)).attr({"id": this.id+"_increase"}).html("+").click(function(){
+                                    var range = $(this).parent().find("input[type=range]")
+                                    range.attr("value", parseInt(range.attr("value")) + 1);
+                                    range.trigger("change")
+                                    draw_state_to_mode_mapping()
+                                })
+                                $("<br/>").insertAfter($(this))
+                                $("<button>").insertAfter($(this)).attr({"id": this.id+"_decrease"}).html("-").click(function(){
+                                    var range = $(this).parent().find("input[type=range]")
+                                    range.attr("value", parseInt(range.attr("value")) - 1);
+                                    range.trigger("change")
+                                    draw_state_to_mode_mapping()
+                                })
+                                $("<br/>").insertAfter($(this))
+                            })
+                        })
+                    </script>
+                </div>
+                <script>
+                    $("#map_state_to_mode_panel input[type=range]").on('mouseup', function(){
+                        draw_state_to_mode_mapping()
+                    })
+                </script>
+                <div id="state_to_mode_presets">
+                    <br/>
+                    <button id="preset_1" onclick="set_preset(114,52,0.25,false,false)">Preset 1</button>left down-c<br/>
+                    <button id="preset_2" onclick="set_preset(-811,-162,-1.08,false,false)">Preset 2</button>s right, c up,</br>f=0.018<br/>
+                    <button id="preset_3" onclick="set_preset(450,0,1.001,true,true)">Preset 3</button>self-inhibit c,<br/>f=0.022<br/>
+                    <button id="preset_4" onclick="set_preset(81,-3676,-0.5,false,false)">Preset 4</button>r right, s left
+                </div>
+                <!--
+                <div id="mode_graph" style="width:300px; float:left;"></div>
+                <script>
+                    $(document).ready(function(){
+                        var l_gf, l_gi, mapping_points, mode, plot;
+
+                        mapping_points = [];
+
+                        mode = -1;
+
+                        while (mode <= 2) {
+                          l_gi = map_mode_to_gi(mode);
+                          l_gf = map_mode_to_gf(mode);
+                          mapping_points.push([l_gi, l_gf]);
+                          mode += 0.1;
+                        }
+
+                        plot = $.jqplot("mode_graph", [mapping_points], {
+                          seriesDefaults: {
+                            shadow: false,
+                            markerOptions: {
+                              style: "circle",
+                              size: 4,
+                              shadow: false
+                            }
+                          },
+                          series: [
+                            {
+                              label: "gi vs. gf"
+                            }
+                          ]
+                        }, {
+                          grid: {
+                            shadow: false
+                          },
+                          axes: {
+                            xaxis: {
+                              label: "gi"
+                            },
+                            yaxis: {
+                              label: "gf"
+                            }
+                          },
+                          highlighter: {
+                            show: false,
+                            sizeAdjust: 7.5
+                          },
+                          cursor: {
+                            show: false
+                          },
+                          legend: {
+                            show: true,
+                            location: "se"
+                          }
+                        });
+                    })
+                </script>
+                -->
+            </div>
+        </div>
+
+        <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;/&phi;'<button id="clear_phase">clear</button></div>
+        <div id="motor_torque_plot">motor torque (blue) and voltage (green)</div>
+        <div id="state_to_mode_mapping">state space U/&phi;'<br/></div>
+        <script>
+            //use d3 for state_to_mode_mapping
+            var margin = {top: 0, right: 0, bottom: 20, left: 30},
+                width = 300,
+                height = 300;
+
+            var scalex = d3.scale.linear()
+                .domain([-0.02, 0.02])
+                .range([0, width])
+
+            var scaley = d3.scale.linear()
+                .domain([-0.02, 0.02])
+                .range([height, 0])
+
+            var svg = d3.select("#state_to_mode_mapping").append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .append("g")
+                
+            svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + (height-margin.bottom) + ")")
+                .call(d3.svg.axis().scale(scalex).orient("bottom"))
+
+            svg.append("g")
+                .attr("class", "y axis")
+                .attr("transform", "translate(" + (margin.left) + ",0)")
+                .call(d3.svg.axis().scale(scaley).orient("left"))
+
+            svg.insert("g").attr("class", "cell")
+
+            //draw the phase space with plain old canvas
+            var context
+
+            function calc_mode_class(mode){
+                if (mode < 0)
+                    return "support"
+                else if (mode > 0 && mode < 1)
+                    return "release"
+                else if (mode == 1)
+                    return "hold"
+                else if (mode > 1)
+                    return "contraction"
+                else
+                    return ""
+            }
+            function calc_mode_to_color(mode){
+                if (mode < 0)
+                    //support
+                    return {'red':0, 'green':physics.clip(-mode*50+10,255) , 'blue':0}
+                else if (mode >= 0 && mode < 0.995)
+                    //release
+                    return {'red':0, 'green':0, 'blue':physics.clip(mode*100+80,255)}
+                    else if (mode < 1.005 && mode > 0.995)
+                    //hold
+                    return {'red':255, 'green':255, 'blue':255}
+                else if (mode > 1.005)
+                    //contraction
+                    return {'red':physics.clip(mode*50+20, 255), 'green':0, 'blue':0}
+                else
+                    return ""
+            }
+
+            function draw_state_to_mode_mapping() {
+                //recalc mapping  
+                //imgData = context.createImageData(300,300)
+                context.clearRect(0,0,300,300)
+                var i, j, mode = 0
+                for (i = -0.02; i < 0.02; i=i+0.0005) {
+                    for (j = -0.02; j < 0.02; j=j+0.0005) {
+                        mode = physics.calcMode(j,i)
+                        px = scalex(j)//j*3750+150
+                        py = scaley(i)//i*3750+150
+                        /*index = (px + py * width) * 4;
+                        imgData[index+0]=255
+                        imgData[index+1]=0
+                        imgData[index+2]=0
+                        imgData[index+3]=255*/
+                        c = calc_mode_to_color(mode)
+                        context.fillStyle = "rgb("+c.red.toFixed()+","+c.green.toFixed()+","+c.blue.toFixed()+")"
+                        context.fillRect(px,py, 2,2)
+                    }
+                } 
+                //context.putImageData(imgData, 300,300)
+            }
+
+
+            //use jsxgraph for phase spaces
+            var phase_space_enabled=false,brd,brd2,g,g2,g3,g4,xdata=[],ydata=[],zdata=[{'U':0, 'phidot':0}],i,xdata2=[],ydata2=[],ydata3=[]
+
+            JXG.Options.showCopyright = false
+            JXG.Options.zoom.wheel = true
+            JXG.Options.axis.withLabel = false
+
+            brd = JXG.JSXGraph.initBoard('phase_space_plot', {boundingbox:[-1.2,0.01,1.2,-0.01], axis:true})
+                            
+            $("#clear_phase").click(function(){
+                lastx = xdata.pop()
+                lasty = ydata.pop()
+                lastz = zdata.pop()
+                xdata.map(function(v,i,a){a[i]=lastx})
+                ydata.map(function(v,i,a){a[i]=lasty})
+            })
+
+            $("#phase_space_enabled").on('click', function(){
+                phase_space_enabled = !phase_space_enabled
+            })
+
+            var line = d3.svg.line()
+                .x(function(d, i) { return scalex(d.U); })
+                .y(function(d, i) { return scaley(d.phidot); });
+ 
+            var path = svg.append("g")
+                .append("path")
+                .data([zdata], function(d) { if (d) return d.U })
+                .attr("class", "line")
+                .attr("d", line);
+
+            function draw_phase_space(){
+                if(phase_space_enabled){
+                    if (xdata.length==500) {
+                        xdata.shift()
+                        ydata.shift()
+                    }
+
+                    xdata.push(physics.getCurrentAngle(physics.lower_joint))
+                    ydata.push(physics.lower_joint.angle_speed)
+                    
+                    if (!g) {                   // If the curve does not exist yet, create it.
+                        g = brd.create('curve', [xdata,ydata], {strokeWidth:1, strokeColor:'red'}); 
+                    }
+
+                    brd.update();
+                }
+                
+                //state space plot
+                if (zdata.length==200) {
+                    zdata.shift()
+                }
+                angle_speed = physics.lower_joint.angle_speed
+                if (!angle_speed)
+                    angle_speed=0
+
+                zdata.push({'U':physics.pend.motor_control, 'phidot': angle_speed })
+
+                path
+                  .attr("d", line)
+                  .attr("transform", null)
+
+            }
+
+            for(i=0; i<1; i=i+0.002){
+                xdata2.push(i)
+            }
+            brd2 = JXG.JSXGraph.initBoard('motor_torque_plot', {boundingbox:[0,0.01,2,-0.01], axis:true})
+            function draw_motor_torque(){
+                if (ydata2.length==500) {
+                    ydata2.shift()
+                    ydata3.shift()
+                }
+                
+                if (isNaN(physics.pend.motor_control))
+                    ydata2.push(0)
+                else
+                    ydata2.push(physics.pend.motor_control)
+                    
+                if (physics.pend && physics.pend.U_csl)
+                    ydata3.push(physics.pend.U_csl)
+                else
+                    ydata3.push(0)
+                
+                if (!g3) {                   // If the curve does not exist yet, create it.
+                    g3 = brd2.create('curve', [xdata2,ydata2], {strokeWidth:1, strokeColor:'blue'}); 
+                } 
+                if (!g4) {                   // If the curve does not exist yet, create it.
+                    g4 = brd2.create('curve', [xdata2,ydata3], {strokeWidth:1, strokeColor:'green'}); 
+                } 
+
+                if (physics.lower_joint.csl_active)
+                    brd2.update();   
+            }
+
+            //draw state to mode mapping and state
+            context = $("<canvas>").appendTo("#state_to_mode_mapping").attr("width", 300).attr("height", 300)[0].getContext('2d')
+
+            /* 
+            //state space plot
+            angle_speed = physics.lower_joint.angle_speed
+            if (!angle_speed)
+                angle_speed=0
+
+            zdata.push({'U':physics.pend.motor_control, 'phidot': angle_speed })
+            */
+        </script>
+
+        <script>
+            $(document).ready(function(){
+                //key bindings
+
+                $('.toggle-button').on('click', function(){
+                    if($(this).css('color') == 'rgb(255, 0, 0)')
+                        $(this).css('color', 'black')
+                    else
+                        $(this).css('color', 'red')
+                })
+
+                //bind enter key in text fields to button click
+                function handle_enter(event){
+                    if(event.keyCode == 13){
+                        $(this).nextAll('button').first().click()
+                    }
+                }     
+                $("#gi_param_lower").keyup(handle_enter)
+                $("#gf_param_lower").keyup(handle_enter)
+                $("#gb_param_lower").keyup(handle_enter)
+                $("#gain_param_lower").keyup(handle_enter)
+                $("#gi_param_upper").keyup(handle_enter)
+                $("#gf_param_upper").keyup(handle_enter)
+                $("#gb_param_upper").keyup(handle_enter)
+                $("#gain_param_upper").keyup(handle_enter)
+
+                //keyboard shortcuts
+                $(document).bind('keydown', 't', function (evt){
+                   $('#toggle_csl').click(); return false;
+                })
+                
+                $(document).bind('keydown', 'p', function (evt){
+                   $('#toggle_pause').click(); return false;
+                })
+                
+                $(document).bind('keydown', 'n', function (evt){
+                   $('#next_step').click(); return false;
+                })
+                
+                $(document).bind('keydown', 'm', function (evt){
+                    checkbox = $('#map_state_to_mode')
+                    checkbox.click();
+                    checkbox.attr('checked', !checkbox.is(':checked'));    
+                    return false;
+                })
+            })
+        </script>
+    </body>
+    <script type="text/javascript" src="libs/coffee-script.js"> </script>
+</html>
