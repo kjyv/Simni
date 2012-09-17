@@ -89,7 +89,7 @@ map_mode_to_gi = function(mode) {
   if (mode < 0) {
     return mode * 3;
   } else {
-    return mode * 0.8;
+    return mode * 0.35;
   }
 };
 
@@ -348,41 +348,41 @@ physics = (function() {
     }
     vel = gi * angle_speed;
     sum = vel + bodyObject.last_integrated;
-    bodyObject.last_integrated = gf * vel;
+    bodyObject.last_integrated = gf * sum;
     return (sum * gain) + gb;
   };
 
   physics.prototype.updateCSL = function(bodyObject, bodyJoint) {
-    var angle;
-    angle = this.getCurrentAngle(bodyJoint);
+    bodyJoint.angle_speed_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle;
     if (bodyJoint.csl_active) {
-      bodyObject.U_csl = this.CSL(bodyJoint.gi, bodyJoint.gf, bodyJoint.gb, bodyJoint.angle_speed, bodyJoint.gain, bodyObject);
+      bodyObject.U_csl = this.CSL(bodyJoint.gi, bodyJoint.gf, bodyJoint.gb, bodyJoint.angle_speed_csl, bodyJoint.gain, bodyObject);
+      if (!isMouseDown || !mouseJoint) {
+        draw_phase_space();
+      }
     }
-    if (!isMouseDown || !mouseJoint) {
-      return draw_phase_space();
-    }
+    return bodyJoint.last_angle = bodyJoint.GetJointAngle();
   };
 
   km = 10.7 * 193 * 0.4 / 1000;
 
-  kb = km;
+  km = 5;
 
   kb = 20;
 
   L = 0.208 / 1000;
 
-  L_inv = dt / L;
+  L_inv = 1000;
 
-  R = 5;
+  R = 8.3;
 
   physics.prototype.updateMotor = function(bodyObject, bodyJoint) {
     var I_t, I_tm1, U_csl, U_t;
-    bodyJoint.angle_speed = -bodyJoint.GetJointSpeed();
+    bodyJoint.angle_speed = bodyJoint.GetJointSpeed();
     I_tm1 = bodyObject.I_tm1;
     U_csl = bodyObject.U_csl;
     U_t = U_csl - (R * I_tm1) - (kb * bodyJoint.angle_speed);
-    I_t = ((L_inv * U_t) + I_tm1) / 2;
-    bodyObject.motor_control = km * I_t;
+    I_t = (U_t * L_inv) + I_tm1;
+    bodyObject.motor_control = U_csl;
     bodyObject.I_tm1 = I_t;
     if (bodyObject.motor_control) {
       return bodyObject.ApplyTorque(bodyObject.motor_control);
@@ -433,10 +433,12 @@ physics = (function() {
 
   physics.prototype.applyFriction = function(bodyObject, bodyJoint) {
     var fd, fg, v;
-    v = bodyObject.GetAngularVelocity();
+    v = -bodyJoint.GetJointSpeed();
     fg = -v * beta;
     fd = this.sgn(-v) * (beta / 10);
-    return bodyObject.ApplyTorque(fg + fd);
+    if (!isMouseDown) {
+      return bodyObject.ApplyTorque(fg + fd);
+    }
   };
 
   physics.prototype.calcMode = function(motor_control, angle_speed) {
@@ -448,7 +450,7 @@ physics = (function() {
 
   physics.prototype.updateMode = function(bodyObject, bodyJoint) {
     var mode;
-    mode = this.calcMode(bodyObject.motor_control, bodyJoint.angle_speed);
+    mode = this.calcMode(bodyObject.motor_control, bodyJoint.angle_speed_csl);
     mode = this.clip(mode, 3);
     map_mode(bodyJoint, mode);
     if (Math.abs(bodyObject.motor_control) > 0.3) {

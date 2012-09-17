@@ -75,7 +75,7 @@ map_mode_to_gi = (mode) ->
   if mode < 0
     mode * 3
   else
-    mode * 0.8
+    mode * 0.35
 
 map_mode_to_gf = (mode) ->
   #double pendulum
@@ -350,31 +350,32 @@ class physics
     #csl controller
     vel = gi * angle_speed
     sum = vel + bodyObject.last_integrated
-    bodyObject.last_integrated = gf * vel
+    bodyObject.last_integrated = gf * sum
     return (sum * gain) + gb
 
   updateCSL: (bodyObject, bodyJoint) =>
-    # some calculations for graphing
-    angle = @getCurrentAngle bodyJoint
-
+    bodyJoint.angle_speed_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle
     if bodyJoint.csl_active
       bodyObject.U_csl = @CSL(
         bodyJoint.gi, bodyJoint.gf, bodyJoint.gb,
-        bodyJoint.angle_speed,
+        bodyJoint.angle_speed_csl,
         bodyJoint.gain,
         bodyObject
       )
-    draw_phase_space() if not isMouseDown or not mouseJoint
+      draw_phase_space() if not isMouseDown or not mouseJoint
+    bodyJoint.last_angle = bodyJoint.GetJointAngle()
 
   #motor constants
   km = 10.7 * 193 * 0.4 / 1000   #torque constant, km_RX28 = 0.0107, includes ratio * efficiency, M=km*I  
-  kb = km            #back emf constant
+  km = 5
+  #kb = km            #back emf constant, kn in maxon Documents
   kb = 20
   L = 0.208 / 1000   #L_RX28 = 0.208 mH; 
-  L_inv = dt/L       #L_inv = 5.004807, SciCos variant: 4854
-  R = 5            #R_RX28 = 8.3 ohm
+  L_inv = 1000       #L_inv = 5.004807, SciCos variant: 4854
+  R = 8.3            #R_RX28 = 8.3 ohm
   updateMotor: (bodyObject, bodyJoint) =>
-    bodyJoint.angle_speed = -bodyJoint.GetJointSpeed()
+    bodyJoint.angle_speed = bodyJoint.GetJointSpeed()
+
     #if not isNaN(bodyJoint.angle_speed)         # i.e. if simulation has properly started
     # motor model
     I_tm1 = bodyObject.I_tm1   # I_t-1
@@ -382,13 +383,12 @@ class physics
 
     #U_csl = I_tm1 * bodyJoint.gi
     U_t = U_csl-(R*I_tm1)-(kb*bodyJoint.angle_speed)
-    I_t = ((L_inv * U_t) + I_tm1) / 2
-    bodyObject.motor_control = km * I_t
+    I_t = (U_t*L_inv) + I_tm1
+    bodyObject.motor_control = U_csl #km * I_t
     bodyObject.I_tm1 = I_t
 
     if bodyObject.motor_control
       bodyObject.ApplyTorque bodyObject.motor_control   #* bodyJoint.csl_sign 
-
 
   clip: (value, cap=1) => Math.max(-cap, Math.min(cap, value))
   sgn: (value) => if value > 0 then 1 else if value < 0 then -1 else 0
@@ -412,7 +412,7 @@ class physics
   close_to_zero: (value) => if Math.abs(value) < 1e-4 then true else false
   applyFriction: (bodyObject, bodyJoint) =>
     #friction model 
-    v = bodyObject.GetAngularVelocity()
+    v = -bodyJoint.GetJointSpeed()
 
     #sticky friction
     #if @close_to_zero(bodyJoint.m_impulse.x)
@@ -425,7 +425,8 @@ class physics
     #dry friction
     fd = @sgn(-v) * (beta / 10)
 
-    bodyObject.ApplyTorque(fg + fd)
+    if not isMouseDown
+      bodyObject.ApplyTorque(fg + fd)
 
   calcMode: (motor_control, angle_speed) =>
     mc = if w0_abs then Math.abs(motor_control) else motor_control
@@ -440,7 +441,7 @@ class physics
     #w2 = -0.2   #-1 bias
     #mode = w0 * Math.abs(@angle) + w1 * @angle_speed + w2
   
-    mode = @calcMode(bodyObject.motor_control, bodyJoint.angle_speed)
+    mode = @calcMode(bodyObject.motor_control, bodyJoint.angle_speed_csl)
     #mode = @clip(mode, 1.3)
     mode = @clip(mode, 3)
     map_mode bodyJoint, mode

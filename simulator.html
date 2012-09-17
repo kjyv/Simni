@@ -245,7 +245,7 @@
         </div>
 
         <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;/&phi;'<button id="clear_phase">clear</button></div>
-        <div id="motor_torque_plot">motor torque (blue) and voltage (green)</div>
+        <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled" checked="checked">motor torque (blue) and voltage (green)</div>
         <div id="state_to_mode_mapping">state space U/&phi;'<br/></div>
         <script>
             //use d3 for state_to_mode_mapping
@@ -335,7 +335,7 @@
 
 
             //use jsxgraph for phase spaces
-            var phase_space_enabled=false,brd,brd2,g,g2,g3,g4,xdata=[],ydata=[],zdata=[{'U':0, 'phidot':0}],i,xdata2=[],ydata2=[],ydata3=[]
+            var phase_space_enabled=false,motor_torque_enabled=true,brd,brd2,g,g2,g3,g4,xdata=[],ydata=[],zdata=[{'U':0, 'phidot':0}],i,xdata2=[],ydata2=[],ydata3=[]
 
             JXG.Options.showCopyright = false
             JXG.Options.zoom.wheel = true
@@ -353,6 +353,10 @@
 
             $("#phase_space_enabled").on('click', function(){
                 phase_space_enabled = !phase_space_enabled
+            })
+            
+            $("#motor_torque_enabled").on('click', function(){
+                motor_torque_enabled= !motor_torque_enabled
             })
 
             var line = d3.svg.line()
@@ -373,7 +377,7 @@
                     }
 
                     xdata.push(physics.getCurrentAngle(physics.lower_joint))
-                    ydata.push(physics.lower_joint.angle_speed)
+                    ydata.push(physics.lower_joint.angle_speed_csl)
                     
                     if (!g) {                   // If the curve does not exist yet, create it.
                         g = brd.create('curve', [xdata,ydata], {strokeWidth:1, strokeColor:'red'}); 
@@ -386,7 +390,7 @@
                 if (zdata.length==200) {
                     zdata.shift()
                 }
-                angle_speed = physics.lower_joint.angle_speed
+                angle_speed = physics.lower_joint.angle_speed_csl
                 if (!angle_speed)
                     angle_speed=0
 
@@ -403,30 +407,32 @@
             }
             brd2 = JXG.JSXGraph.initBoard('motor_torque_plot', {boundingbox:[0,0.01,2,-0.01], axis:true})
             function draw_motor_torque(){
-                if (ydata2.length==500) {
-                    ydata2.shift()
-                    ydata3.shift()
-                }
-                
-                if (isNaN(physics.pend.motor_control))
-                    ydata2.push(0)
-                else
-                    ydata2.push(physics.pend.motor_control)
+                if(motor_torque_enabled){
+                    if (ydata2.length==500) {
+                        ydata2.shift()
+                        ydata3.shift()
+                    }
                     
-                if (physics.pend && physics.pend.U_csl)
-                    ydata3.push(physics.pend.U_csl)
-                else
-                    ydata3.push(0)
-                
-                if (!g3) {                   // If the curve does not exist yet, create it.
-                    g3 = brd2.create('curve', [xdata2,ydata2], {strokeWidth:1, strokeColor:'blue'}); 
-                } 
-                if (!g4) {                   // If the curve does not exist yet, create it.
-                    g4 = brd2.create('curve', [xdata2,ydata3], {strokeWidth:1, strokeColor:'green'}); 
-                } 
+                    if (isNaN(physics.pend.motor_control))
+                        ydata2.push(0)
+                    else
+                        ydata2.push(physics.pend.motor_control)
+                        
+                    if (physics.pend && physics.pend.U_csl)
+                        ydata3.push(physics.pend.U_csl)
+                    else
+                        ydata3.push(0)
+                    
+                    if (!g3) {                   // If the curve does not exist yet, create it.
+                        g3 = brd2.create('curve', [xdata2,ydata2], {strokeWidth:1, strokeColor:'blue'}); 
+                    } 
+                    if (!g4) {                   // If the curve does not exist yet, create it.
+                        g4 = brd2.create('curve', [xdata2,ydata3], {strokeWidth:1, strokeColor:'green'}); 
+                    } 
 
-                if (physics.lower_joint.csl_active)
-                    brd2.update();   
+                    if (physics.lower_joint.csl_active)
+                        brd2.update();   
+                }
             }
 
             //draw state to mode mapping and state
