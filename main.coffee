@@ -148,15 +148,26 @@ myon_precision = (number) ->
 
 class physics
   constructor: ->
+    ###
+    #                               dens    frict  rest    
+     Material DEFAULT= new Material(1.00f,  0.30f, 0.1f,  false, true,  true,  Color.GRAY);
+     Material METAL  = new Material(7.85f,  0.20f, 0.2f,  false, false, false, Color.LIGHT_GRAY); // Heavy, inert.
+     Material STONE  = new Material(2.40f,  0.50f, 0.1f,  false, false, false, Color.DARK_GRAY); // Heavy, inert.
+     Material WOOD   = new Material(0.53f,  0.40f, 0.15f, false, true,  false, new Color(150, 98, 0)); // Medium weight, mostly inert.
+     Material GLASS  = new Material(2.50f,  0.10f, 0.2f,  false, true,  true,  new Color(0, 0, 220, 128)); // Heavy, transparent.
+     Material RUBBER = new Material(1.50f,  0.80f, 0.4f,  false, false, false, new Color(20, 20, 20)); // Medium weight, inert, bouncy.
+     Material ICE    = new Material(0.92f,  0.01f, 0.1f,  false, true,  true,  new Color(0, 146, 220, 200)); // Medium weight, slippery surface.
+    ###
+   
     @world = new b2World(
       new b2Vec2(0, 9.81),    #gravity
       false                  #allow sleep
     )
       
     fixDef = new b2FixtureDef
-    fixDef.density = 20
-    fixDef.friction = 0
-    fixDef.restitution = 0.2
+    fixDef.density = 0.53
+    fixDef.friction = 0.4
+    fixDef.restitution = 0.15
     @fixDef = fixDef
     
     #create ground
@@ -224,23 +235,23 @@ class physics
     @fixDef.shape.SetAsArray pend_vertices, 2
     bodyDef.linearDamping = damping
     bodyDef.angularDamping = damping
-    @pend = @world.CreateBody(bodyDef)
-    line = @pend.CreateFixture(@fixDef)
+    @body = @world.CreateBody(bodyDef)
+    line = @body.CreateFixture(@fixDef)
     
     #initialise friction and motor state
-    @pend.z2 = 0
-    @pend.motor_control = 0
-    @pend.I_tm1 = 0
-    @pend.U_csl = 0
+    @body.z2 = 0
+    @body.motor_control = 0
+    @body.I_tm1 = 0
+    @body.U_csl = 0
 
     #create mass circle
     @fixDef.shape = new b2CircleShape(mass_size)
     @fixDef.shape.m_p = pend_vertices[1]
-    mass = @pend.CreateFixture(@fixDef)
+    mass = @body.CreateFixture(@fixDef)
     
     #rotating joint
     jointDef = new b2RevoluteJointDef()
-    jointDef.Initialize @pend, @ground, pend_vertices[0]
+    jointDef.Initialize @body, @ground, pend_vertices[0]
     jointDef.collideConnected = true
     @lower_joint = @world.CreateJoint(jointDef)
 
@@ -271,18 +282,18 @@ class physics
     @fixDef.shape.SetAsArray pend_vertices, 2
     bodyDef.linearDamping = damping
     bodyDef.angularDamping = damping
-    @pend = @world.CreateBody(bodyDef)
-    line = @pend.CreateFixture(@fixDef)
+    @body = @world.CreateBody(bodyDef)
+    line = @body.CreateFixture(@fixDef)
     
     #initialise friction and motor state
-    @pend.z2 = 0
-    @pend.motor_control = 0
-    @pend.I_tm1 = 0
-    @pend.U_csl = 0
+    @body.z2 = 0
+    @body.motor_control = 0
+    @body.I_tm1 = 0
+    @body.U_csl = 0
     
     #lower rotating joint
     jointDef = new b2RevoluteJointDef()
-    jointDef.Initialize @pend, @ground, pend_vertices[0]
+    jointDef.Initialize @body, @ground, pend_vertices[0]
     jointDef.collideConnected = true
     @lower_joint = @world.CreateJoint(jointDef)
 
@@ -297,9 +308,8 @@ class physics
     #create mass circle
     @fixDef.shape = new b2CircleShape(mass_size)
     @fixDef.shape.m_p = pend_vertices[1]
-    mass = @pend.CreateFixture(@fixDef)
+    mass = @body.CreateFixture(@fixDef)
 
-    
     #second line
     pend_vertices = new Array(
       new b2Vec2(@ground_bodyDef.position.x, @ground_bodyDef.position.y - @ground_height - pend_length - 0.005),
@@ -309,16 +319,16 @@ class physics
     @fixDef.shape.SetAsArray pend_vertices, 2
     bodyDef.linearDamping = damping
     bodyDef.angularDamping = damping
-    @pend2 = @world.CreateBody(bodyDef)
-    line2 = @pend2.CreateFixture(@fixDef)
+    @body2 = @world.CreateBody(bodyDef)
+    line2 = @body2.CreateFixture(@fixDef)
 
     #initialise friction and motor state
-    @pend2.z2 = 0
-    @pend2.motor_control = 0
+    @body2.z2 = 0
+    @body2.motor_control = 0
 
     #upper rotating joint
     jointDef = new b2RevoluteJointDef()
-    jointDef.Initialize @pend2, @pend, pend_vertices[0]
+    jointDef.Initialize @body2, @body, pend_vertices[0]
     jointDef.collideConnected = false
     @upper_joint = @world.CreateJoint(jointDef)
     
@@ -332,7 +342,103 @@ class physics
     #create upper mass circle
     @fixDef.shape = new b2CircleShape(mass_size)
     @fixDef.shape.m_p = pend_vertices[1]
-    mass = @pend2.CreateFixture(@fixDef) 
+    mass = @body2.CreateFixture(@fixDef)
+
+  ellipse2polygon: (r, a, x0, y0) =>
+    points = new Array()
+    step = 2*Math.PI/40
+    for theta in [2*Math.PI..0] by -step
+      x = x0 + r*Math.cos(theta)
+      y = y0 - a*r*Math.sin(theta)
+      points.push(new b2Vec2(x,y))
+    return points[0...points.length-1]
+
+  upper_joint: null
+  createSemni: =>
+
+    #create body (simple ellipse for now)
+    r = 0.2
+    a = 1.5
+    #offsets
+    x0 = @ground_bodyDef.position.x
+    y0 = @ground_bodyDef.position.y - 2*r
+    vertices = @ellipse2polygon(r, a, x0, y0)
+    
+    @fixDef = new b2FixtureDef
+    @fixDef.density = 2
+    @fixDef.friction = 0.4
+    @fixDef.restitution = 0.2
+    @fixDef.shape = new b2PolygonShape
+    @fixDef.shape.SetAsArray vertices, vertices.length
+    bodyDef = new b2BodyDef
+    bodyDef.type = b2Body.b2_dynamicBody
+    @body = @world.CreateBody(bodyDef)
+    bodyFix = @body.CreateFixture(@fixDef)
+    
+    #initialise friction and motor state
+    @body.z2 = 0
+    @body.motor_control = 0
+    @body.I_tm1 = 0
+    @body.U_csl = 0
+
+    ###################
+
+    #upper arm
+    arm_length = 0.1
+    @fixDef = new b2FixtureDef
+    @fixDef.density = 1
+    @fixDef.friction = 0.4
+    @fixDef.restitution = 0.2
+    @fixDef.shape = new b2PolygonShape
+    v = vertices[3]
+    vertices2 = new Array(
+      v
+      new b2Vec2(v.x + arm_length, v.y)
+      new b2Vec2(v.x + arm_length, v.y - 0.02)
+      new b2Vec2(v.x, v.y - 0.02)
+    )
+    @fixDef.shape.SetAsArray vertices, vertices2.length
+
+    bodyDef = new b2BodyDef
+    bodyDef.type = b2Body.b2_dynamicBody
+    @body2 = @world.CreateBody(bodyDef)
+    upper_arm = @body2.CreateFixture(@fixDef)
+    md = new b2MassData()
+    @body2.GetMassData(md)
+    md.mass = 0.05
+    #md.center.x = ...
+    @body2.SetMassData(md)
+    #####################
+
+    #connect body and arm with lower rotating joint
+    jointDef = new b2RevoluteJointDef()
+    jointDef.Initialize @body, @body2, vertices[0]
+    jointDef.collideConnected = false
+    @lower_joint = @world.CreateJoint(jointDef)
+    
+    #initialize
+    @lower_joint.angle_speed = 0
+    @lower_joint.csl_active = false
+    @lower_joint.joint_name = 'lower'
+    @lower_joint.csl_sign = 1
+    @lower_joint.gain = 1
+    @lower_joint.gb = 0
+
+    
+    ###
+    #upper rotating joint
+    jointDef = new b2RevoluteJointDef()
+    jointDef.Initialize @body2, @body3, vertices[0]
+    jointDef.collideConnected = false
+    @upper_joint = @world.CreateJoint(jointDef)
+    
+    @upper_joint.angle_speed = 0
+    @upper_joint.csl_active = false
+    @upper_joint.joint_name = 'upper'
+    @upper_joint.csl_sign = 1
+    @upper_joint.gain = 1
+    @upper_joint.gb = 0
+    ###
 
   getCurrentAngle: (bodyJoint) =>
     #sensor noise
@@ -490,27 +596,29 @@ class physics
       # recalc csl, 60 Hz
       if @pend_style is 1
         if map_state_to_mode
-          @updateMode @pend, @lower_joint
-        @updateCSL @pend, @lower_joint
+          @updateMode @body, @lower_joint
+        @updateCSL @body, @lower_joint
 
       if @pend_style is 2
         if map_state_to_mode
-          @updateMode @pend, @lower_joint
-          @updateMode @pend2, @upper_joint
-        @updateCSL @pend, @lower_joint
-        @updateCSL @pend2, @upper_joint
+          @updateMode @body, @lower_joint
+          @updateMode @body2, @upper_joint
+        @updateCSL @body, @lower_joint
+        @updateCSL @body2, @upper_joint
+
+      #if @pend_style is 3 
 
       #1000 Hz loop
       i = 0
       while i < steps_per_frame
         if @pend_style is 1
-          @updateMotor @pend, @lower_joint
-          @applyFriction @pend, @lower_joint
+          @updateMotor @body, @lower_joint
+          @applyFriction @body, @lower_joint
         if @pend_style is 2
-          @updateMotor @pend, @lower_joint
-          @updateMotor @pend2, @upper_joint
-          @applyFriction @pend, @lower_joint
-          @applyFriction @pend2, @upper_joint
+          @updateMotor @body, @lower_joint
+          @updateMotor @body2, @upper_joint
+          @applyFriction @body, @lower_joint
+          @applyFriction @body2, @upper_joint
         @world.Step(
           dt,             #timestep (1 / fps)
           10,             #velocity iterations

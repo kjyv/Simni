@@ -22,8 +22,9 @@
             <div id="bottom-panel">
                 <div id="controls">
                     <select id="pendulum_style">
-                        <option value="1" selected="selected">Single Pendulum</option>
+                        <option value="1">Single Pendulum</option>
                         <option value="2">Double Pendulum</option>
+                        <option value="3" selected="selected">Semni</option>
                     </select><br/>
                     <script type="text/coffeescript">
                         $ ->
@@ -43,9 +44,9 @@
                                         body = null
 
                                 removeJoint physics.upper_joint
-                                removeBody physics.pend2
+                                removeBody physics.body2
                                 removeJoint physics.lower_joint
-                                removeBody physics.pend
+                                removeBody physics.body
 
                                 #create new objects for selected pendulum kind
                                 style = $(this).val()
@@ -64,6 +65,13 @@
                                     physics.createDoublePendulum()
                                     map_mode physics.lower_joint
                                     map_mode physics.upper_joint
+                                    
+                                else if style is "3"
+                                    physics.pend_style = 3
+
+                                    physics.createSemni()
+                                    #map_mode physics.lower_joint
+                                    #map_mode physics.upper_joint
 
                             $("#pendulum_style").trigger('change')
 
@@ -74,11 +82,11 @@
                     <script type="text/coffeescript">
                         $ ->
                             $("#toggle_csl").on 'click', ->
-                                physics.toggleCSL physics.pend, physics.lower_joint
+                                physics.toggleCSL physics.body, physics.lower_joint
                                 if physics.upper_joint
-                                    physics.toggleCSL physics.pend2, physics.upper_joint
+                                    physics.toggleCSL physics.body2, physics.upper_joint
                     </script>
-                    <button id="apply_torque" onClick="physics.pend.ApplyTorque(0.01)">apply torque (+0.01)</button> 
+                    <button id="apply_torque" onClick="physics.body.ApplyTorque(0.01)">apply torque (+0.01)</button> 
                     <button id="add_box" onClick="physics.createBox()">create box</button><br/>
                     <br/>
          
@@ -394,7 +402,7 @@
                 if (!angle_speed)
                     angle_speed=0
 
-                zdata.push({'U':physics.pend.motor_control, 'phidot': angle_speed })
+                zdata.push({'U':physics.body.motor_control, 'phidot': angle_speed })
 
                 path
                   .attr("d", line)
@@ -413,13 +421,13 @@
                         ydata3.shift()
                     }
                     
-                    if (isNaN(physics.pend.motor_control))
+                    if (isNaN(physics.body.motor_control))
                         ydata2.push(0)
                     else
-                        ydata2.push(physics.pend.motor_control)
+                        ydata2.push(physics.body.motor_control)
                         
-                    if (physics.pend && physics.pend.U_csl)
-                        ydata3.push(physics.pend.U_csl)
+                    if (physics.body && physics.body.U_csl)
+                        ydata3.push(physics.body.U_csl)
                     else
                         ydata3.push(0)
                     
@@ -444,7 +452,7 @@
             if (!angle_speed)
                 angle_speed=0
 
-            zdata.push({'U':physics.pend.motor_control, 'phidot': angle_speed })
+            zdata.push({'U':physics.body.motor_control, 'phidot': angle_speed })
             */
         </script>
 

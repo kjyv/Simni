@@ -181,18 +181,33 @@ physics = (function() {
 
     this.getCurrentAngle = __bind(this.getCurrentAngle, this);
 
+    this.createSemni = __bind(this.createSemni, this);
+
+    this.ellipse2polygon = __bind(this.ellipse2polygon, this);
+
     this.createDoublePendulum = __bind(this.createDoublePendulum, this);
 
     this.createSimplePendulum = __bind(this.createSimplePendulum, this);
 
     this.createBox = __bind(this.createBox, this);
 
+    /*
+        #                               dens    frict  rest    
+         Material DEFAULT= new Material(1.00f,  0.30f, 0.1f,  false, true,  true,  Color.GRAY);
+         Material METAL  = new Material(7.85f,  0.20f, 0.2f,  false, false, false, Color.LIGHT_GRAY); // Heavy, inert.
+         Material STONE  = new Material(2.40f,  0.50f, 0.1f,  false, false, false, Color.DARK_GRAY); // Heavy, inert.
+         Material WOOD   = new Material(0.53f,  0.40f, 0.15f, false, true,  false, new Color(150, 98, 0)); // Medium weight, mostly inert.
+         Material GLASS  = new Material(2.50f,  0.10f, 0.2f,  false, true,  true,  new Color(0, 0, 220, 128)); // Heavy, transparent.
+         Material RUBBER = new Material(1.50f,  0.80f, 0.4f,  false, false, false, new Color(20, 20, 20)); // Medium weight, inert, bouncy.
+         Material ICE    = new Material(0.92f,  0.01f, 0.1f,  false, true,  true,  new Color(0, 146, 220, 200)); // Medium weight, slippery surface.
+    */
+
     var bodyDef, debugDraw, fixDef;
     this.world = new b2World(new b2Vec2(0, 9.81), false);
     fixDef = new b2FixtureDef;
-    fixDef.density = 20;
-    fixDef.friction = 0;
-    fixDef.restitution = 0.2;
+    fixDef.density = 0.53;
+    fixDef.friction = 0.4;
+    fixDef.restitution = 0.15;
     this.fixDef = fixDef;
     this.ground_height = 0.03;
     this.ground_width = 1;
@@ -250,17 +265,17 @@ physics = (function() {
     this.fixDef.shape.SetAsArray(pend_vertices, 2);
     bodyDef.linearDamping = damping;
     bodyDef.angularDamping = damping;
-    this.pend = this.world.CreateBody(bodyDef);
-    line = this.pend.CreateFixture(this.fixDef);
-    this.pend.z2 = 0;
-    this.pend.motor_control = 0;
-    this.pend.I_tm1 = 0;
-    this.pend.U_csl = 0;
+    this.body = this.world.CreateBody(bodyDef);
+    line = this.body.CreateFixture(this.fixDef);
+    this.body.z2 = 0;
+    this.body.motor_control = 0;
+    this.body.I_tm1 = 0;
+    this.body.U_csl = 0;
     this.fixDef.shape = new b2CircleShape(mass_size);
     this.fixDef.shape.m_p = pend_vertices[1];
-    mass = this.pend.CreateFixture(this.fixDef);
+    mass = this.body.CreateFixture(this.fixDef);
     jointDef = new b2RevoluteJointDef();
-    jointDef.Initialize(this.pend, this.ground, pend_vertices[0]);
+    jointDef.Initialize(this.body, this.ground, pend_vertices[0]);
     jointDef.collideConnected = true;
     this.lower_joint = this.world.CreateJoint(jointDef);
     this.lower_joint.angle_speed = 0;
@@ -286,14 +301,14 @@ physics = (function() {
     this.fixDef.shape.SetAsArray(pend_vertices, 2);
     bodyDef.linearDamping = damping;
     bodyDef.angularDamping = damping;
-    this.pend = this.world.CreateBody(bodyDef);
-    line = this.pend.CreateFixture(this.fixDef);
-    this.pend.z2 = 0;
-    this.pend.motor_control = 0;
-    this.pend.I_tm1 = 0;
-    this.pend.U_csl = 0;
+    this.body = this.world.CreateBody(bodyDef);
+    line = this.body.CreateFixture(this.fixDef);
+    this.body.z2 = 0;
+    this.body.motor_control = 0;
+    this.body.I_tm1 = 0;
+    this.body.U_csl = 0;
     jointDef = new b2RevoluteJointDef();
-    jointDef.Initialize(this.pend, this.ground, pend_vertices[0]);
+    jointDef.Initialize(this.body, this.ground, pend_vertices[0]);
     jointDef.collideConnected = true;
     this.lower_joint = this.world.CreateJoint(jointDef);
     this.lower_joint.angle_speed = 0;
@@ -304,18 +319,18 @@ physics = (function() {
     this.lower_joint.gb = 0;
     this.fixDef.shape = new b2CircleShape(mass_size);
     this.fixDef.shape.m_p = pend_vertices[1];
-    mass = this.pend.CreateFixture(this.fixDef);
+    mass = this.body.CreateFixture(this.fixDef);
     pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x, this.ground_bodyDef.position.y - this.ground_height - pend_length - 0.005), new b2Vec2(this.ground_bodyDef.position.x, this.ground_bodyDef.position.y - this.ground_height - (2 * pend_length)));
     this.fixDef.shape = new b2PolygonShape;
     this.fixDef.shape.SetAsArray(pend_vertices, 2);
     bodyDef.linearDamping = damping;
     bodyDef.angularDamping = damping;
-    this.pend2 = this.world.CreateBody(bodyDef);
-    line2 = this.pend2.CreateFixture(this.fixDef);
-    this.pend2.z2 = 0;
-    this.pend2.motor_control = 0;
+    this.body2 = this.world.CreateBody(bodyDef);
+    line2 = this.body2.CreateFixture(this.fixDef);
+    this.body2.z2 = 0;
+    this.body2.motor_control = 0;
     jointDef = new b2RevoluteJointDef();
-    jointDef.Initialize(this.pend2, this.pend, pend_vertices[0]);
+    jointDef.Initialize(this.body2, this.body, pend_vertices[0]);
     jointDef.collideConnected = false;
     this.upper_joint = this.world.CreateJoint(jointDef);
     this.upper_joint.angle_speed = 0;
@@ -326,7 +341,86 @@ physics = (function() {
     this.upper_joint.gb = 0;
     this.fixDef.shape = new b2CircleShape(mass_size);
     this.fixDef.shape.m_p = pend_vertices[1];
-    return mass = this.pend2.CreateFixture(this.fixDef);
+    return mass = this.body2.CreateFixture(this.fixDef);
+  };
+
+  physics.prototype.ellipse2polygon = function(r, a, x0, y0) {
+    var points, step, theta, x, y, _i, _ref;
+    points = new Array();
+    step = 2 * Math.PI / 40;
+    for (theta = _i = _ref = 2 * Math.PI; _ref <= 0 ? _i <= 0 : _i >= 0; theta = _i += -step) {
+      x = x0 + r * Math.cos(theta);
+      y = y0 - a * r * Math.sin(theta);
+      points.push(new b2Vec2(x, y));
+    }
+    return points.slice(0, points.length - 1);
+  };
+
+  physics.prototype.upper_joint = null;
+
+  physics.prototype.createSemni = function() {
+    var a, arm_length, bodyDef, bodyFix, jointDef, md, r, upper_arm, v, vertices, vertices2, x0, y0;
+    r = 0.2;
+    a = 1.5;
+    x0 = this.ground_bodyDef.position.x;
+    y0 = this.ground_bodyDef.position.y - 2 * r;
+    vertices = this.ellipse2polygon(r, a, x0, y0);
+    this.fixDef = new b2FixtureDef;
+    this.fixDef.density = 2;
+    this.fixDef.friction = 0.4;
+    this.fixDef.restitution = 0.2;
+    this.fixDef.shape = new b2PolygonShape;
+    this.fixDef.shape.SetAsArray(vertices, vertices.length);
+    bodyDef = new b2BodyDef;
+    bodyDef.type = b2Body.b2_dynamicBody;
+    this.body = this.world.CreateBody(bodyDef);
+    bodyFix = this.body.CreateFixture(this.fixDef);
+    this.body.z2 = 0;
+    this.body.motor_control = 0;
+    this.body.I_tm1 = 0;
+    this.body.U_csl = 0;
+    arm_length = 0.1;
+    this.fixDef = new b2FixtureDef;
+    this.fixDef.density = 1;
+    this.fixDef.friction = 0.4;
+    this.fixDef.restitution = 0.2;
+    this.fixDef.shape = new b2PolygonShape;
+    v = vertices[3];
+    vertices2 = new Array(v, new b2Vec2(v.x + arm_length, v.y), new b2Vec2(v.x + arm_length, v.y - 0.02), new b2Vec2(v.x, v.y - 0.02));
+    this.fixDef.shape.SetAsArray(vertices, vertices2.length);
+    bodyDef = new b2BodyDef;
+    bodyDef.type = b2Body.b2_dynamicBody;
+    this.body2 = this.world.CreateBody(bodyDef);
+    upper_arm = this.body2.CreateFixture(this.fixDef);
+    md = new b2MassData();
+    this.body2.GetMassData(md);
+    md.mass = 0.05;
+    this.body2.SetMassData(md);
+    jointDef = new b2RevoluteJointDef();
+    jointDef.Initialize(this.body, this.body2, vertices[0]);
+    jointDef.collideConnected = false;
+    this.lower_joint = this.world.CreateJoint(jointDef);
+    this.lower_joint.angle_speed = 0;
+    this.lower_joint.csl_active = false;
+    this.lower_joint.joint_name = 'lower';
+    this.lower_joint.csl_sign = 1;
+    this.lower_joint.gain = 1;
+    return this.lower_joint.gb = 0;
+    /*
+        #upper rotating joint
+        jointDef = new b2RevoluteJointDef()
+        jointDef.Initialize @body2, @body3, vertices[0]
+        jointDef.collideConnected = false
+        @upper_joint = @world.CreateJoint(jointDef)
+        
+        @upper_joint.angle_speed = 0
+        @upper_joint.csl_active = false
+        @upper_joint.joint_name = 'upper'
+        @upper_joint.csl_sign = 1
+        @upper_joint.gain = 1
+        @upper_joint.gb = 0
+    */
+
   };
 
   physics.prototype.getCurrentAngle = function(bodyJoint) {
@@ -500,29 +594,29 @@ physics = (function() {
       }
       if (this.pend_style === 1) {
         if (map_state_to_mode) {
-          this.updateMode(this.pend, this.lower_joint);
+          this.updateMode(this.body, this.lower_joint);
         }
-        this.updateCSL(this.pend, this.lower_joint);
+        this.updateCSL(this.body, this.lower_joint);
       }
       if (this.pend_style === 2) {
         if (map_state_to_mode) {
-          this.updateMode(this.pend, this.lower_joint);
-          this.updateMode(this.pend2, this.upper_joint);
+          this.updateMode(this.body, this.lower_joint);
+          this.updateMode(this.body2, this.upper_joint);
         }
-        this.updateCSL(this.pend, this.lower_joint);
-        this.updateCSL(this.pend2, this.upper_joint);
+        this.updateCSL(this.body, this.lower_joint);
+        this.updateCSL(this.body2, this.upper_joint);
       }
       i = 0;
       while (i < steps_per_frame) {
         if (this.pend_style === 1) {
-          this.updateMotor(this.pend, this.lower_joint);
-          this.applyFriction(this.pend, this.lower_joint);
+          this.updateMotor(this.body, this.lower_joint);
+          this.applyFriction(this.body, this.lower_joint);
         }
         if (this.pend_style === 2) {
-          this.updateMotor(this.pend, this.lower_joint);
-          this.updateMotor(this.pend2, this.upper_joint);
-          this.applyFriction(this.pend, this.lower_joint);
-          this.applyFriction(this.pend2, this.upper_joint);
+          this.updateMotor(this.body, this.lower_joint);
+          this.updateMotor(this.body2, this.upper_joint);
+          this.applyFriction(this.body, this.lower_joint);
+          this.applyFriction(this.body2, this.upper_joint);
         }
         this.world.Step(dt, 10, 10);
         i++;
