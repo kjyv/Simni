@@ -82,16 +82,20 @@
                     <script type="text/coffeescript">
                         $ ->
                             $("#toggle_csl").on 'click', ->
-                                physics.toggleCSL physics.body, physics.lower_joint
-                                if physics.upper_joint
+                                if physics.pend_style is '3'
                                     physics.toggleCSL physics.body2, physics.upper_joint
+                                    physics.toggleCSL physics.body3, physics.lower_joint
+                                else
+                                    physics.toggleCSL physics.body, physics.lower_joint
+                                    if physics.upper_joint
+                                        physics.toggleCSL physics.body2, physics.upper_joint
                     </script>
                     <button id="apply_torque" onClick="physics.body.ApplyTorque(0.01)">apply torque (+0.01)</button> 
                     <button id="add_box" onClick="physics.createBox()">create box</button><br/>
                     <br/>
          
-                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.050" step="0.001" onchange="set_friction(parseFloat(this.value))" />
-                    <span id="friction_val">0.050</span><br/>
+                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.000" step="0.001" onchange="set_friction(parseFloat(this.value))" />
+                    <span id="friction_val">0.000</span><br/>
 
                     <label for="stiction_param">stiction</label> <input id="stiction_param" type="range" min="0" max="5" value="0.6" step="0.1" onchange="set_stiction(parseFloat(this.value))" />
                     <span id="stiction_val">0.100</span><br/>            
@@ -439,7 +443,7 @@
                     } 
 
                     if (physics.lower_joint.csl_active)
-                        brd2.update();   
+                        brd2.update(); 
                 }
             }
 

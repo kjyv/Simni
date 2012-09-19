@@ -344,25 +344,21 @@ class physics
     @fixDef.shape.m_p = pend_vertices[1]
     mass = @body2.CreateFixture(@fixDef)
 
-  ellipse2polygon: (r, a, x0, y0) =>
+  ellipse2polygon: (r, b, x0, y0) =>
     points = new Array()
     step = 2*Math.PI/40
     for theta in [2*Math.PI..0] by -step
-      x = x0 + r*Math.cos(theta)
-      y = y0 - a*r*Math.sin(theta)
+      x = + b*r*Math.cos(theta)
+      y = - r*Math.sin(theta)
       points.push(new b2Vec2(x,y))
     return points[0...points.length-1]
 
   upper_joint: null
   createSemni: =>
-
     #create body (simple ellipse for now)
     r = 0.2
-    a = 1.5
-    #offsets
-    x0 = @ground_bodyDef.position.x
-    y0 = @ground_bodyDef.position.y - 2*r
-    vertices = @ellipse2polygon(r, a, x0, y0)
+    b = 0.6
+    vertices = @ellipse2polygon(r, b)
     
     @fixDef = new b2FixtureDef
     @fixDef.density = 2
@@ -370,8 +366,12 @@ class physics
     @fixDef.restitution = 0.2
     @fixDef.shape = new b2PolygonShape
     @fixDef.shape.SetAsArray vertices, vertices.length
+    @fixDef.filter.groupIndex = -1  #negative groups never collide with each other
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_dynamicBody
+    x0 = @ground_bodyDef.position.x
+    y0 = @ground_bodyDef.position.y - 2*r
+    bodyDef.position.Set(x0,y0)
     @body = @world.CreateBody(bodyDef)
     bodyFix = @body.CreateFixture(@fixDef)
     
@@ -384,35 +384,37 @@ class physics
     ###################
 
     #upper arm
-    arm_length = 0.1
-    @fixDef = new b2FixtureDef
-    @fixDef.density = 1
-    @fixDef.friction = 0.4
-    @fixDef.restitution = 0.2
-    @fixDef.shape = new b2PolygonShape
-    v = vertices[3]
-    vertices2 = new Array(
-      v
-      new b2Vec2(v.x + arm_length, v.y)
-      new b2Vec2(v.x + arm_length, v.y - 0.02)
-      new b2Vec2(v.x, v.y - 0.02)
-    )
-    @fixDef.shape.SetAsArray vertices, vertices2.length
+    @fixDef2 = new b2FixtureDef
+    @fixDef2.density = 1
+    @fixDef2.friction = 0.4
+    @fixDef2.restitution = 0.2
+    @fixDef2.shape = new b2PolygonShape
+    @fixDef2.shape.SetAsBox(0.02,0.05)
+    @fixDef2.filter.groupIndex = -1
+    bodyDef2 = new b2BodyDef
+    bodyDef2.type = b2Body.b2_dynamicBody
+    bodyDef2.position.Set(x0, y0 + 0.2)
 
-    bodyDef = new b2BodyDef
-    bodyDef.type = b2Body.b2_dynamicBody
-    @body2 = @world.CreateBody(bodyDef)
-    upper_arm = @body2.CreateFixture(@fixDef)
+    @body2 = @world.CreateBody(bodyDef2)
+    lower_arm = @body2.CreateFixture(@fixDef2)
+
     md = new b2MassData()
     @body2.GetMassData(md)
     md.mass = 0.05
     #md.center.x = ...
     @body2.SetMassData(md)
-    #####################
 
-    #connect body and arm with lower rotating joint
+    
+    #connect body and upper arm with rotating joint
     jointDef = new b2RevoluteJointDef()
-    jointDef.Initialize @body, @body2, vertices[0]
+    #jointDef.Initialize @body, @body2, vertices2[0]
+    jointDef.bodyA = @body
+    jointDef.bodyB = @body2
+    v = vertices[2]
+    jointDef.localAnchorA.Set(0.03,v.y)   #point on the body that arm is attached to (local coordinates, 
+                                          #relative to body center)
+    jointDef.localAnchorB.Set(0,-0.05)    #point on arm that is attached to body
+    #jointDef.anchor = new b2Vec2(vertices[3].x, vertices[3].y)
     jointDef.collideConnected = false
     @lower_joint = @world.CreateJoint(jointDef)
     
@@ -424,11 +426,35 @@ class physics
     @lower_joint.gain = 1
     @lower_joint.gb = 0
 
+    ########
+
+    #upper arm
+    @fixDef3 = new b2FixtureDef
+    @fixDef3.density = 1
+    @fixDef3.friction = 0.4
+    @fixDef3.restitution = 0.2
+    @fixDef3.shape = new b2PolygonShape
+    @fixDef3.shape.SetAsBox(0.02,0.05)
+    @fixDef3.filter.groupIndex = -1
+    bodyDef3 = new b2BodyDef
+    bodyDef3.type = b2Body.b2_dynamicBody
+    bodyDef3.position.Set(x0, y0 + 0.4)
+    @body3 = @world.CreateBody(bodyDef3)
+    upper_arm = @body3.CreateFixture(@fixDef3)
+
+    md = new b2MassData()
+    @body3.GetMassData(md)
+    md.mass = 0.05
+    #md.center.x = ...
+    @body3.SetMassData(md)
     
-    ###
+    
     #upper rotating joint
     jointDef = new b2RevoluteJointDef()
-    jointDef.Initialize @body2, @body3, vertices[0]
+    jointDef.bodyA = @body2
+    jointDef.bodyB = @body3
+    jointDef.localAnchorA.Set(0,0.05)
+    jointDef.localAnchorB.Set(0,-0.05)
     jointDef.collideConnected = false
     @upper_joint = @world.CreateJoint(jointDef)
     
@@ -438,7 +464,7 @@ class physics
     @upper_joint.csl_sign = 1
     @upper_joint.gain = 1
     @upper_joint.gb = 0
-    ###
+    
 
   getCurrentAngle: (bodyJoint) =>
     #sensor noise
@@ -451,6 +477,8 @@ class physics
     bodyJoint.csl_active = not bodyJoint.csl_active
     bodyObject.last_integrated = 0
     bodyObject.U_csl = 0
+    $("#set_csl_params_lower").trigger('click')
+    $("#set_csl_params_upper").trigger('click')
 
   CSL: (gi, gf, gb, angle_speed, gain=1, bodyObject) =>
     #csl controller
@@ -515,7 +543,7 @@ class physics
   ###
   
   
-  close_to_zero: (value) => if Math.abs(value) < 1e-4 then true else false
+  #close_to_zero: (value) => if Math.abs(value) < 1e-4 then true else false
   applyFriction: (bodyObject, bodyJoint) =>
     #friction model 
     v = -bodyJoint.GetJointSpeed()
@@ -605,8 +633,10 @@ class physics
           @updateMode @body2, @upper_joint
         @updateCSL @body, @lower_joint
         @updateCSL @body2, @upper_joint
-
-      #if @pend_style is 3 
+      
+      if @pend_style is 3
+        @updateCSL @body2, @lower_joint
+        @updateCSL @body3, @upper_joint
 
       #1000 Hz loop
       i = 0
@@ -619,6 +649,11 @@ class physics
           @updateMotor @body2, @upper_joint
           @applyFriction @body, @lower_joint
           @applyFriction @body2, @upper_joint
+        if @pend_style is 3
+          @updateMotor @body2, @lower_joint
+          @updateMotor @body3, @upper_joint
+          #@applyFriction @body2, @lower_joint
+          #@applyFriction @body3, @upper_joint
         @world.Step(
           dt,             #timestep (1 / fps)
           10,             #velocity iterations
@@ -667,7 +702,6 @@ $ ->
   #initial values  
   w0_abs = ($("#w0_abs").attr("checked") isnt undefined)
   w1_abs = ($("#w1_abs").attr("checked") isnt undefined)
-  
 
   physics = new physics()
   #make physics global for external access
@@ -675,7 +709,7 @@ $ ->
 
   #request first frame from browser to start update cycle
   requestAnimFrame physics.update
- 
+
   #fps counter
   window.stats = new Stats()
   window.stats.setMode 0
@@ -736,5 +770,4 @@ $ ->
     #}
     true
 
-  return
 
