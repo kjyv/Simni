@@ -168,9 +168,9 @@ class physics
     )
       
     fixDef = new b2FixtureDef
-    fixDef.density = 0.2
+    fixDef.density = 10
     fixDef.friction = 0.9
-    fixDef.restitution = 0.15
+    fixDef.restitution = 0.01
     @fixDef = fixDef
     
     #create ground
@@ -363,7 +363,7 @@ class physics
     #create body
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_dynamicBody
-    bodyDef.angularDamping = 0.02
+    #bodyDef.angularDamping = 5
     x0 = @ground_bodyDef.position.x
     y0 = @ground_bodyDef.position.y - 0.2
     bodyDef.position.Set(x0,y0)
@@ -371,12 +371,15 @@ class physics
 
     @fixDef = new b2FixtureDef
     @fixDef.density = 5
-    @fixDef.friction = 0.8
+    @fixDef.friction = 0.5
     @fixDef.restitution = 0.1
     @fixDef.filter.groupIndex = -1  #negative groups never collide with each other
     @fixDef.shape = new b2PolygonShape
-    @fixDef.shape.SetAsArray contour, contour.length
-    bodyFix = @body.CreateFixture(@fixDef)
+    #@fixDef.shape.SetAsArray contour, contour.length
+    for fixture in contour
+      @fixDef.shape.SetAsArray(fixture, fixture.length)
+      @body.CreateFixture(@fixDef)
+    #bodyFix = @body.CreateFixture(@fixDef)
 
     ###
     md = new b2MassData()
@@ -401,8 +404,8 @@ class physics
     @body2 = @world.CreateBody(bodyDef2)
 
     @fixDef2 = new b2FixtureDef
-    @fixDef2.density = 5
-    @fixDef2.friction = 0.4
+    @fixDef2.density = 4
+    @fixDef2.friction = 0.5
     @fixDef2.restitution = 0.1
     @fixDef2.filter.groupIndex = -1
     @fixDef2.shape = new b2PolygonShape
@@ -425,18 +428,21 @@ class physics
     #jointDef.Initialize @body, @body2, vertices2[0]
     jointDef.bodyA = @body2
     jointDef.bodyB = @body
-    v = contour[20]
-    jointDef.localAnchorA.Set(0.175,0.08)  #point on arm that is attached to body
-    jointDef.localAnchorB.Set(0.175,0.08)    #point on the body that arm is attached to (local coordinates, 
+    jointDef.localAnchorA.Set(672/ptm_ratio, 385/ptm_ratio)  #point on arm that is attached to body
+    jointDef.localAnchorB.Set(672/ptm_ratio, 385/ptm_ratio)    #point on the body that arm is attached to (local coordinates, 
                                             #relative to body center)
     
     #jointDef.anchor = new b2Vec2(vertices[3].x, vertices[3].y)
     jointDef.collideConnected = false
 
     #simple friction with box2d possiblities (dry)
-    jointDef.maxMotorTorque = 0.02
+    jointDef.maxMotorTorque = 0.035
     jointDef.motorSpeed = 0.0
     jointDef.enableMotor = true
+
+    jointDef.upperAngle = 0.157
+    jointDef.lowerAngle = -1.487
+    jointDef.enableLimit = true
     @lower_joint = @world.CreateJoint(jointDef)
     
     #initialize
@@ -456,8 +462,8 @@ class physics
     @body3 = @world.CreateBody(bodyDef3)
     
     @fixDef3 = new b2FixtureDef
-    @fixDef3.density = 5
-    @fixDef3.friction = 0.4
+    @fixDef3.density = 22.5          #arm weighs ~130g
+    @fixDef3.friction = 0.1
     @fixDef3.restitution = 0.2
     @fixDef3.filter.groupIndex = -1
     @fixDef3.shape = new b2PolygonShape
@@ -477,12 +483,16 @@ class physics
     jointDef = new b2RevoluteJointDef()
     jointDef.bodyA = @body3
     jointDef.bodyB = @body2
-    jointDef.localAnchorA.Set(0.09,0.033)
-    jointDef.localAnchorB.Set(0.09,0.033)
+    jointDef.localAnchorA.Set(430/ptm_ratio, 504/ptm_ratio)
+    jointDef.localAnchorB.Set(430/ptm_ratio, 504/ptm_ratio)
     jointDef.collideConnected = false
     jointDef.maxMotorTorque = 0.02
     jointDef.motorSpeed = 0.0
     jointDef.enableMotor = true
+
+    jointDef.upperAngle = 9.27
+    jointDef.lowerAngle = 4.57
+    jointDef.enableLimit = true
     @upper_joint = @world.CreateJoint(jointDef)
     
     @upper_joint.angle_speed = 0
@@ -510,7 +520,11 @@ class physics
     vel = gi * angle_speed
     sum = vel + bodyObject.last_integrated
     bodyObject.last_integrated = gf * sum
-    return @clip((sum * gain) + gb, 0.05)
+    if @pend_style is 3
+      limit = 0.1
+    else
+      limit = 5
+    return @clip((sum * gain) + gb, limit)
 
   updateCSL: (bodyObject, bodyJoint) =>
     if not bodyObject.last_integrated? or not bodyJoint.csl_active
@@ -665,9 +679,6 @@ class physics
         @updateCSL @body, @lower_joint
         @updateCSL @body2, @upper_joint
       
-      if @pend_style is 3
-        @updateCSL @body2, @lower_joint
-        @updateCSL @body3, @upper_joint
 
       #1000 Hz loop
       i = 0
@@ -685,6 +696,11 @@ class physics
           @updateMotor @body3, @upper_joint
           #@applyFriction @body2, @lower_joint
           #@applyFriction @body3, @upper_joint
+          
+        if @pend_style is 3
+          @updateCSL @body2, @lower_joint
+          @updateCSL @body3, @upper_joint
+
         @world.Step(
           dt,             #timestep (1 / fps)
           10,             #velocity iterations

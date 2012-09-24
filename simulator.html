@@ -44,6 +44,8 @@
                                         physics.world.DestroyBody body
                                         body = null
 
+
+                                removeBody physics.body3
                                 removeJoint physics.upper_joint
                                 removeBody physics.body2
                                 removeJoint physics.lower_joint
@@ -95,8 +97,8 @@
                     <button id="add_box" onClick="physics.createBox()">create box</button><br/>
                     <br/>
          
-                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.020" step="0.001" onchange="set_friction(parseFloat(this.value))" />
-                    <span id="friction_val">0.020</span><br/>
+                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.035" step="0.001" onchange="set_friction(parseFloat(this.value))" />
+                    <span id="friction_val">0.035</span><br/>
 
                     <label for="stiction_param">stiction</label> <input id="stiction_param" type="range" min="0" max="5" value="0.6" step="0.1" onchange="set_stiction(parseFloat(this.value))" />
                     <span id="stiction_val">0.100</span><br/>            
@@ -105,8 +107,8 @@
                     <span id="stiction_epsilon_val">0.010</span><br/><br/>
 
 
-                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="0.03" style="width:60px;"/>
-                    <label for="gf_param_upper">g<sub>f</sub></label> <input id="gf_param_upper" type="text" value="1.003" style="width:60px;"/>
+                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="0.05" style="width:60px;"/>
+                    <label for="gf_param_upper">g<sub>f</sub></label> <input id="gf_param_upper" type="text" value="1.002" style="width:60px;"/>
                     <label for="gb_param_upper">g<sub>b</sub></label> <input id="gb_param_upper" type="text" value="0" style="width:60px;"/>
                     <label for="gain_param_upper">gain</label> <input id="gain_param_upper" type="text" value="1" style="width:60px;"/>
                     <button id="set_csl_params_upper">set</button> <br/>
@@ -125,8 +127,8 @@
                     <span id="mode_val_upper"></span> <span id="csl_mode_name_upper">contraction</span><br/>
 
 
-                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="0.07" style="width:60px;"/>
-                    <label for="gf_param_lower">g<sub>f</sub></label> <input id="gf_param_lower" type="text" value="1.005" style="width:60px;"/>
+                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="0.05" style="width:60px;"/>
+                    <label for="gf_param_lower">g<sub>f</sub></label> <input id="gf_param_lower" type="text" value="1.002" style="width:60px;"/>
                     <label for="gb_param_lower">g<sub>b</sub></label> <input id="gb_param_lower" type="text" value="0" style="width:60px;"/>
                     <label for="gain_param_lower">gain</label> <input id="gain_param_lower" type="text" value="1" style="width:60px;"/>
                     <button id="set_csl_params_lower">set</button> <br/>
@@ -434,8 +436,8 @@
                     if (physics.body && physics.body.U_csl)
                         ydata3.push(physics.body.U_csl)
                     else {
-                        if (physics.body2 && physics.body2.U_csl)
-                            ydata3.push(physics.body2.U_csl)
+                        if (physics.body3 && physics.body3.U_csl)
+                            ydata3.push(physics.body3.U_csl)
                         else
                             ydata3.push(0)
                     } 

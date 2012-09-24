@@ -8,6 +8,9 @@ mode(-1);
 Semni = fscanfMat("/Users/stefan/Dropbox/diplomarbeit/2d-simulation/data/SemniOutline.txt");
 
 function decompose(x,y, filename)
+    nump = size(x,2);
+    //C = [x(1:(nump-1))' y(2:nump)'; nump 1];
+    //tri = constrained_delaunay_2(x, y, C)
     tri = delaunay_2(x, y)
     [nbtri,nb] = size(tri);
     tri = [tri tri(:,1)];
@@ -30,7 +33,7 @@ normfactor = 1 / 333.3 / 100
 resolution = 4 // every 4th contour point is taken into account
 
 contour = normfactor*[Semni(121:resolution:241, :); Semni(763:resolution:1004, :)]
-plot2d(contour(:,1), contour(:,2))
+plot2d(contour(:,1), contour(:,2),frameflag=4)
 fprintfMat("/Users/stefan/Dropbox/diplomarbeit/2d-simulation/data/SemniContourCCW.txt", contour)
 
 // contour of each module from contour for milling machine -> SemniOutline.txt
@@ -51,8 +54,8 @@ R2 = [Semni(763:-resolution:441, :); Semni(1492:resolution:1644, :)]'
 
 //R2 = [R2(:,:) R2(:,1)]
 arm1Contour = normfactor*[R2(1,1:resolution:size(R2, 2)); R2(2,1:resolution:size(R2, 2))]'
-//plot2d(arm1Contour(:,1), arm1Contour(:,2))
-decompose(arm1Contour(:,1)',arm1Contour(:,2)', "/Users/stefan/Dropbox/diplomarbeit/2d-simulation/data/SemniArm1ContourCCW.txt")
+plot2d(arm1Contour(:,1), arm1Contour(:,2))
+//decompose(arm1Contour(:,1)',arm1Contour(:,2)', "/Users/stefan/Dropbox/diplomarbeit/2d-simulation/data/SemniArm1ContourCCW.txt")
 
 //temp = 763 - 441 + 1 + 1644 - 1492 + 1 // = 476
 //R2 = [ [ 2  0.175 -0.89*%pi  0.158  238 ;
@@ -65,8 +68,8 @@ R3 = [Semni(1:resolution:439, :)]'
 //min(-1*R3(2,1:resolution:size(R3, 2)))
 arm2Contour = normfactor*[R3(1,1:resolution:size(R3, 2)); R3(2,1:resolution:size(R3, 2))]'
 
-//plot2d(arm2Contour(:,1), arm2Contour(:,2))
-decompose(arm2Contour(:,1)',arm2Contour(:,2)', "/Users/stefan/Dropbox/diplomarbeit/2d-simulation/data/SemniArm2ContourCCW.txt")
+plot2d(arm2Contour(:,1), arm2Contour(:,2))
+//decompose(arm2Contour(:,1)',arm2Contour(:,2)', "/Users/stefan/Dropbox/diplomarbeit/2d-simulation/data/SemniArm2ContourCCW.txt")
 
 
 // contour of solid part: radius 0.04 around [0.255; 0.070]

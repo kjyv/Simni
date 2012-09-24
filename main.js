@@ -205,9 +205,9 @@ physics = (function() {
     var bodyDef, debugDraw, fixDef;
     this.world = new b2World(new b2Vec2(0, 9.81), false);
     fixDef = new b2FixtureDef;
-    fixDef.density = 0.2;
+    fixDef.density = 10;
     fixDef.friction = 0.9;
-    fixDef.restitution = 0.15;
+    fixDef.restitution = 0.01;
     this.fixDef = fixDef;
     this.ground_height = 0.03;
     this.ground_width = 1;
@@ -359,22 +359,24 @@ physics = (function() {
   physics.prototype.upper_joint = null;
 
   physics.prototype.createSemni = function() {
-    var bodyDef, bodyDef2, bodyDef3, bodyFix, fixture, jointDef, v, x0, y0, _i, _j, _len, _len1;
+    var bodyDef, bodyDef2, bodyDef3, fixture, jointDef, x0, y0, _i, _j, _k, _len, _len1, _len2;
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_dynamicBody;
-    bodyDef.angularDamping = 0.02;
     x0 = this.ground_bodyDef.position.x;
     y0 = this.ground_bodyDef.position.y - 0.2;
     bodyDef.position.Set(x0, y0);
     this.body = this.world.CreateBody(bodyDef);
     this.fixDef = new b2FixtureDef;
     this.fixDef.density = 5;
-    this.fixDef.friction = 0.8;
+    this.fixDef.friction = 0.5;
     this.fixDef.restitution = 0.1;
     this.fixDef.filter.groupIndex = -1;
     this.fixDef.shape = new b2PolygonShape;
-    this.fixDef.shape.SetAsArray(contour, contour.length);
-    bodyFix = this.body.CreateFixture(this.fixDef);
+    for (_i = 0, _len = contour.length; _i < _len; _i++) {
+      fixture = contour[_i];
+      this.fixDef.shape.SetAsArray(fixture, fixture.length);
+      this.body.CreateFixture(this.fixDef);
+    }
     /*
         md = new b2MassData()
         @body.GetMassData(md)
@@ -391,13 +393,13 @@ physics = (function() {
     bodyDef2.type = b2Body.b2_dynamicBody;
     this.body2 = this.world.CreateBody(bodyDef2);
     this.fixDef2 = new b2FixtureDef;
-    this.fixDef2.density = 5;
-    this.fixDef2.friction = 0.4;
+    this.fixDef2.density = 4;
+    this.fixDef2.friction = 0.5;
     this.fixDef2.restitution = 0.1;
     this.fixDef2.filter.groupIndex = -1;
     this.fixDef2.shape = new b2PolygonShape;
-    for (_i = 0, _len = arm1ContourConvex.length; _i < _len; _i++) {
-      fixture = arm1ContourConvex[_i];
+    for (_j = 0, _len1 = arm1ContourConvex.length; _j < _len1; _j++) {
+      fixture = arm1ContourConvex[_j];
       this.fixDef2.shape.SetAsArray(fixture, fixture.length);
       this.body2.CreateFixture(this.fixDef2);
     }
@@ -412,13 +414,15 @@ physics = (function() {
     jointDef = new b2RevoluteJointDef();
     jointDef.bodyA = this.body2;
     jointDef.bodyB = this.body;
-    v = contour[20];
-    jointDef.localAnchorA.Set(0.175, 0.08);
-    jointDef.localAnchorB.Set(0.175, 0.08);
+    jointDef.localAnchorA.Set(672 / ptm_ratio, 385 / ptm_ratio);
+    jointDef.localAnchorB.Set(672 / ptm_ratio, 385 / ptm_ratio);
     jointDef.collideConnected = false;
-    jointDef.maxMotorTorque = 0.02;
+    jointDef.maxMotorTorque = 0.035;
     jointDef.motorSpeed = 0.0;
     jointDef.enableMotor = true;
+    jointDef.upperAngle = 0.157;
+    jointDef.lowerAngle = -1.487;
+    jointDef.enableLimit = true;
     this.lower_joint = this.world.CreateJoint(jointDef);
     this.lower_joint.angle_speed = 0;
     this.lower_joint.csl_active = false;
@@ -430,13 +434,13 @@ physics = (function() {
     bodyDef3.type = b2Body.b2_dynamicBody;
     this.body3 = this.world.CreateBody(bodyDef3);
     this.fixDef3 = new b2FixtureDef;
-    this.fixDef3.density = 5;
-    this.fixDef3.friction = 0.4;
+    this.fixDef3.density = 22.5;
+    this.fixDef3.friction = 0.1;
     this.fixDef3.restitution = 0.2;
     this.fixDef3.filter.groupIndex = -1;
     this.fixDef3.shape = new b2PolygonShape;
-    for (_j = 0, _len1 = arm2ContourConvex.length; _j < _len1; _j++) {
-      fixture = arm2ContourConvex[_j];
+    for (_k = 0, _len2 = arm2ContourConvex.length; _k < _len2; _k++) {
+      fixture = arm2ContourConvex[_k];
       this.fixDef3.shape.SetAsArray(fixture, fixture.length);
       this.body3.CreateFixture(this.fixDef3);
     }
@@ -451,12 +455,15 @@ physics = (function() {
     jointDef = new b2RevoluteJointDef();
     jointDef.bodyA = this.body3;
     jointDef.bodyB = this.body2;
-    jointDef.localAnchorA.Set(0.09, 0.033);
-    jointDef.localAnchorB.Set(0.09, 0.033);
+    jointDef.localAnchorA.Set(430 / ptm_ratio, 504 / ptm_ratio);
+    jointDef.localAnchorB.Set(430 / ptm_ratio, 504 / ptm_ratio);
     jointDef.collideConnected = false;
     jointDef.maxMotorTorque = 0.02;
     jointDef.motorSpeed = 0.0;
     jointDef.enableMotor = true;
+    jointDef.upperAngle = 9.27;
+    jointDef.lowerAngle = 4.57;
+    jointDef.enableLimit = true;
     this.upper_joint = this.world.CreateJoint(jointDef);
     this.upper_joint.angle_speed = 0;
     this.upper_joint.csl_active = false;
@@ -479,14 +486,19 @@ physics = (function() {
   };
 
   physics.prototype.CSL = function(gi, gf, gb, angle_speed, gain, bodyObject) {
-    var sum, vel;
+    var limit, sum, vel;
     if (gain == null) {
       gain = 1;
     }
     vel = gi * angle_speed;
     sum = vel + bodyObject.last_integrated;
     bodyObject.last_integrated = gf * sum;
-    return this.clip((sum * gain) + gb, 0.05);
+    if (this.pend_style === 3) {
+      limit = 0.1;
+    } else {
+      limit = 5;
+    }
+    return this.clip((sum * gain) + gb, limit);
   };
 
   physics.prototype.updateCSL = function(bodyObject, bodyJoint) {
@@ -646,10 +658,6 @@ physics = (function() {
         this.updateCSL(this.body, this.lower_joint);
         this.updateCSL(this.body2, this.upper_joint);
       }
-      if (this.pend_style === 3) {
-        this.updateCSL(this.body2, this.lower_joint);
-        this.updateCSL(this.body3, this.upper_joint);
-      }
       i = 0;
       while (i < steps_per_frame) {
         if (this.pend_style === 1) {
@@ -665,6 +673,10 @@ physics = (function() {
         if (this.pend_style === 3) {
           this.updateMotor(this.body2, this.lower_joint);
           this.updateMotor(this.body3, this.upper_joint);
+        }
+        if (this.pend_style === 3) {
+          this.updateCSL(this.body2, this.lower_joint);
+          this.updateCSL(this.body3, this.upper_joint);
         }
         this.world.Step(dt, 10, 10);
         i++;

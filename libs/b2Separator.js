@@ -143,10 +143,12 @@ function calcShapes(verticesVec)
             i2 = (i<n-1?i+1:i+1-n);
             i3 = (i<n-2?i+2:i+2-n);
 
+            //get next triangle points
             p1 = vec[i1];
             p2 = vec[i2];
             p3 = vec[i3];
             
+
             d = det(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
             if(d<0) {
                 isConvex = false;

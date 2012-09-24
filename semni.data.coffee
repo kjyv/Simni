@@ -96,6 +96,22 @@ contour = new Array(
   new b2Vec2(0.007711,0.083228)
 )
 
+ptm_ratio = 2500
+contour = [
+  [   new b2Vec2(150/ptm_ratio, 388/ptm_ratio)  ,  new b2Vec2(165/ptm_ratio, 364/ptm_ratio)  ,  new b2Vec2(208/ptm_ratio, 330/ptm_ratio)  ,  new b2Vec2(200/ptm_ratio, 457/ptm_ratio)  ,  new b2Vec2(173/ptm_ratio, 436/ptm_ratio)  ,  new b2Vec2(159/ptm_ratio, 423/ptm_ratio)  ,  new b2Vec2(150/ptm_ratio, 405/ptm_ratio)  ] ,
+  [   new b2Vec2(165/ptm_ratio, 364/ptm_ratio)  ,  new b2Vec2(150/ptm_ratio, 388/ptm_ratio)  ,  new b2Vec2(155/ptm_ratio, 375/ptm_ratio)  ] ,
+  [   new b2Vec2(208/ptm_ratio, 330/ptm_ratio)  ,  new b2Vec2(241/ptm_ratio, 306/ptm_ratio)  ,  new b2Vec2(284/ptm_ratio, 279/ptm_ratio)  ,  new b2Vec2(338/ptm_ratio, 251/ptm_ratio)  ,  new b2Vec2(407/ptm_ratio, 224/ptm_ratio)  ,  new b2Vec2(277/ptm_ratio, 510/ptm_ratio)  ,  new b2Vec2(234/ptm_ratio, 482/ptm_ratio)  ,  new b2Vec2(200/ptm_ratio, 457/ptm_ratio)  ] ,
+  [   new b2Vec2(469/ptm_ratio, 207/ptm_ratio)  ,  new b2Vec2(527/ptm_ratio, 196/ptm_ratio)  ,  new b2Vec2(483/ptm_ratio, 589/ptm_ratio)  ,  new b2Vec2(426/ptm_ratio, 575/ptm_ratio)  ,  new b2Vec2(352/ptm_ratio, 548/ptm_ratio)  ,  new b2Vec2(314/ptm_ratio, 530/ptm_ratio)  ,  new b2Vec2(277/ptm_ratio, 510/ptm_ratio)  ,  new b2Vec2(407/ptm_ratio, 224/ptm_ratio)  ] ,
+  [   new b2Vec2(1031/ptm_ratio, 354/ptm_ratio)  ,  new b2Vec2(1038/ptm_ratio, 396/ptm_ratio)  ,  new b2Vec2(1036/ptm_ratio, 419/ptm_ratio)  ,  new b2Vec2(1021/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(963/ptm_ratio, 277/ptm_ratio)  ,  new b2Vec2(982/ptm_ratio, 288/ptm_ratio)  ,  new b2Vec2(1003/ptm_ratio, 306/ptm_ratio)  ,  new b2Vec2(1021/ptm_ratio, 330/ptm_ratio)  ] ,
+  [   new b2Vec2(1038/ptm_ratio, 396/ptm_ratio)  ,  new b2Vec2(1031/ptm_ratio, 354/ptm_ratio)  ,  new b2Vec2(1037/ptm_ratio, 375/ptm_ratio)  ] ,
+  [   new b2Vec2(582/ptm_ratio, 190/ptm_ratio)  ,  new b2Vec2(642/ptm_ratio, 189/ptm_ratio)  ,  new b2Vec2(706/ptm_ratio, 194/ptm_ratio)  ,  new b2Vec2(751/ptm_ratio, 200/ptm_ratio)  ,  new b2Vec2(589/ptm_ratio, 603/ptm_ratio)  ,  new b2Vec2(533/ptm_ratio, 598/ptm_ratio)  ,  new b2Vec2(483/ptm_ratio, 589/ptm_ratio)  ,  new b2Vec2(527/ptm_ratio, 196/ptm_ratio)  ] ,
+  [   new b2Vec2(971/ptm_ratio, 512/ptm_ratio)  ,  new b2Vec2(933/ptm_ratio, 532/ptm_ratio)  ,  new b2Vec2(891/ptm_ratio, 551/ptm_ratio)  ,  new b2Vec2(811/ptm_ratio, 579/ptm_ratio)  ,  new b2Vec2(589/ptm_ratio, 603/ptm_ratio)  ,  new b2Vec2(1021/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(1010/ptm_ratio, 478/ptm_ratio)  ,  new b2Vec2(995/ptm_ratio, 495/ptm_ratio)  ] ,
+  [   new b2Vec2(794/ptm_ratio, 210/ptm_ratio)  ,  new b2Vec2(840/ptm_ratio, 223/ptm_ratio)  ,  new b2Vec2(891/ptm_ratio, 242/ptm_ratio)  ,  new b2Vec2(929/ptm_ratio, 259/ptm_ratio)  ,  new b2Vec2(1021/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(589/ptm_ratio, 603/ptm_ratio)  ,  new b2Vec2(751/ptm_ratio, 200/ptm_ratio)  ] ,
+  [   new b2Vec2(1021/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(1036/ptm_ratio, 419/ptm_ratio)  ,  new b2Vec2(1031/ptm_ratio, 441/ptm_ratio)  ] ,
+  [   new b2Vec2(1021/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(929/ptm_ratio, 259/ptm_ratio)  ,  new b2Vec2(963/ptm_ratio, 277/ptm_ratio)  ] ,
+  [   new b2Vec2(811/ptm_ratio, 579/ptm_ratio)  ,  new b2Vec2(891/ptm_ratio, 551/ptm_ratio)  ,  new b2Vec2(853/ptm_ratio, 566/ptm_ratio)  ] ,
+  [   new b2Vec2(702/ptm_ratio, 600/ptm_ratio)  ,  new b2Vec2(665/ptm_ratio, 603/ptm_ratio)  ,  new b2Vec2(626/ptm_ratio, 604/ptm_ratio)  ,  new b2Vec2(589/ptm_ratio, 603/ptm_ratio)  ,  new b2Vec2(811/ptm_ratio, 579/ptm_ratio)  ,  new b2Vec2(774/ptm_ratio, 588/ptm_ratio)  ,  new b2Vec2(739/ptm_ratio, 595/ptm_ratio)  ]
+]
 
 arm1Contour = new Array(
   new b2Vec2(0.087369,0.011761),
@@ -161,404 +177,32 @@ arm2Contour = new Array(
   new b2Vec2(0.097510,0.028863)
 )
 
-arm1ContourConvex = new Array(
-  new Array(
-     new b2Vec2(0.195920, 0.096250),
-     new b2Vec2(0.187909, 0.101050),
-     new b2Vec2(0.178878, 0.103450),
-  ),
+arm1ContourConvex = [
+  [   new b2Vec2(709/ptm_ratio, 306/ptm_ratio)  ,  new b2Vec2(747/ptm_ratio, 338/ptm_ratio)  ,  new b2Vec2(569/ptm_ratio, 577/ptm_ratio)  ,  new b2Vec2(523/ptm_ratio, 581/ptm_ratio)  ,  new b2Vec2(563/ptm_ratio, 374/ptm_ratio)  ,  new b2Vec2(583/ptm_ratio, 342/ptm_ratio)  ,  new b2Vec2(649/ptm_ratio, 299/ptm_ratio)  ,  new b2Vec2(681/ptm_ratio, 297/ptm_ratio)  ] ,
+  [   new b2Vec2(415/ptm_ratio, 441/ptm_ratio)  ,  new b2Vec2(439/ptm_ratio, 438/ptm_ratio)  ,  new b2Vec2(374/ptm_ratio, 471/ptm_ratio)  ,  new b2Vec2(379/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(398/ptm_ratio, 447/ptm_ratio)  ] ,
+  [   new b2Vec2(767/ptm_ratio, 393/ptm_ratio)  ,  new b2Vec2(764/ptm_ratio, 419/ptm_ratio)  ,  new b2Vec2(754/ptm_ratio, 445/ptm_ratio)  ,  new b2Vec2(715/ptm_ratio, 495/ptm_ratio)  ,  new b2Vec2(649/ptm_ratio, 546/ptm_ratio)  ,  new b2Vec2(569/ptm_ratio, 577/ptm_ratio)  ,  new b2Vec2(747/ptm_ratio, 338/ptm_ratio)  ,  new b2Vec2(762/ptm_ratio, 365/ptm_ratio)  ] ,
+  [   new b2Vec2(747/ptm_ratio, 338/ptm_ratio)  ,  new b2Vec2(709/ptm_ratio, 306/ptm_ratio)  ,  new b2Vec2(730/ptm_ratio, 319/ptm_ratio)  ] ,
+  [   new b2Vec2(374/ptm_ratio, 544/ptm_ratio)  ,  new b2Vec2(366/ptm_ratio, 524/ptm_ratio)  ,  new b2Vec2(431/ptm_ratio, 573/ptm_ratio)  ,  new b2Vec2(413/ptm_ratio, 570/ptm_ratio)  ,  new b2Vec2(396/ptm_ratio, 564/ptm_ratio)  ,  new b2Vec2(384/ptm_ratio, 556/ptm_ratio)  ] ,
+  [   new b2Vec2(366/ptm_ratio, 524/ptm_ratio)  ,  new b2Vec2(363/ptm_ratio, 509/ptm_ratio)  ,  new b2Vec2(364/ptm_ratio, 496/ptm_ratio)  ,  new b2Vec2(485/ptm_ratio, 430/ptm_ratio)  ,  new b2Vec2(527/ptm_ratio, 410/ptm_ratio)  ,  new b2Vec2(523/ptm_ratio, 581/ptm_ratio)  ,  new b2Vec2(477/ptm_ratio, 582/ptm_ratio)  ,  new b2Vec2(431/ptm_ratio, 573/ptm_ratio)  ] ,
+  [   new b2Vec2(485/ptm_ratio, 430/ptm_ratio)  ,  new b2Vec2(364/ptm_ratio, 496/ptm_ratio)  ,  new b2Vec2(367/ptm_ratio, 485/ptm_ratio)  ,  new b2Vec2(374/ptm_ratio, 471/ptm_ratio)  ,  new b2Vec2(439/ptm_ratio, 438/ptm_ratio)  ] ,
+  [   new b2Vec2(649/ptm_ratio, 299/ptm_ratio)  ,  new b2Vec2(583/ptm_ratio, 342/ptm_ratio)  ,  new b2Vec2(606/ptm_ratio, 318/ptm_ratio)  ,  new b2Vec2(624/ptm_ratio, 307/ptm_ratio)  ] ,
+  [   new b2Vec2(563/ptm_ratio, 374/ptm_ratio)  ,  new b2Vec2(523/ptm_ratio, 581/ptm_ratio)  ,  new b2Vec2(527/ptm_ratio, 410/ptm_ratio)  ]
+]
+
+
+arm2ContourConvex = [
+  [   new b2Vec2(153/ptm_ratio, 379/ptm_ratio)  ,  new b2Vec2(161/ptm_ratio, 368/ptm_ratio)  ,  new b2Vec2(178.66667175293/ptm_ratio, 358/ptm_ratio)  ,  new b2Vec2(230/ptm_ratio, 374/ptm_ratio)  ,  new b2Vec2(190/ptm_ratio, 447/ptm_ratio)  ,  new b2Vec2(158/ptm_ratio, 422/ptm_ratio)  ,  new b2Vec2(149/ptm_ratio, 400/ptm_ratio)  ] ,
+  [   new b2Vec2(211/ptm_ratio, 359/ptm_ratio)  ,  new b2Vec2(230/ptm_ratio, 374/ptm_ratio)  ,  new b2Vec2(178.66667175293/ptm_ratio, 358/ptm_ratio)  ,  new b2Vec2(196/ptm_ratio, 355.333343505859/ptm_ratio)  ] ,
+  [   new b2Vec2(487/ptm_ratio, 472/ptm_ratio)  ,  new b2Vec2(494/ptm_ratio, 490/ptm_ratio)  ,  new b2Vec2(496/ptm_ratio, 509/ptm_ratio)  ,  new b2Vec2(346/ptm_ratio, 539/ptm_ratio)  ,  new b2Vec2(278/ptm_ratio, 504/ptm_ratio)  ,  new b2Vec2(458/ptm_ratio, 447/ptm_ratio)  ,  new b2Vec2(475/ptm_ratio, 457/ptm_ratio)  ] ,
+  [   new b2Vec2(399/ptm_ratio, 565/ptm_ratio)  ,  new b2Vec2(375/ptm_ratio, 554/ptm_ratio)  ,  new b2Vec2(346/ptm_ratio, 539/ptm_ratio)  ,  new b2Vec2(496/ptm_ratio, 509/ptm_ratio)  ,  new b2Vec2(491/ptm_ratio, 530/ptm_ratio)  ,  new b2Vec2(464/ptm_ratio, 563/ptm_ratio)  ,  new b2Vec2(445/ptm_ratio, 571/ptm_ratio)  ,  new b2Vec2(421/ptm_ratio, 572/ptm_ratio)  ] ,
+  [   new b2Vec2(464/ptm_ratio, 563/ptm_ratio)  ,  new b2Vec2(491/ptm_ratio, 530/ptm_ratio)  ,  new b2Vec2(481/ptm_ratio, 548/ptm_ratio)  ] ,
+  [   new b2Vec2(178.66667175293/ptm_ratio, 358/ptm_ratio)  ,  new b2Vec2(161/ptm_ratio, 368/ptm_ratio)  ,  new b2Vec2(170/ptm_ratio, 361/ptm_ratio)  ] ,
+  [   new b2Vec2(230/ptm_ratio, 374/ptm_ratio)  ,  new b2Vec2(247/ptm_ratio, 386/ptm_ratio)  ,  new b2Vec2(233/ptm_ratio, 481/ptm_ratio)  ,  new b2Vec2(210/ptm_ratio, 464/ptm_ratio)  ,  new b2Vec2(190/ptm_ratio, 447/ptm_ratio)  ] ,
+  [   new b2Vec2(268/ptm_ratio, 396/ptm_ratio)  ,  new b2Vec2(233/ptm_ratio, 481/ptm_ratio)  ,  new b2Vec2(247/ptm_ratio, 386/ptm_ratio)  ] ,
+  [   new b2Vec2(332/ptm_ratio, 426/ptm_ratio)  ,  new b2Vec2(278/ptm_ratio, 504/ptm_ratio)  ,  new b2Vec2(253.33332824707/ptm_ratio, 492/ptm_ratio)  ,  new b2Vec2(233/ptm_ratio, 481/ptm_ratio)  ,  new b2Vec2(268/ptm_ratio, 396/ptm_ratio)  ] ,
+  [   new b2Vec2(332/ptm_ratio, 426/ptm_ratio)  ,  new b2Vec2(458/ptm_ratio, 447/ptm_ratio)  ,  new b2Vec2(278/ptm_ratio, 504/ptm_ratio)  ] ,
+  [   new b2Vec2(458/ptm_ratio, 447/ptm_ratio)  ,  new b2Vec2(418/ptm_ratio, 439/ptm_ratio)  ,  new b2Vec2(438/ptm_ratio, 440/ptm_ratio)  ] ,
+  [   new b2Vec2(391/ptm_ratio, 435/ptm_ratio)  ,  new b2Vec2(332/ptm_ratio, 426/ptm_ratio)  ,  new b2Vec2(364/ptm_ratio, 430/ptm_ratio)  ] ,
+  [   new b2Vec2(458/ptm_ratio, 447/ptm_ratio)  ,  new b2Vec2(391/ptm_ratio, 435/ptm_ratio)  ,  new b2Vec2(418/ptm_ratio, 439/ptm_ratio)  ]
+]
 
-  new Array(
-     new b2Vec2(0.202280, 0.089439),
-     new b2Vec2(0.195920, 0.096250),
-     new b2Vec2(0.178878, 0.103450),
-  ),
-
-  new Array(
-     new b2Vec2(0.202280, 0.089439),
-     new b2Vec2(0.208341, 0.071947),
-     new b2Vec2(0.206541, 0.081128),
-  ),
-
-  new Array(
-     new b2Vec2(0.202280, 0.089439),
-     new b2Vec2(0.178878, 0.103450),
-     new b2Vec2(0.208341, 0.071947),
-  ),
-
-  new Array(
-     new b2Vec2(0.178878, 0.103450),
-     new b2Vec2(0.169547, 0.103300),
-     new b2Vec2(0.152775, 0.095470),
-  ),
-
-  new Array(
-     new b2Vec2(0.169547, 0.103300),
-     new b2Vec2(0.160606, 0.100570),
-     new b2Vec2(0.152775, 0.095470),
-  ),
-
-  new Array(
-     new b2Vec2(0.178878, 0.103450),
-     new b2Vec2(0.152775, 0.095470),
-     new b2Vec2(0.208341, 0.071947),
-  ),
-
-  new Array(
-     new b2Vec2(0.152775, 0.095470),
-     new b2Vec2(0.207561, 0.062646),
-     new b2Vec2(0.208341, 0.071947),
-  ),
-
-  new Array(
-     new b2Vec2(0.146625, 0.088419),
-     new b2Vec2(0.207561, 0.062646),
-     new b2Vec2(0.152775, 0.095470),
-  ),
-
-  new Array(
-     new b2Vec2(0.204260, 0.053915),
-     new b2Vec2(0.207561, 0.062646),
-     new b2Vec2(0.146625, 0.088419),
-  ),
-
-  new Array(
-     new b2Vec2(0.204260, 0.053915),
-     new b2Vec2(0.146625, 0.088419),
-     new b2Vec2(0.190579, 0.036574),
-  ),
-
-  new Array(
-     new b2Vec2(0.146625, 0.088419),
-     new b2Vec2(0.139064, 0.076718),
-     new b2Vec2(0.190579, 0.036574),
-  ),
-
-  new Array(
-     new b2Vec2(0.139064, 0.076718),
-     new b2Vec2(0.168437, 0.019652),
-     new b2Vec2(0.190579, 0.036574),
-  ),
-
-  new Array(
-     new b2Vec2(0.127363, 0.065827),
-     new b2Vec2(0.168437, 0.019652),
-     new b2Vec2(0.139064, 0.076718),
-  ),
-
-  new Array(
-     new b2Vec2(0.083978, 0.052895),
-     new b2Vec2(0.089859, 0.054995),
-     new b2Vec2(0.152775, 0.095470),
-  ),
-
-  new Array(
-     new b2Vec2(0.142514, 0.009481),
-     new b2Vec2(0.127363, 0.065827),
-     new b2Vec2(0.113111, 0.058566),
-  ),
-
-  new Array(
-     new b2Vec2(0.097390, 0.055536),
-     new b2Vec2(0.113111, 0.058566),
-     new b2Vec2(0.127363, 0.065827),
-  ),
-
-  new Array(
-     new b2Vec2(0.142514, 0.009481),
-     new b2Vec2(0.113111, 0.058566),
-     new b2Vec2(0.114761, 0.006781),
-  ),
-
-  new Array(
-     new b2Vec2(0.142514, 0.009481),
-     new b2Vec2(0.168437, 0.019652),
-     new b2Vec2(0.127363, 0.065827),
-  ),
-
-  new Array(
-     new b2Vec2(0.146625, 0.088419),
-     new b2Vec2(0.097390, 0.055536),
-     new b2Vec2(0.139064, 0.076718),
-  ),
-
-  new Array(
-     new b2Vec2(0.097390, 0.055536),
-     new b2Vec2(0.127363, 0.065827),
-     new b2Vec2(0.139064, 0.076718),
-  ),
-
-  new Array(
-     new b2Vec2(0.113111, 0.058566),
-     new b2Vec2(0.097390, 0.055536),
-     new b2Vec2(0.114761, 0.006781),
-  ),
-
-  new Array(
-     new b2Vec2(0.152775, 0.095470),
-     new b2Vec2(0.089859, 0.054995),
-     new b2Vec2(0.146625, 0.088419),
-  ),
-
-  new Array(
-     new b2Vec2(0.097390, 0.055536),
-     new b2Vec2(0.087369, 0.011761),
-     new b2Vec2(0.114761, 0.006781),
-  ),
-
-  new Array(
-     new b2Vec2(0.089859, 0.054995),
-     new b2Vec2(0.097390, 0.055536),
-     new b2Vec2(0.146625, 0.088419),
-  ),
-
-  new Array(
-     new b2Vec2(0.089859, 0.054995),
-     new b2Vec2(0.087369, 0.011761),
-     new b2Vec2(0.097390, 0.055536),
-  ),
-
-  new Array(
-     new b2Vec2(0.160606, 0.100570),
-     new b2Vec2(0.083978, 0.052895),
-     new b2Vec2(0.152775, 0.095470),
-  ),
-
-  new Array(
-     new b2Vec2(0.083978, 0.052895),
-     new b2Vec2(0.078938, 0.049265),
-     new b2Vec2(0.089859, 0.054995),
-  ),
-
-  new Array(
-     new b2Vec2(0.078938, 0.049265),
-     new b2Vec2(0.072007, 0.032463),
-     new b2Vec2(0.089859, 0.054995),
-  ),
-
-  new Array(
-     new b2Vec2(0.075068, 0.044374),
-     new b2Vec2(0.072007, 0.032463),
-     new b2Vec2(0.078938, 0.049265),
-  ),
-
-  new Array(
-     new b2Vec2(0.072697, 0.038644),
-     new b2Vec2(0.072007, 0.032463),
-     new b2Vec2(0.075068, 0.044374),
-  ),
-
-  new Array(
-     new b2Vec2(0.072007, 0.032463),
-     new b2Vec2(0.073027, 0.026343),
-     new b2Vec2(0.079808, 0.016052),
-  ),
-
-  new Array(
-     new b2Vec2(0.072007, 0.032463),
-     new b2Vec2(0.079808, 0.016052),
-     new b2Vec2(0.089859, 0.054995),
-  ),
-
-  new Array(
-     new b2Vec2(0.075698, 0.020702),
-     new b2Vec2(0.079808, 0.016052),
-     new b2Vec2(0.073027, 0.026343),
-  ),
-
-  new Array(
-     new b2Vec2(0.079808, 0.016052),
-     new b2Vec2(0.087369, 0.011761),
-     new b2Vec2(0.089859, 0.054995),
-  )
-
-)
-
-
-arm2ContourConvex = new Array(
-  new Array(
-     new b2Vec2(0.021032, 0.082208),
-     new b2Vec2(0.013591, 0.084098),
-     new b2Vec2(0.003360, 0.079208),
-  ),
-
-  new Array(
-     new b2Vec2(0.061926, 0.060216),
-     new b2Vec2(0.092469, 0.055476),
-     new b2Vec2(0.033843, 0.073027),
-  ),
-
-  new Array(
-     new b2Vec2(0.021032, 0.082208),
-     new b2Vec2(0.017462, 0.083678),
-     new b2Vec2(0.013591, 0.084098),
-  ),
-
-  new Array(
-     new b2Vec2(0.021032, 0.082208),
-     new b2Vec2(0.003120, 0.061266),
-     new b2Vec2(0.033843, 0.073027),
-  ),
-
-  new Array(
-     new b2Vec2(0.092469, 0.055476),
-     new b2Vec2(0.021032, 0.082208),
-     new b2Vec2(0.033843, 0.073027),
-  ),
-
-  new Array(
-     new b2Vec2(0.097510, 0.055236),
-     new b2Vec2(0.093099, 0.010681),
-     new b2Vec2(0.099280, 0.011191),
-  ),
-
-  new Array(
-     new b2Vec2(0.097510, 0.055236),
-     new b2Vec2(0.092469, 0.055476),
-     new b2Vec2(0.093099, 0.010681),
-  ),
-
-  new Array(
-     new b2Vec2(0.006271, 0.081788),
-     new b2Vec2(0.013591, 0.084098),
-     new b2Vec2(0.009751, 0.083468),
-  ),
-
-  new Array(
-     new b2Vec2(0.003360, 0.079208),
-     new b2Vec2(0.013591, 0.084098),
-     new b2Vec2(0.006271, 0.081788),
-  ),
-
-  new Array(
-     new b2Vec2(0.001260, 0.075938),
-     new b2Vec2(0.000150, 0.072217),
-     new b2Vec2(0.003360, 0.079208),
-  ),
-
-  new Array(
-     new b2Vec2(0.000150, 0.072217),
-     new b2Vec2(0.001110, 0.064596),
-     new b2Vec2(0.003120, 0.061266),
-  ),
-
-  new Array(
-     new b2Vec2(0.000090, 0.068347),
-     new b2Vec2(0.001110, 0.064596),
-     new b2Vec2(0.000150, 0.072217),
-  ),
-
-  new Array(
-     new b2Vec2(0.000150, 0.072217),
-     new b2Vec2(0.003120, 0.061266),
-     new b2Vec2(0.003360, 0.079208),
-  ),
-
-  new Array(
-     new b2Vec2(0.003120, 0.061266),
-     new b2Vec2(0.021032, 0.082208),
-     new b2Vec2(0.003360, 0.079208),
-  ),
-
-  new Array(
-     new b2Vec2(0.026613, 0.042244),
-     new b2Vec2(0.033843, 0.073027),
-     new b2Vec2(0.003120, 0.061266),
-  ),
-
-  new Array(
-     new b2Vec2(0.061926, 0.060216),
-     new b2Vec2(0.033843, 0.073027),
-     new b2Vec2(0.026613, 0.042244),
-  ),
-
-  new Array(
-     new b2Vec2(0.061926, 0.060216),
-     new b2Vec2(0.026613, 0.042244),
-     new b2Vec2(0.083558, 0.013051),
-  ),
-
-  new Array(
-     new b2Vec2(0.061926, 0.060216),
-     new b2Vec2(0.083558, 0.013051),
-     new b2Vec2(0.092469, 0.055476),
-  ),
-
-  new Array(
-     new b2Vec2(0.083558, 0.013051),
-     new b2Vec2(0.093099, 0.010681),
-     new b2Vec2(0.092469, 0.055476),
-  ),
-
-  new Array(
-     new b2Vec2(0.110081, 0.017072),
-     new b2Vec2(0.116772, 0.033963),
-     new b2Vec2(0.115662, 0.040054),
-  ),
-
-  new Array(
-     new b2Vec2(0.110081, 0.017072),
-     new b2Vec2(0.115662, 0.040054),
-     new b2Vec2(0.105101, 0.013381),
-  ),
-
-  new Array(
-     new b2Vec2(0.115662, 0.040054),
-     new b2Vec2(0.103480, 0.053525),
-     new b2Vec2(0.097510, 0.055236),
-  ),
-
-  new Array(
-     new b2Vec2(0.110081, 0.017072),
-     new b2Vec2(0.113891, 0.021992),
-     new b2Vec2(0.116172, 0.027783),
-  ),
-
-  new Array(
-     new b2Vec2(0.110081, 0.017072),
-     new b2Vec2(0.116172, 0.027783),
-     new b2Vec2(0.116772, 0.033963),
-  ),
-
-  new Array(
-     new b2Vec2(0.115662, 0.040054),
-     new b2Vec2(0.097510, 0.055236),
-     new b2Vec2(0.105101, 0.013381),
-  ),
-
-  new Array(
-     new b2Vec2(0.108761, 0.050255),
-     new b2Vec2(0.103480, 0.053525),
-     new b2Vec2(0.112931, 0.045635),
-  ),
-
-  new Array(
-     new b2Vec2(0.103480, 0.053525),
-     new b2Vec2(0.115662, 0.040054),
-     new b2Vec2(0.112931, 0.045635),
-  ),
-
-  new Array(
-     new b2Vec2(0.097510, 0.055236),
-     new b2Vec2(0.099280, 0.011191),
-     new b2Vec2(0.105101, 0.013381),
-  ),
-
-  new Array(
-     new b2Vec2(0.021032, 0.082208),
-     new b2Vec2(0.103480, 0.053525),
-     new b2Vec2(0.017462, 0.083678),
-  ),
-
-  new Array(
-     new b2Vec2(0.021032, 0.082208),
-     new b2Vec2(0.097510, 0.055236),
-     new b2Vec2(0.103480, 0.053525),
-  ),
-
-  new Array(
-     new b2Vec2(0.021032, 0.082208),
-     new b2Vec2(0.092469, 0.055476),
-     new b2Vec2(0.097510, 0.055236),
-  )
-)
