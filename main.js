@@ -89,13 +89,13 @@ map_mode_to_gi = function(mode) {
   if (mode < 0) {
     return mode * 3;
   } else {
-    return mode * 0.35;
+    return 1.1 + (0.001 * mode);
   }
 };
 
 map_mode_to_gf = function(mode) {
   if (mode > 1) {
-    return mode * 0.03 + 1;
+    return mode * 0.0006 + 1;
   } else if (mode < 0) {
     return 0;
   } else {
@@ -139,6 +139,9 @@ set_friction = function(newBeta) {
   $("#friction_val").html(beta.toFixed(3));
   if (physics.pend_style === 3) {
     physics.upper_joint.m_maxMotorTorque = beta;
+    physics.lower_joint.m_maxMotorTorque = beta;
+  }
+  if (physics.pend_style === 4) {
     return physics.lower_joint.m_maxMotorTorque = beta;
   }
 };
@@ -182,6 +185,8 @@ physics = (function() {
     this.toggleCSL = __bind(this.toggleCSL, this);
 
     this.getNoisyAngle = __bind(this.getNoisyAngle, this);
+
+    this.createTestBoxes = __bind(this.createTestBoxes, this);
 
     this.createSemni = __bind(this.createSemni, this);
 
@@ -359,7 +364,7 @@ physics = (function() {
   physics.prototype.upper_joint = null;
 
   physics.prototype.createSemni = function() {
-    var bodyDef, bodyDef2, bodyDef3, fixture, jointDef, x0, y0, _i, _j, _k, _len, _len1, _len2;
+    var bodyDef, bodyDef2, bodyDef3, fixture, jointDef, md, x0, y0, _i, _j, _k, _len, _len1, _len2;
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_dynamicBody;
     x0 = this.ground_bodyDef.position.x;
@@ -367,7 +372,7 @@ physics = (function() {
     bodyDef.position.Set(x0, y0);
     this.body = this.world.CreateBody(bodyDef);
     this.fixDef = new b2FixtureDef;
-    this.fixDef.density = 5;
+    this.fixDef.density = 2.8;
     this.fixDef.friction = 0.5;
     this.fixDef.restitution = 0.1;
     this.fixDef.filter.groupIndex = -1;
@@ -377,14 +382,6 @@ physics = (function() {
       this.fixDef.shape.SetAsArray(fixture, fixture.length);
       this.body.CreateFixture(this.fixDef);
     }
-    /*
-        md = new b2MassData()
-        @body.GetMassData(md)
-        md.mass = 0.030
-        #md.center.x = ...
-        @body.SetMassData(md)
-    */
-
     this.body.z2 = 0;
     this.body.motor_control = 0;
     this.body.I_tm1 = 0;
@@ -393,7 +390,7 @@ physics = (function() {
     bodyDef2.type = b2Body.b2_dynamicBody;
     this.body2 = this.world.CreateBody(bodyDef2);
     this.fixDef2 = new b2FixtureDef;
-    this.fixDef2.density = 4;
+    this.fixDef2.density = 12;
     this.fixDef2.friction = 0.5;
     this.fixDef2.restitution = 0.1;
     this.fixDef2.filter.groupIndex = -1;
@@ -403,21 +400,17 @@ physics = (function() {
       this.fixDef2.shape.SetAsArray(fixture, fixture.length);
       this.body2.CreateFixture(this.fixDef2);
     }
-    /*
-        md = new b2MassData()
-        @body2.GetMassData(md)
-        md.mass = 0.07
-        #md.center.x = ...
-        @body2.SetMassData(md)
-    */
-
+    md = new b2MassData();
+    this.body2.GetMassData(md);
+    md.I = 0.02;
+    this.body2.SetMassData(md);
     jointDef = new b2RevoluteJointDef();
     jointDef.bodyA = this.body2;
     jointDef.bodyB = this.body;
     jointDef.localAnchorA.Set(672 / ptm_ratio, 385 / ptm_ratio);
     jointDef.localAnchorB.Set(672 / ptm_ratio, 385 / ptm_ratio);
     jointDef.collideConnected = false;
-    jointDef.maxMotorTorque = 0.035;
+    jointDef.maxMotorTorque = 0.100;
     jointDef.motorSpeed = 0.0;
     jointDef.enableMotor = true;
     jointDef.upperAngle = 0.157;
@@ -434,8 +427,8 @@ physics = (function() {
     bodyDef3.type = b2Body.b2_dynamicBody;
     this.body3 = this.world.CreateBody(bodyDef3);
     this.fixDef3 = new b2FixtureDef;
-    this.fixDef3.density = 22.5;
-    this.fixDef3.friction = 0.1;
+    this.fixDef3.density = 30;
+    this.fixDef3.friction = 0.2;
     this.fixDef3.restitution = 0.2;
     this.fixDef3.filter.groupIndex = -1;
     this.fixDef3.shape = new b2PolygonShape;
@@ -444,14 +437,10 @@ physics = (function() {
       this.fixDef3.shape.SetAsArray(fixture, fixture.length);
       this.body3.CreateFixture(this.fixDef3);
     }
-    /*
-        md = new b2MassData()
-        @body3.GetMassData(md)
-        md.mass = 0.05
-        #md.center.x = ...
-        @body3.SetMassData(md)
-    */
-
+    md = new b2MassData();
+    this.body3.GetMassData(md);
+    md.I = 0.01;
+    this.body3.SetMassData(md);
     jointDef = new b2RevoluteJointDef();
     jointDef.bodyA = this.body3;
     jointDef.bodyB = this.body2;
@@ -473,6 +462,52 @@ physics = (function() {
     return this.upper_joint.gb = 0;
   };
 
+  physics.prototype.createTestBoxes = function() {
+    var bodyDef, jointDef;
+    bodyDef = new b2BodyDef;
+    bodyDef.type = b2Body.b2_dynamicBody;
+    bodyDef.position.Set(0.5, 0.5);
+    this.body = this.world.CreateBody(bodyDef);
+    this.fixDef = new b2FixtureDef;
+    this.fixDef.density = 1;
+    this.fixDef.friction = 0.5;
+    this.fixDef.restitution = 0.1;
+    this.fixDef.filter.groupIndex = -1;
+    this.fixDef.shape = new b2PolygonShape;
+    this.fixDef.shape.SetAsBox(0.1, 0.2);
+    this.body.CreateFixture(this.fixDef);
+    bodyDef = new b2BodyDef;
+    bodyDef.type = b2Body.b2_dynamicBody;
+    this.body2 = this.world.CreateBody(bodyDef);
+    this.fixDef = new b2FixtureDef;
+    this.fixDef.density = 1;
+    this.fixDef.friction = 0.5;
+    this.fixDef.restitution = 0.1;
+    this.fixDef.filter.groupIndex = -1;
+    this.fixDef.shape = new b2PolygonShape;
+    this.fixDef.shape.SetAsBox(0.1, 0.2);
+    this.body2.CreateFixture(this.fixDef);
+    jointDef = new b2RevoluteJointDef();
+    jointDef.bodyA = this.body2;
+    jointDef.bodyB = this.body;
+    jointDef.localAnchorA.Set(0.04, 0.09);
+    jointDef.localAnchorB.Set(0.04, 0.09);
+    jointDef.collideConnected = false;
+    jointDef.maxMotorTorque = beta;
+    jointDef.motorSpeed = 0.0;
+    jointDef.enableMotor = true;
+    jointDef.upperAngle = 0.157;
+    jointDef.lowerAngle = -1.487;
+    jointDef.enableLimit = true;
+    this.lower_joint = this.world.CreateJoint(jointDef);
+    this.lower_joint.angle_speed = 0;
+    this.lower_joint.csl_active = false;
+    this.lower_joint.joint_name = 'lower';
+    this.lower_joint.csl_sign = 1;
+    this.lower_joint.gain = 1;
+    return this.lower_joint.gb = 0;
+  };
+
   physics.prototype.getNoisyAngle = function(bodyJoint) {
     var rand;
     rand = 0;
@@ -481,8 +516,12 @@ physics = (function() {
 
   physics.prototype.toggleCSL = function(bodyObject, bodyJoint) {
     bodyJoint.csl_active = !bodyJoint.csl_active;
-    $("#set_csl_params_lower").trigger('click');
-    return $("#set_csl_params_upper").trigger('click');
+    if (this.lower_joint) {
+      $("#set_csl_params_lower").trigger('click');
+    }
+    if (this.upper_joint) {
+      return $("#set_csl_params_upper").trigger('click');
+    }
   };
 
   physics.prototype.CSL = function(gi, gf, gb, angle_speed, gain, bodyObject) {
@@ -494,9 +533,9 @@ physics = (function() {
     sum = vel + bodyObject.last_integrated;
     bodyObject.last_integrated = gf * sum;
     if (this.pend_style === 3) {
-      limit = 0.1;
+      limit = 0.2;
     } else {
-      limit = 5;
+      limit = 3;
     }
     return this.clip((sum * gain) + gb, limit);
   };
@@ -514,14 +553,20 @@ physics = (function() {
         draw_phase_space();
       }
     }
-    return bodyJoint.last_angle = bodyJoint.GetJointAngle();
+    bodyJoint.last_angle = bodyJoint.GetJointAngle();
+    if (Math.abs(bodyObject.motor_control) > 4) {
+      bodyJoint.csl_sign = bodyJoint.csl_sign ? 0 : 1;
+      return bodyObject.last_integrated = 0;
+    } else {
+      return bodyJoint.csl_sign = 1;
+    }
   };
 
   km = 10.7 * 193 * 0.4 / 1000;
 
-  km = 5;
+  km = 2;
 
-  kb = 20;
+  kb = 5;
 
   L = 0.208 / 1000;
 
@@ -530,16 +575,12 @@ physics = (function() {
   R = 8.3;
 
   physics.prototype.updateMotor = function(bodyObject, bodyJoint) {
-    var I_t, I_tm1, U_csl, U_t;
-    bodyJoint.angle_speed = bodyJoint.GetJointSpeed();
-    I_tm1 = bodyObject.I_tm1;
+    var I_t, U_csl;
     U_csl = bodyObject.U_csl;
-    U_t = U_csl - (R * I_tm1) - (kb * bodyJoint.angle_speed);
-    I_t = (U_t * L_inv) + I_tm1;
-    bodyObject.motor_control = U_csl;
-    bodyObject.I_tm1 = I_t;
+    I_t = (U_csl - (kb * (-bodyJoint.angle_speed_csl))) * (1 / R);
+    bodyObject.motor_control = km * I_t;
     if (bodyObject.motor_control) {
-      return bodyObject.ApplyTorque(bodyObject.motor_control);
+      return bodyObject.ApplyTorque(bodyObject.motor_control * bodyJoint.csl_sign);
     }
   };
 
@@ -598,13 +639,7 @@ physics = (function() {
     var mode;
     mode = this.calcMode(bodyObject.motor_control, bodyJoint.angle_speed_csl);
     mode = this.clip(mode, 3);
-    map_mode(bodyJoint, mode);
-    if (Math.abs(bodyObject.motor_control) > 0.3) {
-      bodyJoint.csl_sign = bodyJoint.csl_sign ? 0 : 1;
-      return bodyObject.last_integrated = 0;
-    } else {
-      return bodyJoint.csl_sign = 1;
-    }
+    return map_mode(bodyJoint, mode);
   };
 
   was_static = false;
@@ -648,35 +683,37 @@ physics = (function() {
         if (map_state_to_mode) {
           this.updateMode(this.body, this.lower_joint);
         }
-        this.updateCSL(this.body, this.lower_joint);
       }
       if (this.pend_style === 2) {
         if (map_state_to_mode) {
           this.updateMode(this.body, this.lower_joint);
           this.updateMode(this.body2, this.upper_joint);
         }
-        this.updateCSL(this.body, this.lower_joint);
-        this.updateCSL(this.body2, this.upper_joint);
       }
       i = 0;
       while (i < steps_per_frame) {
         if (this.pend_style === 1) {
+          this.updateCSL(this.body, this.lower_joint);
           this.updateMotor(this.body, this.lower_joint);
           this.applyFriction(this.body, this.lower_joint);
         }
         if (this.pend_style === 2) {
+          this.updateCSL(this.body, this.lower_joint);
+          this.updateCSL(this.body2, this.upper_joint);
           this.updateMotor(this.body, this.lower_joint);
           this.updateMotor(this.body2, this.upper_joint);
           this.applyFriction(this.body, this.lower_joint);
           this.applyFriction(this.body2, this.upper_joint);
         }
         if (this.pend_style === 3) {
+          this.updateCSL(this.body2, this.lower_joint);
+          this.updateCSL(this.body3, this.upper_joint);
           this.updateMotor(this.body2, this.lower_joint);
           this.updateMotor(this.body3, this.upper_joint);
         }
-        if (this.pend_style === 3) {
-          this.updateCSL(this.body2, this.lower_joint);
-          this.updateCSL(this.body3, this.upper_joint);
+        if (this.pend_style === 4) {
+          this.updateCSL(this.body, this.lower_joint);
+          this.updateMotor(this.body, this.lower_joint);
         }
         this.world.Step(dt, 10, 10);
         i++;

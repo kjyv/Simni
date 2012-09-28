@@ -5,15 +5,11 @@
         <script src="libs/Stats.js"></script>
         <script src="libs/jquery.min.js"></script>
         <script src="libs/jquery.hotkeys.js"></script>
-        <!-- <script src="libs/jquery.jqplot.js"></script> -->
-        <!-- <script src="libs/jqplot.cursor.min.js"></script> -->
-        <!-- <script src="libs/jqplot.highlighter.min.js"></script> -->
         <script type="text/javascript" src="libs/jsxgraphcore.js"></script>
         <script src="libs/d3.v2.js"></script>
         <script src="libs/Box2dWeb-2.1.a.3.js"></script>
         <script src="semni.data.js"></script>
         <script src="main.js"></script>
-        <link rel="stylesheet" type="text/css" href="libs/jquery.jqplot.css" />
         <link rel="stylesheet" type="text/css" href="libs/jsxgraph.css" />
         <link rel="stylesheet" type="text/css" href="simulator.css" />
     </head>
@@ -26,6 +22,7 @@
                         <option value="1">Single Pendulum</option>
                         <option value="2">Double Pendulum</option>
                         <option value="3" selected="selected">Semni</option>
+                        <option value="4">Box/Joint Test</option>
                     </select><br/>
                     <script type="text/coffeescript">
                         $ ->
@@ -73,8 +70,10 @@
                                     physics.pend_style = 3
 
                                     physics.createSemni()
-                                    #map_mode physics.lower_joint
-                                    #map_mode physics.upper_joint
+                                    
+                                else if style is "4"
+                                    physics.pend_style = 4
+                                    physics.createTestBoxes()
 
                             $("#pendulum_style").trigger('change')
 
@@ -97,8 +96,8 @@
                     <button id="add_box" onClick="physics.createBox()">create box</button><br/>
                     <br/>
          
-                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.035" step="0.001" onchange="set_friction(parseFloat(this.value))" />
-                    <span id="friction_val">0.035</span><br/>
+                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.100" step="0.001" onchange="set_friction(parseFloat(this.value))" />
+                    <span id="friction_val">0.100</span><br/>
 
                     <label for="stiction_param">stiction</label> <input id="stiction_param" type="range" min="0" max="5" value="0.6" step="0.1" onchange="set_stiction(parseFloat(this.value))" />
                     <span id="stiction_val">0.100</span><br/>            
@@ -198,70 +197,12 @@
                     <button id="preset_3" onclick="set_preset(450,0,1.001,true,true)">Preset 3</button>self-inhibit c,<br/>f=0.022<br/>
                     <button id="preset_4" onclick="set_preset(81,-3676,-0.5,false,false)">Preset 4</button>r right, s left
                 </div>
-                <!--
-                <div id="mode_graph" style="width:300px; float:left;"></div>
-                <script>
-                    $(document).ready(function(){
-                        var l_gf, l_gi, mapping_points, mode, plot;
-
-                        mapping_points = [];
-
-                        mode = -1;
-
-                        while (mode <= 2) {
-                          l_gi = map_mode_to_gi(mode);
-                          l_gf = map_mode_to_gf(mode);
-                          mapping_points.push([l_gi, l_gf]);
-                          mode += 0.1;
-                        }
-
-                        plot = $.jqplot("mode_graph", [mapping_points], {
-                          seriesDefaults: {
-                            shadow: false,
-                            markerOptions: {
-                              style: "circle",
-                              size: 4,
-                              shadow: false
-                            }
-                          },
-                          series: [
-                            {
-                              label: "gi vs. gf"
-                            }
-                          ]
-                        }, {
-                          grid: {
-                            shadow: false
-                          },
-                          axes: {
-                            xaxis: {
-                              label: "gi"
-                            },
-                            yaxis: {
-                              label: "gf"
-                            }
-                          },
-                          highlighter: {
-                            show: false,
-                            sizeAdjust: 7.5
-                          },
-                          cursor: {
-                            show: false
-                          },
-                          legend: {
-                            show: true,
-                            location: "se"
-                          }
-                        });
-                    })
-                </script>
-                -->
             </div>
         </div>
 
         <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;/&phi;'<button id="clear_phase">clear</button></div>
         <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled" checked="checked">motor torque (blue) and voltage (green)</div>
-        <div id="state_to_mode_mapping">state space U/&phi;'<br/></div>
+        <div id="state_to_mode_mapping"><input type="checkbox" id="phase_space_2_enabled">phase space U/&phi;'<br/></div>
         <script>
             //use d3 for state_to_mode_mapping
             var margin = {top: 0, right: 0, bottom: 20, left: 30},
@@ -350,7 +291,7 @@
 
 
             //use jsxgraph for phase spaces
-            var phase_space_enabled=false,motor_torque_enabled=true,brd,brd2,g,g2,g3,g4,xdata=[],ydata=[],zdata=[{'U':0, 'phidot':0}],i,xdata2=[],ydata2=[],ydata3=[]
+            var phase_space_enabled=false,motor_torque_enabled=true,phase_space_2_enabled=false,brd,brd2,g,g2,g3,g4,xdata=[],ydata=[],zdata=[{'U':0, 'phidot':0}],i,xdata2=[],ydata2=[],ydata3=[]
 
             JXG.Options.showCopyright = false
             JXG.Options.zoom.wheel = true
@@ -372,6 +313,10 @@
             
             $("#motor_torque_enabled").on('click', function(){
                 motor_torque_enabled= !motor_torque_enabled
+            })
+            
+            $("#phase_space_2_enabled").on('click', function(){
+                phase_space_2_enabled = !phase_space_2_enabled
             })
 
             var line = d3.svg.line()
@@ -401,26 +346,31 @@
                     brd.update();
                 }
                 
-                //state space plot
-                if (zdata.length==200) {
-                    zdata.shift()
+                if(phase_space_2_enabled) {
+                    if (zdata.length==200) {
+                        zdata.shift()
+                    }
+                    angle_speed = physics.lower_joint.angle_speed_csl
+                    if (!angle_speed)
+                        angle_speed=0
+                    
+                    if (physics.body.motor_control)
+                        Uval = physics.body.motor_control
+                    else
+                        Uval = physics.body2.motor_control
+
+                    zdata.push({'U':Uval, 'phidot': angle_speed })
+
+                    path
+                      .attr("d", line)
+                      .attr("transform", null)
                 }
-                angle_speed = physics.lower_joint.angle_speed_csl
-                if (!angle_speed)
-                    angle_speed=0
-
-                zdata.push({'U':physics.body.motor_control, 'phidot': angle_speed })
-
-                path
-                  .attr("d", line)
-                  .attr("transform", null)
-
             }
 
             for(i=0; i<1; i=i+0.002){
                 xdata2.push(i)
             }
-            brd2 = JXG.JSXGraph.initBoard('motor_torque_plot', {boundingbox:[0,0.01,2,-0.01], axis:true})
+            brd2 = JXG.JSXGraph.initBoard('motor_torque_plot', {boundingbox:[0,0.30,2,-0.30], axis:true})
             function draw_motor_torque(){
                 if(motor_torque_enabled){
                     if (ydata2.length==500) {
@@ -428,10 +378,13 @@
                         ydata3.shift()
                     }
                     
-                    if (isNaN(physics.body.motor_control))
-                        ydata2.push(0)
-                    else
+                    if (physics.body.motor_control)
                         ydata2.push(physics.body.motor_control)
+                    else
+                        if (physics.body2.motor_control)
+                            ydata2.push(physics.body2.motor_control)
+                        else
+                            ydata2.push(0)
                         
                     if (physics.body && physics.body.U_csl)
                         ydata3.push(physics.body.U_csl)
