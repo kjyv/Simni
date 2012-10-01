@@ -403,7 +403,7 @@ class physics
 
     ###################
 
-    #lower arm (connected to body)
+    #upper arm (connected to body)
     bodyDef2 = new b2BodyDef
     bodyDef2.type = b2Body.b2_dynamicBody
     #bodyDef2.position.Set(x0, y0)
@@ -452,19 +452,19 @@ class physics
     jointDef.upperAngle = 0.157
     jointDef.lowerAngle = -1.487
     jointDef.enableLimit = true
-    @lower_joint = @world.CreateJoint(jointDef)
+    @upper_joint = @world.CreateJoint(jointDef)
     
     #initialize
-    @lower_joint.angle_speed = 0
-    @lower_joint.csl_active = false
-    @lower_joint.joint_name = 'lower'
-    @lower_joint.csl_sign = 1
-    @lower_joint.gain = 1
-    @lower_joint.gb = 0
+    @upper_joint.angle_speed = 0
+    @upper_joint.csl_active = false
+    @upper_joint.joint_name = 'upper'
+    @upper_joint.csl_sign = 1
+    @upper_joint.gain = 1
+    @upper_joint.gb = 0
 
     ########
 
-    #upper arm (not at body)
+    #lower arm (not at body)
     bodyDef3 = new b2BodyDef
     bodyDef3.type = b2Body.b2_dynamicBody
     #bodyDef3.position.Set(x0, y0 + 0.4)
@@ -496,7 +496,7 @@ class physics
     @body3.U_csl = 0
     
     
-    #upper rotating joint
+    #lower rotating joint
     jointDef = new b2RevoluteJointDef()
     jointDef.bodyA = @body3
     jointDef.bodyB = @body2
@@ -510,14 +510,14 @@ class physics
     jointDef.upperAngle = 9.27
     jointDef.lowerAngle = 4.57
     jointDef.enableLimit = true
-    @upper_joint = @world.CreateJoint(jointDef)
+    @lower_joint = @world.CreateJoint(jointDef)
     
-    @upper_joint.angle_speed = 0
-    @upper_joint.csl_active = false
-    @upper_joint.joint_name = 'upper'
-    @upper_joint.csl_sign = 1
-    @upper_joint.gain = 1
-    @upper_joint.gb = 0
+    @lower_joint.angle_speed = 0
+    @lower_joint.csl_active = false
+    @lower_joint.joint_name = 'lower'
+    @lower_joint.csl_sign = 1
+    @lower_joint.gain = 1
+    @lower_joint.gb = 0
     
   createTestBoxes: =>
     bodyDef = new b2BodyDef
@@ -593,7 +593,7 @@ class physics
     sum = vel + bodyObject.last_integrated
     bodyObject.last_integrated = gf * sum
     if @pend_style is 3
-      limit = 2
+      limit = 2.3
     else
       limit = 3
     return @clip((sum * gain) + gb, limit)
@@ -631,7 +631,6 @@ class physics
     
   #motor constants
   km = 10.7 * 193 * 0.4 / 1000   #torque constant, km_RX28 = 0.0107, includes ratio * efficiency, M=km*I  
-  km = 2
   #kb = km            #back emf constant, kn in maxon Documents
   kb = 5
   L = 0.208 / 1000   #L_RX28 = 0.208 mH; 

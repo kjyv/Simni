@@ -422,13 +422,13 @@ physics = (function() {
     jointDef.upperAngle = 0.157;
     jointDef.lowerAngle = -1.487;
     jointDef.enableLimit = true;
-    this.lower_joint = this.world.CreateJoint(jointDef);
-    this.lower_joint.angle_speed = 0;
-    this.lower_joint.csl_active = false;
-    this.lower_joint.joint_name = 'lower';
-    this.lower_joint.csl_sign = 1;
-    this.lower_joint.gain = 1;
-    this.lower_joint.gb = 0;
+    this.upper_joint = this.world.CreateJoint(jointDef);
+    this.upper_joint.angle_speed = 0;
+    this.upper_joint.csl_active = false;
+    this.upper_joint.joint_name = 'upper';
+    this.upper_joint.csl_sign = 1;
+    this.upper_joint.gain = 1;
+    this.upper_joint.gb = 0;
     bodyDef3 = new b2BodyDef;
     bodyDef3.type = b2Body.b2_dynamicBody;
     this.body3 = this.world.CreateBody(bodyDef3);
@@ -464,13 +464,13 @@ physics = (function() {
     jointDef.upperAngle = 9.27;
     jointDef.lowerAngle = 4.57;
     jointDef.enableLimit = true;
-    this.upper_joint = this.world.CreateJoint(jointDef);
-    this.upper_joint.angle_speed = 0;
-    this.upper_joint.csl_active = false;
-    this.upper_joint.joint_name = 'upper';
-    this.upper_joint.csl_sign = 1;
-    this.upper_joint.gain = 1;
-    return this.upper_joint.gb = 0;
+    this.lower_joint = this.world.CreateJoint(jointDef);
+    this.lower_joint.angle_speed = 0;
+    this.lower_joint.csl_active = false;
+    this.lower_joint.joint_name = 'lower';
+    this.lower_joint.csl_sign = 1;
+    this.lower_joint.gain = 1;
+    return this.lower_joint.gb = 0;
   };
 
   physics.prototype.createTestBoxes = function() {
@@ -544,7 +544,7 @@ physics = (function() {
     sum = vel + bodyObject.last_integrated;
     bodyObject.last_integrated = gf * sum;
     if (this.pend_style === 3) {
-      limit = 2;
+      limit = 2.3;
     } else {
       limit = 3;
     }
@@ -574,8 +574,6 @@ physics = (function() {
   };
 
   km = 10.7 * 193 * 0.4 / 1000;
-
-  km = 2;
 
   kb = 5;
 
