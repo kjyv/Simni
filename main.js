@@ -373,7 +373,7 @@ physics = (function() {
     this.body = this.world.CreateBody(bodyDef);
     this.fixDef = new b2FixtureDef;
     this.fixDef.density = 2.8;
-    this.fixDef.friction = 0.5;
+    this.fixDef.friction = 0.6;
     this.fixDef.restitution = 0.1;
     this.fixDef.filter.groupIndex = -1;
     this.fixDef.shape = new b2PolygonShape;
@@ -392,7 +392,7 @@ physics = (function() {
     this.body2 = this.world.CreateBody(bodyDef2);
     this.fixDef2 = new b2FixtureDef;
     this.fixDef2.density = 12;
-    this.fixDef2.friction = 0.5;
+    this.fixDef2.friction = 0.6;
     this.fixDef2.restitution = 0.1;
     this.fixDef2.filter.groupIndex = -1;
     this.fixDef2.shape = new b2PolygonShape;
@@ -434,7 +434,7 @@ physics = (function() {
     this.body3 = this.world.CreateBody(bodyDef3);
     this.fixDef3 = new b2FixtureDef;
     this.fixDef3.density = 30;
-    this.fixDef3.friction = 0.2;
+    this.fixDef3.friction = 0.6;
     this.fixDef3.restitution = 0.2;
     this.fixDef3.filter.groupIndex = -1;
     this.fixDef3.shape = new b2PolygonShape;
@@ -544,7 +544,7 @@ physics = (function() {
     sum = vel + bodyObject.last_integrated;
     bodyObject.last_integrated = gf * sum;
     if (this.pend_style === 3) {
-      limit = 2.3;
+      limit = 2.8;
     } else {
       limit = 3;
     }
@@ -564,13 +564,7 @@ physics = (function() {
         draw_phase_space();
       }
     }
-    bodyJoint.last_angle = bodyJoint.GetJointAngle();
-    if (Math.abs(bodyObject.motor_control) > 4) {
-      bodyJoint.csl_sign = bodyJoint.csl_sign ? 0 : 1;
-      return bodyObject.last_integrated = 0;
-    } else {
-      return bodyJoint.csl_sign = 1;
-    }
+    return bodyJoint.last_angle = bodyJoint.GetJointAngle();
   };
 
   km = 10.7 * 193 * 0.4 / 1000;
@@ -589,7 +583,7 @@ physics = (function() {
     I_t = (U_csl - (kb * (-bodyJoint.angle_speed_csl))) * (1 / R);
     bodyObject.motor_control = km * I_t;
     if (bodyObject.motor_control) {
-      return bodyJoint.m_applyTorque = bodyObject.motor_control * bodyJoint.csl_sign;
+      return bodyJoint.m_applyTorque = bodyObject.motor_control;
     }
   };
 

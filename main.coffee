@@ -377,7 +377,7 @@ class physics
 
     @fixDef = new b2FixtureDef
     @fixDef.density = 2.8
-    @fixDef.friction = 0.5
+    @fixDef.friction = 0.6
     @fixDef.restitution = 0.1
     @fixDef.filter.groupIndex = -1  #negative groups never collide with each other
     @fixDef.shape = new b2PolygonShape
@@ -387,7 +387,6 @@ class physics
       @body.CreateFixture(@fixDef)
     #bodyFix = @body.CreateFixture(@fixDef)
 
-    
     #md = new b2MassData()
     #@body.GetMassData(md)
     #md.mass = 0.030
@@ -411,7 +410,7 @@ class physics
 
     @fixDef2 = new b2FixtureDef
     @fixDef2.density = 12
-    @fixDef2.friction = 0.5
+    @fixDef2.friction = 0.6
     @fixDef2.restitution = 0.1
     @fixDef2.filter.groupIndex = -1
     @fixDef2.shape = new b2PolygonShape
@@ -472,7 +471,7 @@ class physics
     
     @fixDef3 = new b2FixtureDef
     @fixDef3.density = 30
-    @fixDef3.friction = 0.2
+    @fixDef3.friction = 0.6
     @fixDef3.restitution = 0.2
     @fixDef3.filter.groupIndex = -1
     @fixDef3.shape = new b2PolygonShape
@@ -593,7 +592,7 @@ class physics
     sum = vel + bodyObject.last_integrated
     bodyObject.last_integrated = gf * sum
     if @pend_style is 3
-      limit = 2.3
+      limit = 2.8
     else
       limit = 3
     return @clip((sum * gain) + gb, limit)
@@ -616,11 +615,11 @@ class physics
     bodyJoint.last_angle = bodyJoint.GetJointAngle()
     
     #calm down if contraction goes out of bounds
-    if Math.abs(bodyObject.motor_control) > 4
-      bodyJoint.csl_sign = if bodyJoint.csl_sign then 0 else 1
-      bodyObject.last_integrated = 0
-    else
-      bodyJoint.csl_sign = 1
+    #if Math.abs(bodyObject.motor_control) > 0.5
+    #  bodyJoint.csl_sign = if bodyJoint.csl_sign then 0 else 1
+    #  bodyObject.last_integrated = 0
+    #else
+    #  bodyJoint.csl_sign = 1
 
     #TODO: detect stable poses
     # 1 compare current to last angle value and set could-be stable flag if we have a small interval
@@ -642,7 +641,7 @@ class physics
     I_t = (U_csl - (kb*(-bodyJoint.angle_speed_csl)))*(1/R)     #U_csl-(R*I_tm1)-(kb*bodyJoint.angle_speed)
     bodyObject.motor_control = km * I_t
     if bodyObject.motor_control
-      bodyJoint.m_applyTorque = bodyObject.motor_control * bodyJoint.csl_sign
+      bodyJoint.m_applyTorque = bodyObject.motor_control #* bodyJoint.csl_sign
 
   clip: (value, cap=1) => Math.max(-cap, Math.min(cap, value))
   sgn: (value) => if value > 0 then 1 else if value < 0 then -1 else 0
