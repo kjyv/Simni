@@ -10285,6 +10285,8 @@ Box2D.postDefs = [];
       var m2 = bB.m_invMass;
       var i1 = bA.m_invI;
       var i2 = bB.m_invI;
+
+	  // Solve motor constraint.
       if (this.m_enableMotor && this.m_limitState != b2Joint.e_equalLimits) {
          var Cdot = w2 - w1 - this.m_motorSpeed;
          var impulse = this.m_motorMass * ((-Cdot));
@@ -10295,6 +10297,8 @@ Box2D.postDefs = [];
          w1 -= i1 * impulse;
          w2 += i2 * impulse;
       }
+
+	  // Solve limit constraint.
       if (this.m_enableLimit && this.m_limitState != b2Joint.e_inactiveLimit) {
          tMat = bA.m_xf.R;
          r1X = this.m_localAnchor1.x - bA.m_sweep.localCenter.x;
@@ -10347,6 +10351,7 @@ Box2D.postDefs = [];
          w2 += i2 * (r2X * this.impulse3.y - r2Y * this.impulse3.x + this.impulse3.z);
       }
       else {
+		 // Solve point-to-point constraint
          tMat = bA.m_xf.R;
          r1X = this.m_localAnchor1.x - bA.m_sweep.localCenter.x;
          r1Y = this.m_localAnchor1.y - bA.m_sweep.localCenter.y;

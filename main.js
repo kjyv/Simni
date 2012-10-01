@@ -383,6 +383,7 @@ physics = (function() {
       this.body.CreateFixture(this.fixDef);
     }
     this.body.z2 = 0;
+    this.body.last_motor_control = 0;
     this.body.motor_control = 0;
     this.body.I_tm1 = 0;
     this.body.U_csl = 0;
@@ -404,6 +405,11 @@ physics = (function() {
     this.body2.GetMassData(md);
     md.I = 0.02;
     this.body2.SetMassData(md);
+    this.body2.z2 = 0;
+    this.body2.last_motor_control = 0;
+    this.body2.motor_control = 0;
+    this.body2.I_tm1 = 0;
+    this.body2.U_csl = 0;
     jointDef = new b2RevoluteJointDef();
     jointDef.bodyA = this.body2;
     jointDef.bodyB = this.body;
@@ -441,6 +447,11 @@ physics = (function() {
     this.body3.GetMassData(md);
     md.I = 0.01;
     this.body3.SetMassData(md);
+    this.body3.z2 = 0;
+    this.body3.last_motor_control = 0;
+    this.body3.motor_control = 0;
+    this.body3.I_tm1 = 0;
+    this.body3.U_csl = 0;
     jointDef = new b2RevoluteJointDef();
     jointDef.bodyA = this.body3;
     jointDef.bodyB = this.body2;
@@ -533,7 +544,7 @@ physics = (function() {
     sum = vel + bodyObject.last_integrated;
     bodyObject.last_integrated = gf * sum;
     if (this.pend_style === 3) {
-      limit = 0.2;
+      limit = 2;
     } else {
       limit = 3;
     }
@@ -580,7 +591,7 @@ physics = (function() {
     I_t = (U_csl - (kb * (-bodyJoint.angle_speed_csl))) * (1 / R);
     bodyObject.motor_control = km * I_t;
     if (bodyObject.motor_control) {
-      return bodyObject.ApplyTorque(bodyObject.motor_control * bodyJoint.csl_sign);
+      return bodyJoint.m_applyTorque = bodyObject.motor_control * bodyJoint.csl_sign;
     }
   };
 

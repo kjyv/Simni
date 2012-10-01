@@ -7,7 +7,8 @@
         <script src="libs/jquery.hotkeys.js"></script>
         <script type="text/javascript" src="libs/jsxgraphcore.js"></script>
         <script src="libs/d3.v2.js"></script>
-        <script src="libs/Box2dWeb-2.1.a.3.js"></script>
+        <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
+        <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
         <script src="semni.data.js"></script>
         <script src="main.js"></script>
         <link rel="stylesheet" type="text/css" href="libs/jsxgraph.css" />
@@ -106,7 +107,7 @@
                     <span id="stiction_epsilon_val">0.010</span><br/><br/>
 
 
-                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="0.05" style="width:60px;"/>
+                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="1.8" style="width:60px;"/>
                     <label for="gf_param_upper">g<sub>f</sub></label> <input id="gf_param_upper" type="text" value="1.002" style="width:60px;"/>
                     <label for="gb_param_upper">g<sub>b</sub></label> <input id="gb_param_upper" type="text" value="0" style="width:60px;"/>
                     <label for="gain_param_upper">gain</label> <input id="gain_param_upper" type="text" value="1" style="width:60px;"/>
@@ -126,7 +127,7 @@
                     <span id="mode_val_upper"></span> <span id="csl_mode_name_upper">contraction</span><br/>
 
 
-                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="0.05" style="width:60px;"/>
+                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="1.8" style="width:60px;"/>
                     <label for="gf_param_lower">g<sub>f</sub></label> <input id="gf_param_lower" type="text" value="1.002" style="width:60px;"/>
                     <label for="gb_param_lower">g<sub>b</sub></label> <input id="gb_param_lower" type="text" value="0" style="width:60px;"/>
                     <label for="gain_param_lower">gain</label> <input id="gain_param_lower" type="text" value="1" style="width:60px;"/>

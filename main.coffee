@@ -396,6 +396,7 @@ class physics
     
     #initialise friction and motor state
     @body.z2 = 0
+    @body.last_motor_control = 0
     @body.motor_control = 0
     @body.I_tm1 = 0
     @body.U_csl = 0
@@ -425,6 +426,13 @@ class physics
     md.I = 0.02
     #md.center.Set()
     @body2.SetMassData(md)
+    
+    #initialise friction and motor state
+    @body2.z2 = 0
+    @body2.last_motor_control = 0
+    @body2.motor_control = 0
+    @body2.I_tm1 = 0
+    @body2.U_csl = 0
 
     #connect body and arm with rotating joint
     jointDef = new b2RevoluteJointDef()
@@ -479,6 +487,13 @@ class physics
     #md.center.x = ...
     md.I = 0.01
     @body3.SetMassData(md)
+
+    #initialise friction and motor state
+    @body3.z2 = 0
+    @body3.last_motor_control = 0
+    @body3.motor_control = 0
+    @body3.I_tm1 = 0
+    @body3.U_csl = 0
     
     
     #upper rotating joint
@@ -578,7 +593,7 @@ class physics
     sum = vel + bodyObject.last_integrated
     bodyObject.last_integrated = gf * sum
     if @pend_style is 3
-      limit = 0.2
+      limit = 2
     else
       limit = 3
     return @clip((sum * gain) + gb, limit)
@@ -606,6 +621,13 @@ class physics
       bodyObject.last_integrated = 0
     else
       bodyJoint.csl_sign = 1
+
+    #TODO: detect stable poses
+    # 1 compare current to last angle value and set could-be stable flag if we have a small interval
+    # 2a keep first value compare all following values to it and count how many steps have passed
+    # 2b if any new value is out of the allowed interval, set could-be stable flag to false again
+    # 4 if enough steps have passed and and could-be stable flag is still true, set stable flag
+    # 5 unset stable and could-be stable flag if any new value is too far away from initial position    
     
   #motor constants
   km = 10.7 * 193 * 0.4 / 1000   #torque constant, km_RX28 = 0.0107, includes ratio * efficiency, M=km*I  
@@ -616,20 +638,12 @@ class physics
   L_inv = 1000       #L_inv = 5.004807, SciCos variant: 4854
   R = 8.3            #R_RX28 = 8.3 ohm
   updateMotor: (bodyObject, bodyJoint) =>
-    #bodyJoint.angle_speed = bodyJoint.GetJointSpeed()
-
-    #if not isNaN(bodyJoint.angle_speed)         # i.e. if simulation has properly started
     # motor model
-    #I_tm1 = bodyObject.I_tm1   # I_t-1
     U_csl = bodyObject.U_csl
-
     I_t = (U_csl - (kb*(-bodyJoint.angle_speed_csl)))*(1/R)     #U_csl-(R*I_tm1)-(kb*bodyJoint.angle_speed)
-    #I_t = (U_t*L_inv) + I_tm1
     bodyObject.motor_control = km * I_t
-    #bodyObject.I_tm1 = I_t
-
     if bodyObject.motor_control
-      bodyObject.ApplyTorque bodyObject.motor_control * bodyJoint.csl_sign
+      bodyJoint.m_applyTorque = bodyObject.motor_control * bodyJoint.csl_sign
 
   clip: (value, cap=1) => Math.max(-cap, Math.min(cap, value))
   sgn: (value) => if value > 0 then 1 else if value < 0 then -1 else 0
