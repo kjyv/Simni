@@ -213,7 +213,7 @@ class physics
     
     #create a box
     fixDef.shape = new b2PolygonShape
-    fixDef.shape.SetAsBox 0.1, 0.1
+    fixDef.shape.SetAsBox 0.30, 0.14
 
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_staticBody
@@ -371,12 +371,12 @@ class physics
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_dynamicBody
     x0 = @ground_bodyDef.position.x
-    y0 = @ground_bodyDef.position.y - 0.2
+    y0 = @ground_bodyDef.position.y - 0.7
     bodyDef.position.Set(x0,y0)
     @body = @world.CreateBody(bodyDef)
 
     @fixDef = new b2FixtureDef
-    @fixDef.density = 2.8
+    @fixDef.density = 0.99
     @fixDef.friction = 0.6
     @fixDef.restitution = 0.1
     @fixDef.filter.groupIndex = -1  #negative groups never collide with each other
@@ -385,13 +385,29 @@ class physics
     for fixture in contour
       @fixDef.shape.SetAsArray(fixture, fixture.length)
       @body.CreateFixture(@fixDef)
-    #bodyFix = @body.CreateFixture(@fixDef)
 
-    #md = new b2MassData()
-    #@body.GetMassData(md)
-    #md.mass = 0.030
-    #md.center.Set(0.05, 0.01)
-    #@body.SetMassData(md)
+    #add head (hole)
+    @fixDef.density = 0.00001
+    @fixDef.shape = new b2CircleShape
+    @fixDef.shape.m_p.Set(head[0].x, head[0].y)
+    @fixDef.shape.m_radius = head[1]
+    @fixDef.filter.groupIndex = 1
+    @body.CreateFixture(@fixDef)
+
+    #set center of mass, but keep the rest of the data
+    md = new b2MassData()
+    @body.GetMassData(md)
+    md.center.Set(contourCenter.x, contourCenter.y)
+    md.I = @body.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y)
+    @body.SetMassData(md)
+    
+    #show center of mass
+    @fixDef.density = 0.00001
+    @fixDef.shape = new b2CircleShape
+    @fixDef.shape.m_p.Set(contourCenter.x, contourCenter.y)
+    @fixDef.shape.m_radius = 0.01
+    @fixDef.filter.groupIndex = -1
+    @body.CreateFixture(@fixDef)
     
     #initialise friction and motor state
     @body.z2 = 0
@@ -409,7 +425,7 @@ class physics
     @body2 = @world.CreateBody(bodyDef2)
 
     @fixDef2 = new b2FixtureDef
-    @fixDef2.density = 12
+    @fixDef2.density = 4.35
     @fixDef2.friction = 0.6
     @fixDef2.restitution = 0.1
     @fixDef2.filter.groupIndex = -1
@@ -417,14 +433,21 @@ class physics
     for fixture in arm1ContourConvex
       @fixDef2.shape.SetAsArray(fixture, fixture.length)
       @body2.CreateFixture(@fixDef2)
-    #@fixDef2.shape.SetAsBox(0.02,0.05)
-    #b2Separator.Separate(@body2, @fixDef2, arm2Contour, 1)
     
+    #set center of mass
     md = new b2MassData()
     @body2.GetMassData(md)
-    md.I = 0.02
-    #md.center.Set()
+    md.center.Set(arm1Center.x, arm1Center.y)
+    md.I = @body2.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y)
     @body2.SetMassData(md)
+
+    #show center of mass
+    @fixDef2.density = 0.00001
+    @fixDef2.shape = new b2CircleShape
+    @fixDef2.shape.m_p.Set(arm1Center.x, arm2Center.y)
+    @fixDef2.shape.m_radius = 0.01
+    @fixDef2.filter.groupIndex = -1
+    @body2.CreateFixture(@fixDef2)
     
     #initialise friction and motor state
     @body2.z2 = 0
@@ -436,21 +459,21 @@ class physics
     #connect body and arm with rotating joint
     jointDef = new b2RevoluteJointDef()
     #jointDef.Initialize @body, @body2, vertices2[0]
-    jointDef.bodyA = @body2
-    jointDef.bodyB = @body
-    jointDef.localAnchorA.Set(672/ptm_ratio, 385/ptm_ratio)  #point on arm that is attached to body
-    jointDef.localAnchorB.Set(672/ptm_ratio, 385/ptm_ratio)  #point on the body that arm is attached to 
+    jointDef.bodyA = @body
+    jointDef.bodyB = @body2
+    jointDef.localAnchorA.Set(arm1JointAnchor.x, arm1JointAnchor.y)  #point on arm that is attached to body
+    jointDef.localAnchorB.Set(arm1JointAnchor.x, arm1JointAnchor.y)  #point on the body that arm is attached to 
     #jointDef.anchor = new b2Vec2(vertices[3].x, vertices[3].y)
-    jointDef.collideConnected = false
+    jointDef.collideConnected = true
 
     #simple friction with box2d possiblities (dry)
     jointDef.maxMotorTorque = 0.100
     jointDef.motorSpeed = 0.0
     jointDef.enableMotor = true
 
-    jointDef.upperAngle = 0.157
-    jointDef.lowerAngle = -1.487
-    jointDef.enableLimit = true
+    #jointDef.upperAngle = 0.157
+    #jointDef.lowerAngle = -1.487
+    #jointDef.enableLimit = true
     @upper_joint = @world.CreateJoint(jointDef)
     
     #initialize
@@ -460,8 +483,8 @@ class physics
     @upper_joint.csl_sign = 1
     @upper_joint.gain = 1
     @upper_joint.gb = 0
-
-    ########
+    
+    #####
 
     #lower arm (not at body)
     bodyDef3 = new b2BodyDef
@@ -470,7 +493,7 @@ class physics
     @body3 = @world.CreateBody(bodyDef3)
     
     @fixDef3 = new b2FixtureDef
-    @fixDef3.density = 30
+    @fixDef3.density = 10.9
     @fixDef3.friction = 0.6
     @fixDef3.restitution = 0.2
     @fixDef3.filter.groupIndex = -1
@@ -479,13 +502,20 @@ class physics
       @fixDef3.shape.SetAsArray(fixture, fixture.length)
       @body3.CreateFixture(@fixDef3)
 
-    
+    #set center of mass
     md = new b2MassData()
     @body3.GetMassData(md)
-    #md.mass = 0.05
-    #md.center.x = ...
-    md.I = 0.01
+    md.center.Set(arm2Center.x, arm2Center.y)
+    md.I = @body3.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y)
     @body3.SetMassData(md)
+
+    #show center of mass
+    @fixDef3.density = 0.00001
+    @fixDef3.shape = new b2CircleShape
+    @fixDef3.shape.m_p.Set(arm2Center.x, arm2Center.y)
+    @fixDef3.shape.m_radius = 0.01
+    @fixDef3.filter.groupIndex = -1
+    @body3.CreateFixture(@fixDef3)
 
     #initialise friction and motor state
     @body3.z2 = 0
@@ -497,18 +527,18 @@ class physics
     
     #lower rotating joint
     jointDef = new b2RevoluteJointDef()
-    jointDef.bodyA = @body3
-    jointDef.bodyB = @body2
-    jointDef.localAnchorA.Set(430/ptm_ratio, 504/ptm_ratio)
-    jointDef.localAnchorB.Set(430/ptm_ratio, 504/ptm_ratio)
+    jointDef.bodyA = @body2
+    jointDef.bodyB = @body3
+    jointDef.localAnchorA.Set(arm2JointAnchor.x, arm2JointAnchor.y)
+    jointDef.localAnchorB.Set(arm2JointAnchor.x, arm2JointAnchor.y)
     jointDef.collideConnected = false
     jointDef.maxMotorTorque = 0.02
     jointDef.motorSpeed = 0.0
     jointDef.enableMotor = true
 
-    jointDef.upperAngle = 9.27
-    jointDef.lowerAngle = 4.57
-    jointDef.enableLimit = true
+    #jointDef.upperAngle = 9.27
+    #jointDef.lowerAngle = 4.57
+    #jointDef.enableLimit = true
     @lower_joint = @world.CreateJoint(jointDef)
     
     @lower_joint.angle_speed = 0
@@ -517,7 +547,7 @@ class physics
     @lower_joint.csl_sign = 1
     @lower_joint.gain = 1
     @lower_joint.gb = 0
-    
+
   createTestBoxes: =>
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_dynamicBody
@@ -559,9 +589,9 @@ class physics
     jointDef.motorSpeed = 0.0
     jointDef.enableMotor = true
 
-    jointDef.upperAngle = 0.157
-    jointDef.lowerAngle = -1.487
-    jointDef.enableLimit = true
+    #jointDef.upperAngle = 0.157
+    #jointDef.lowerAngle = -1.487
+    #jointDef.enableLimit = true
     @lower_joint = @world.CreateJoint(jointDef)
     
     #initialize
@@ -592,7 +622,7 @@ class physics
     sum = vel + bodyObject.last_integrated
     bodyObject.last_integrated = gf * sum
     if @pend_style is 3
-      limit = 2.8
+      limit = 12
     else
       limit = 3
     return @clip((sum * gain) + gb, limit)
@@ -601,17 +631,19 @@ class physics
     if not bodyObject.last_integrated? or not bodyJoint.csl_active
       bodyObject.last_integrated = 0
       bodyObject.U_csl = 0
+
+    if not bodyJoint.last_angle?
       bodyJoint.last_angle = bodyJoint.GetJointAngle()
 
-    bodyJoint.angle_speed_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle
+    bodyJoint.angle_diff_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle
     if bodyJoint.csl_active
       bodyObject.U_csl = @CSL(
         bodyJoint.gi, bodyJoint.gf, bodyJoint.gb,
-        bodyJoint.angle_speed_csl,
+        bodyJoint.angle_diff_csl,
         bodyJoint.gain,
         bodyObject
       )
-      draw_phase_space() if not isMouseDown or not mouseJoint
+    draw_phase_space() if not isMouseDown or not mouseJoint
     bodyJoint.last_angle = bodyJoint.GetJointAngle()
     
     #calm down if contraction goes out of bounds
@@ -631,14 +663,14 @@ class physics
   #motor constants
   km = 10.7 * 193 * 0.4 / 1000   #torque constant, km_RX28 = 0.0107, includes ratio * efficiency, M=km*I  
   #kb = km            #back emf constant, kn in maxon Documents
-  kb = 5
-  L = 0.208 / 1000   #L_RX28 = 0.208 mH; 
-  L_inv = 1000       #L_inv = 5.004807, SciCos variant: 4854
+  kb = 2.07           #889/60*2*pi * 193
+  #L = 0.208 / 1000   #L_RX28 = 0.208 mH; 
+  #L_inv = 1000       #L_inv = 5.004807, SciCos variant: 4854
   R = 8.3            #R_RX28 = 8.3 ohm
   updateMotor: (bodyObject, bodyJoint) =>
     # motor model
     U_csl = bodyObject.U_csl
-    I_t = (U_csl - (kb*(-bodyJoint.angle_speed_csl)))*(1/R)     #U_csl-(R*I_tm1)-(kb*bodyJoint.angle_speed)
+    I_t = (U_csl - (kb*(-bodyJoint.angle_diff_csl/dt)))*(1/R)     #U_csl-(R*I_tm1)-(kb*bodyJoint.angle_diff_csl)
     bodyObject.motor_control = km * I_t
     if bodyObject.motor_control
       bodyJoint.m_applyTorque = bodyObject.motor_control #* bodyJoint.csl_sign
@@ -695,7 +727,7 @@ class physics
     #w2 = -0.2   #-1 bias
     #mode = w0 * Math.abs(@angle) + w1 * @angle_speed + w2
   
-    mode = @calcMode(bodyObject.motor_control, bodyJoint.angle_speed_csl)
+    mode = @calcMode(bodyObject.motor_control, bodyJoint.angle_diff_csl)
     #mode = @clip(mode, 1.3)
     mode = @clip(mode, 3)
     map_mode bodyJoint, mode
@@ -766,6 +798,7 @@ class physics
         if @pend_style is 4
           @updateCSL @body, @lower_joint
           @updateMotor @body, @lower_joint
+          
 
         @world.Step(
           dt,             #timestep (1 / fps)

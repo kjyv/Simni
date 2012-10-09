@@ -38,6 +38,29 @@ fprintfMat("/Users/stefan/Dropbox/diplomarbeit/2d-simulation/data/SemniContourCC
 
 // contour of each module from contour for milling machine -> SemniOutline.txt
 
+// The data might contain points of more than one module.
+// Each of the N modules, given by a list of points, should start with a preamble containing properties of the module.
+// At the end, there should be a list of points of all solid contours.
+//
+// SI - System!
+//
+// structure of preamble
+// pre = [ M  j  jamin  c  L ;
+//         p  j  jamax  c  m ] ...
+//
+//      M     = module number
+//      p     = parent: which module number
+//      j     = joint (coordinate)
+//      jamin = minimum of joint angle (Min: -%pi)
+//      jamax = maximum of joint angle (Max:  %pi)
+//      c     = center of mass (coordinate)
+//      m     = mass
+//      L     = length of following list of points
+//
+// preamble for solid contours
+// pre0 = [ -M ;
+//           L ]
+
 R1 = [Semni(122:241, :); Semni(763:1004, :)]'
 R1 = normfactor * R1(:, 1:resolution:361)
 R1i = [Semni(1276:-1:1005, :); Semni(1365:-1:1277, :)]'
@@ -52,18 +75,25 @@ R1 = [ [ 1  0.0 -%pi         0.184  200 ;
 
 R2 = [Semni(763:-resolution:441, :); Semni(1492:resolution:1644, :)]'
 
-//R2 = [R2(:,:) R2(:,1)]
 arm1Contour = normfactor*[R2(1,1:resolution:size(R2, 2)); R2(2,1:resolution:size(R2, 2))]'
 plot2d(arm1Contour(:,1), arm1Contour(:,2))
 //decompose(arm1Contour(:,1)',arm1Contour(:,2)', "/Users/stefan/Dropbox/diplomarbeit/2d-simulation/data/SemniArm1ContourCCW.txt")
 
+//R2 = [Semni(763:-1:441, :); Semni(1492:1644, :)]'
 //temp = 763 - 441 + 1 + 1644 - 1492 + 1 // = 476
 //R2 = [ [ 2  0.175 -0.89*%pi  0.158  238 ;
 //	1  0.070 0.375*%pi  0.057  0.125 ] normfactor*R2(:, 1:resolution:(temp-1)) ]
 
 R3 = [Semni(1:resolution:439, :)]'
+// old version: SEMNI without LiPo batteries
 //R3 = [ [ 3  0.094 -0.6*%pi   0.080  220 ;
 //	2  0.033      %pi   0.037  0.092 ] normfactor*R3 ]
+
+// new: SEMNI with LiPo batteries in lower leg
+R3_ = [ [ 3  0.094 -0.6*%pi   0.058  220 ;
+         2  0.033      %pi   0.046  0.18 ]]
+
+plot2d(R3_(1,4), R3_(2,4))
 
 //min(-1*R3(2,1:resolution:size(R3, 2)))
 arm2Contour = normfactor*[R3(1,1:resolution:size(R3, 2)); R3(2,1:resolution:size(R3, 2))]'

@@ -161,7 +161,7 @@ myon_precision = function(number) {
 };
 
 physics = (function() {
-  var L, L_inv, R, kb, km, was_static;
+  var R, kb, km, was_static;
 
   function physics() {
     this.update = __bind(this.update, this);
@@ -247,7 +247,7 @@ physics = (function() {
     fixDef.restitution = 0.2;
     this.fixDef = fixDef;
     fixDef.shape = new b2PolygonShape;
-    fixDef.shape.SetAsBox(0.1, 0.1);
+    fixDef.shape.SetAsBox(0.30, 0.14);
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_staticBody;
     bodyDef.position.Set(1.3, 0.8);
@@ -368,11 +368,11 @@ physics = (function() {
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_dynamicBody;
     x0 = this.ground_bodyDef.position.x;
-    y0 = this.ground_bodyDef.position.y - 0.2;
+    y0 = this.ground_bodyDef.position.y - 0.7;
     bodyDef.position.Set(x0, y0);
     this.body = this.world.CreateBody(bodyDef);
     this.fixDef = new b2FixtureDef;
-    this.fixDef.density = 2.8;
+    this.fixDef.density = 0.99;
     this.fixDef.friction = 0.6;
     this.fixDef.restitution = 0.1;
     this.fixDef.filter.groupIndex = -1;
@@ -382,6 +382,23 @@ physics = (function() {
       this.fixDef.shape.SetAsArray(fixture, fixture.length);
       this.body.CreateFixture(this.fixDef);
     }
+    this.fixDef.density = 0.00001;
+    this.fixDef.shape = new b2CircleShape;
+    this.fixDef.shape.m_p.Set(head[0].x, head[0].y);
+    this.fixDef.shape.m_radius = head[1];
+    this.fixDef.filter.groupIndex = 1;
+    this.body.CreateFixture(this.fixDef);
+    md = new b2MassData();
+    this.body.GetMassData(md);
+    md.center.Set(contourCenter.x, contourCenter.y);
+    md.I = this.body.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y);
+    this.body.SetMassData(md);
+    this.fixDef.density = 0.00001;
+    this.fixDef.shape = new b2CircleShape;
+    this.fixDef.shape.m_p.Set(contourCenter.x, contourCenter.y);
+    this.fixDef.shape.m_radius = 0.01;
+    this.fixDef.filter.groupIndex = -1;
+    this.body.CreateFixture(this.fixDef);
     this.body.z2 = 0;
     this.body.last_motor_control = 0;
     this.body.motor_control = 0;
@@ -391,7 +408,7 @@ physics = (function() {
     bodyDef2.type = b2Body.b2_dynamicBody;
     this.body2 = this.world.CreateBody(bodyDef2);
     this.fixDef2 = new b2FixtureDef;
-    this.fixDef2.density = 12;
+    this.fixDef2.density = 4.35;
     this.fixDef2.friction = 0.6;
     this.fixDef2.restitution = 0.1;
     this.fixDef2.filter.groupIndex = -1;
@@ -403,25 +420,29 @@ physics = (function() {
     }
     md = new b2MassData();
     this.body2.GetMassData(md);
-    md.I = 0.02;
+    md.center.Set(arm1Center.x, arm1Center.y);
+    md.I = this.body2.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y);
     this.body2.SetMassData(md);
+    this.fixDef2.density = 0.00001;
+    this.fixDef2.shape = new b2CircleShape;
+    this.fixDef2.shape.m_p.Set(arm1Center.x, arm2Center.y);
+    this.fixDef2.shape.m_radius = 0.01;
+    this.fixDef2.filter.groupIndex = -1;
+    this.body2.CreateFixture(this.fixDef2);
     this.body2.z2 = 0;
     this.body2.last_motor_control = 0;
     this.body2.motor_control = 0;
     this.body2.I_tm1 = 0;
     this.body2.U_csl = 0;
     jointDef = new b2RevoluteJointDef();
-    jointDef.bodyA = this.body2;
-    jointDef.bodyB = this.body;
-    jointDef.localAnchorA.Set(672 / ptm_ratio, 385 / ptm_ratio);
-    jointDef.localAnchorB.Set(672 / ptm_ratio, 385 / ptm_ratio);
-    jointDef.collideConnected = false;
+    jointDef.bodyA = this.body;
+    jointDef.bodyB = this.body2;
+    jointDef.localAnchorA.Set(arm1JointAnchor.x, arm1JointAnchor.y);
+    jointDef.localAnchorB.Set(arm1JointAnchor.x, arm1JointAnchor.y);
+    jointDef.collideConnected = true;
     jointDef.maxMotorTorque = 0.100;
     jointDef.motorSpeed = 0.0;
     jointDef.enableMotor = true;
-    jointDef.upperAngle = 0.157;
-    jointDef.lowerAngle = -1.487;
-    jointDef.enableLimit = true;
     this.upper_joint = this.world.CreateJoint(jointDef);
     this.upper_joint.angle_speed = 0;
     this.upper_joint.csl_active = false;
@@ -433,7 +454,7 @@ physics = (function() {
     bodyDef3.type = b2Body.b2_dynamicBody;
     this.body3 = this.world.CreateBody(bodyDef3);
     this.fixDef3 = new b2FixtureDef;
-    this.fixDef3.density = 30;
+    this.fixDef3.density = 10.9;
     this.fixDef3.friction = 0.6;
     this.fixDef3.restitution = 0.2;
     this.fixDef3.filter.groupIndex = -1;
@@ -445,25 +466,29 @@ physics = (function() {
     }
     md = new b2MassData();
     this.body3.GetMassData(md);
-    md.I = 0.01;
+    md.center.Set(arm2Center.x, arm2Center.y);
+    md.I = this.body3.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y);
     this.body3.SetMassData(md);
+    this.fixDef3.density = 0.00001;
+    this.fixDef3.shape = new b2CircleShape;
+    this.fixDef3.shape.m_p.Set(arm2Center.x, arm2Center.y);
+    this.fixDef3.shape.m_radius = 0.01;
+    this.fixDef3.filter.groupIndex = -1;
+    this.body3.CreateFixture(this.fixDef3);
     this.body3.z2 = 0;
     this.body3.last_motor_control = 0;
     this.body3.motor_control = 0;
     this.body3.I_tm1 = 0;
     this.body3.U_csl = 0;
     jointDef = new b2RevoluteJointDef();
-    jointDef.bodyA = this.body3;
-    jointDef.bodyB = this.body2;
-    jointDef.localAnchorA.Set(430 / ptm_ratio, 504 / ptm_ratio);
-    jointDef.localAnchorB.Set(430 / ptm_ratio, 504 / ptm_ratio);
+    jointDef.bodyA = this.body2;
+    jointDef.bodyB = this.body3;
+    jointDef.localAnchorA.Set(arm2JointAnchor.x, arm2JointAnchor.y);
+    jointDef.localAnchorB.Set(arm2JointAnchor.x, arm2JointAnchor.y);
     jointDef.collideConnected = false;
     jointDef.maxMotorTorque = 0.02;
     jointDef.motorSpeed = 0.0;
     jointDef.enableMotor = true;
-    jointDef.upperAngle = 9.27;
-    jointDef.lowerAngle = 4.57;
-    jointDef.enableLimit = true;
     this.lower_joint = this.world.CreateJoint(jointDef);
     this.lower_joint.angle_speed = 0;
     this.lower_joint.csl_active = false;
@@ -507,9 +532,6 @@ physics = (function() {
     jointDef.maxMotorTorque = beta;
     jointDef.motorSpeed = 0.0;
     jointDef.enableMotor = true;
-    jointDef.upperAngle = 0.157;
-    jointDef.lowerAngle = -1.487;
-    jointDef.enableLimit = true;
     this.lower_joint = this.world.CreateJoint(jointDef);
     this.lower_joint.angle_speed = 0;
     this.lower_joint.csl_active = false;
@@ -544,7 +566,7 @@ physics = (function() {
     sum = vel + bodyObject.last_integrated;
     bodyObject.last_integrated = gf * sum;
     if (this.pend_style === 3) {
-      limit = 2.8;
+      limit = 12;
     } else {
       limit = 3;
     }
@@ -555,32 +577,30 @@ physics = (function() {
     if (!(bodyObject.last_integrated != null) || !bodyJoint.csl_active) {
       bodyObject.last_integrated = 0;
       bodyObject.U_csl = 0;
+    }
+    if (!(bodyJoint.last_angle != null)) {
       bodyJoint.last_angle = bodyJoint.GetJointAngle();
     }
-    bodyJoint.angle_speed_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle;
+    bodyJoint.angle_diff_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle;
     if (bodyJoint.csl_active) {
-      bodyObject.U_csl = this.CSL(bodyJoint.gi, bodyJoint.gf, bodyJoint.gb, bodyJoint.angle_speed_csl, bodyJoint.gain, bodyObject);
-      if (!isMouseDown || !mouseJoint) {
-        draw_phase_space();
-      }
+      bodyObject.U_csl = this.CSL(bodyJoint.gi, bodyJoint.gf, bodyJoint.gb, bodyJoint.angle_diff_csl, bodyJoint.gain, bodyObject);
+    }
+    if (!isMouseDown || !mouseJoint) {
+      draw_phase_space();
     }
     return bodyJoint.last_angle = bodyJoint.GetJointAngle();
   };
 
   km = 10.7 * 193 * 0.4 / 1000;
 
-  kb = 5;
-
-  L = 0.208 / 1000;
-
-  L_inv = 1000;
+  kb = 2.07;
 
   R = 8.3;
 
   physics.prototype.updateMotor = function(bodyObject, bodyJoint) {
     var I_t, U_csl;
     U_csl = bodyObject.U_csl;
-    I_t = (U_csl - (kb * (-bodyJoint.angle_speed_csl))) * (1 / R);
+    I_t = (U_csl - (kb * (-bodyJoint.angle_diff_csl / dt))) * (1 / R);
     bodyObject.motor_control = km * I_t;
     if (bodyObject.motor_control) {
       return bodyJoint.m_applyTorque = bodyObject.motor_control;
@@ -640,7 +660,7 @@ physics = (function() {
 
   physics.prototype.updateMode = function(bodyObject, bodyJoint) {
     var mode;
-    mode = this.calcMode(bodyObject.motor_control, bodyJoint.angle_speed_csl);
+    mode = this.calcMode(bodyObject.motor_control, bodyJoint.angle_diff_csl);
     mode = this.clip(mode, 3);
     return map_mode(bodyJoint, mode);
   };

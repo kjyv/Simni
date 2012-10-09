@@ -9,7 +9,7 @@ package
     public class PhysicsData extends Object
 	{
 		// ptm ratio
-        public var ptm_ratio:Number = 1000;
+        public var ptm_ratio:Number = 4000;
 		
 		// the physcis data 
 		var dict:Dictionary;
@@ -89,24 +89,119 @@ package
                                             2, 0, 0,
                                             // categoryBits, maskBits, groupIndex, isSensor
 											1, 65535, 0, false,
+											'POLYGON',
+
+                                            // vertexes of decomposed polygons
+                                            [
+
+                                                [   new b2Vec2(308/ptm_ratio, 455/ptm_ratio)  ,  new b2Vec2(316/ptm_ratio, 548/ptm_ratio)  ,  new b2Vec2(298/ptm_ratio, 534/ptm_ratio)  ,  new b2Vec2(284/ptm_ratio, 521/ptm_ratio)  ,  new b2Vec2(277/ptm_ratio, 484/ptm_ratio)  ,  new b2Vec2(282/ptm_ratio, 472/ptm_ratio)  ,  new b2Vec2(294/ptm_ratio, 460/ptm_ratio)  ] ,
+                                                [   new b2Vec2(277/ptm_ratio, 484/ptm_ratio)  ,  new b2Vec2(284/ptm_ratio, 521/ptm_ratio)  ,  new b2Vec2(275/ptm_ratio, 499/ptm_ratio)  ] ,
+                                                [   new b2Vec2(613/ptm_ratio, 571/ptm_ratio)  ,  new b2Vec2(620/ptm_ratio, 589/ptm_ratio)  ,  new b2Vec2(622/ptm_ratio, 608/ptm_ratio)  ,  new b2Vec2(468/ptm_ratio, 642/ptm_ratio)  ,  new b2Vec2(402/ptm_ratio, 608/ptm_ratio)  ,  new b2Vec2(584/ptm_ratio, 546/ptm_ratio)  ,  new b2Vec2(601/ptm_ratio, 556/ptm_ratio)  ] ,
+                                                [   new b2Vec2(607/ptm_ratio, 647/ptm_ratio)  ,  new b2Vec2(590/ptm_ratio, 662/ptm_ratio)  ,  new b2Vec2(548/ptm_ratio, 671/ptm_ratio)  ,  new b2Vec2(525/ptm_ratio, 664/ptm_ratio)  ,  new b2Vec2(499/ptm_ratio, 655/ptm_ratio)  ,  new b2Vec2(468/ptm_ratio, 642/ptm_ratio)  ,  new b2Vec2(622/ptm_ratio, 608/ptm_ratio)  ,  new b2Vec2(618/ptm_ratio, 629/ptm_ratio)  ] ,
+                                                [   new b2Vec2(308/ptm_ratio, 455/ptm_ratio)  ,  new b2Vec2(356/ptm_ratio, 473/ptm_ratio)  ,  new b2Vec2(373/ptm_ratio, 485/ptm_ratio)  ,  new b2Vec2(402/ptm_ratio, 608/ptm_ratio)  ,  new b2Vec2(358/ptm_ratio, 580/ptm_ratio)  ,  new b2Vec2(337/ptm_ratio, 565/ptm_ratio)  ,  new b2Vec2(316/ptm_ratio, 548/ptm_ratio)  ] ,
+                                                [   new b2Vec2(548/ptm_ratio, 671/ptm_ratio)  ,  new b2Vec2(590/ptm_ratio, 662/ptm_ratio)  ,  new b2Vec2(570/ptm_ratio, 670/ptm_ratio)  ] ,
+                                                [   new b2Vec2(356/ptm_ratio, 473/ptm_ratio)  ,  new b2Vec2(308/ptm_ratio, 455/ptm_ratio)  ,  new b2Vec2(322/ptm_ratio, 454/ptm_ratio)  ,  new b2Vec2(337/ptm_ratio, 458/ptm_ratio)  ] ,
+                                                [   new b2Vec2(584/ptm_ratio, 546/ptm_ratio)  ,  new b2Vec2(402/ptm_ratio, 608/ptm_ratio)  ,  new b2Vec2(517/ptm_ratio, 537/ptm_ratio)  ,  new b2Vec2(564/ptm_ratio, 539/ptm_ratio)  ] ,
+                                                [   new b2Vec2(399/ptm_ratio, 500/ptm_ratio)  ,  new b2Vec2(402/ptm_ratio, 608/ptm_ratio)  ,  new b2Vec2(373/ptm_ratio, 485/ptm_ratio)  ] ,
+                                                [   new b2Vec2(429/ptm_ratio, 514/ptm_ratio)  ,  new b2Vec2(402/ptm_ratio, 608/ptm_ratio)  ,  new b2Vec2(399/ptm_ratio, 500/ptm_ratio)  ] ,
+                                                [   new b2Vec2(458/ptm_ratio, 525/ptm_ratio)  ,  new b2Vec2(402/ptm_ratio, 608/ptm_ratio)  ,  new b2Vec2(429/ptm_ratio, 514/ptm_ratio)  ] ,
+                                                [   new b2Vec2(490/ptm_ratio, 532/ptm_ratio)  ,  new b2Vec2(402/ptm_ratio, 608/ptm_ratio)  ,  new b2Vec2(458/ptm_ratio, 525/ptm_ratio)  ] ,
+                                                [   new b2Vec2(517/ptm_ratio, 537/ptm_ratio)  ,  new b2Vec2(402/ptm_ratio, 608/ptm_ratio)  ,  new b2Vec2(490/ptm_ratio, 532/ptm_ratio)  ]
+											]
+
+										]
+ ,
+										[
+											// density, friction, restitution
+                                            2, 0, 0,
+                                            // categoryBits, maskBits, groupIndex, isSensor
+											1, 65535, 0, false,
+											'POLYGON',
+
+                                            // vertexes of decomposed polygons
+                                            [
+
+                                                [   new b2Vec2(514/ptm_ratio, 554/ptm_ratio)  ,  new b2Vec2(628/ptm_ratio, 684/ptm_ratio)  ,  new b2Vec2(593/ptm_ratio, 681/ptm_ratio)  ,  new b2Vec2(559/ptm_ratio, 675/ptm_ratio)  ,  new b2Vec2(531/ptm_ratio, 667/ptm_ratio)  ,  new b2Vec2(499/ptm_ratio, 639/ptm_ratio)  ,  new b2Vec2(489/ptm_ratio, 598/ptm_ratio)  ,  new b2Vec2(496/ptm_ratio, 573/ptm_ratio)  ] ,
+                                                [   new b2Vec2(489/ptm_ratio, 598/ptm_ratio)  ,  new b2Vec2(499/ptm_ratio, 639/ptm_ratio)  ,  new b2Vec2(490/ptm_ratio, 618/ptm_ratio)  ] ,
+                                                [   new b2Vec2(499/ptm_ratio, 639/ptm_ratio)  ,  new b2Vec2(531/ptm_ratio, 667/ptm_ratio)  ,  new b2Vec2(510/ptm_ratio, 654/ptm_ratio)  ] ,
+                                                [   new b2Vec2(514/ptm_ratio, 554/ptm_ratio)  ,  new b2Vec2(613/ptm_ratio, 530/ptm_ratio)  ,  new b2Vec2(776/ptm_ratio, 644/ptm_ratio)  ,  new b2Vec2(728/ptm_ratio, 666/ptm_ratio)  ,  new b2Vec2(679/ptm_ratio, 680/ptm_ratio)  ,  new b2Vec2(628/ptm_ratio, 684/ptm_ratio)  ] ,
+                                                [   new b2Vec2(857/ptm_ratio, 419/ptm_ratio)  ,  new b2Vec2(875/ptm_ratio, 439/ptm_ratio)  ,  new b2Vec2(814/ptm_ratio, 619/ptm_ratio)  ,  new b2Vec2(776/ptm_ratio, 644/ptm_ratio)  ,  new b2Vec2(691/ptm_ratio, 473/ptm_ratio)  ,  new b2Vec2(777/ptm_ratio, 397/ptm_ratio)  ,  new b2Vec2(807/ptm_ratio, 397/ptm_ratio)  ,  new b2Vec2(834/ptm_ratio, 404/ptm_ratio)  ] ,
+                                                [   new b2Vec2(889/ptm_ratio, 523/ptm_ratio)  ,  new b2Vec2(877/ptm_ratio, 550/ptm_ratio)  ,  new b2Vec2(851/ptm_ratio, 583/ptm_ratio)  ,  new b2Vec2(814/ptm_ratio, 619/ptm_ratio)  ,  new b2Vec2(875/ptm_ratio, 439/ptm_ratio)  ,  new b2Vec2(888/ptm_ratio, 465/ptm_ratio)  ,  new b2Vec2(893/ptm_ratio, 494/ptm_ratio)  ] ,
+                                                [   new b2Vec2(752/ptm_ratio, 405/ptm_ratio)  ,  new b2Vec2(777/ptm_ratio, 397/ptm_ratio)  ,  new b2Vec2(691/ptm_ratio, 473/ptm_ratio)  ,  new b2Vec2(711/ptm_ratio, 440/ptm_ratio)  ,  new b2Vec2(732/ptm_ratio, 417/ptm_ratio)  ] ,
+                                                [   new b2Vec2(776/ptm_ratio, 644/ptm_ratio)  ,  new b2Vec2(655/ptm_ratio, 508/ptm_ratio)  ,  new b2Vec2(691/ptm_ratio, 473/ptm_ratio)  ] ,
+                                                [   new b2Vec2(776/ptm_ratio, 644/ptm_ratio)  ,  new b2Vec2(613/ptm_ratio, 530/ptm_ratio)  ,  new b2Vec2(655/ptm_ratio, 508/ptm_ratio)  ] ,
+                                                [   new b2Vec2(543/ptm_ratio, 540/ptm_ratio)  ,  new b2Vec2(577/ptm_ratio, 538/ptm_ratio)  ,  new b2Vec2(514/ptm_ratio, 554/ptm_ratio)  ,  new b2Vec2(526/ptm_ratio, 546/ptm_ratio)  ]
+											]
+
+										]
+ ,
+										[
+											// density, friction, restitution
+                                            2, 0, 0,
+                                            // categoryBits, maskBits, groupIndex, isSensor
+											1, 65535, 0, false,
+											'POLYGON',
+
+                                            // vertexes of decomposed polygons
+                                            [
+
+                                                [   new b2Vec2(277/ptm_ratio, 487/ptm_ratio)  ,  new b2Vec2(292/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(335/ptm_ratio, 429/ptm_ratio)  ,  new b2Vec2(327/ptm_ratio, 556/ptm_ratio)  ,  new b2Vec2(303/ptm_ratio, 538/ptm_ratio)  ,  new b2Vec2(285/ptm_ratio, 521/ptm_ratio)  ,  new b2Vec2(276/ptm_ratio, 504/ptm_ratio)  ] ,
+                                                [   new b2Vec2(292/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(277/ptm_ratio, 487/ptm_ratio)  ,  new b2Vec2(282/ptm_ratio, 474/ptm_ratio)  ] ,
+                                                [   new b2Vec2(335/ptm_ratio, 429/ptm_ratio)  ,  new b2Vec2(368/ptm_ratio, 405/ptm_ratio)  ,  new b2Vec2(411/ptm_ratio, 378/ptm_ratio)  ,  new b2Vec2(465/ptm_ratio, 350/ptm_ratio)  ,  new b2Vec2(534/ptm_ratio, 323/ptm_ratio)  ,  new b2Vec2(404/ptm_ratio, 609/ptm_ratio)  ,  new b2Vec2(360/ptm_ratio, 582/ptm_ratio)  ,  new b2Vec2(327/ptm_ratio, 556/ptm_ratio)  ] ,
+                                                [   new b2Vec2(534/ptm_ratio, 323/ptm_ratio)  ,  new b2Vec2(596/ptm_ratio, 306/ptm_ratio)  ,  new b2Vec2(654/ptm_ratio, 295/ptm_ratio)  ,  new b2Vec2(610/ptm_ratio, 689/ptm_ratio)  ,  new b2Vec2(553/ptm_ratio, 674/ptm_ratio)  ,  new b2Vec2(492/ptm_ratio, 652/ptm_ratio)  ,  new b2Vec2(448/ptm_ratio, 632/ptm_ratio)  ,  new b2Vec2(404/ptm_ratio, 609/ptm_ratio)  ] ,
+                                                [   new b2Vec2(709/ptm_ratio, 289/ptm_ratio)  ,  new b2Vec2(769/ptm_ratio, 288/ptm_ratio)  ,  new b2Vec2(833/ptm_ratio, 293/ptm_ratio)  ,  new b2Vec2(878/ptm_ratio, 299/ptm_ratio)  ,  new b2Vec2(716/ptm_ratio, 702/ptm_ratio)  ,  new b2Vec2(660/ptm_ratio, 697/ptm_ratio)  ,  new b2Vec2(610/ptm_ratio, 689/ptm_ratio)  ,  new b2Vec2(654/ptm_ratio, 295/ptm_ratio)  ] ,
+                                                [   new b2Vec2(1147/ptm_ratio, 560/ptm_ratio)  ,  new b2Vec2(1122/ptm_ratio, 593/ptm_ratio)  ,  new b2Vec2(1098/ptm_ratio, 611/ptm_ratio)  ,  new b2Vec2(1060/ptm_ratio, 631/ptm_ratio)  ,  new b2Vec2(1018/ptm_ratio, 650/ptm_ratio)  ,  new b2Vec2(1056/ptm_ratio, 358/ptm_ratio)  ,  new b2Vec2(1162/ptm_ratio, 518/ptm_ratio)  ,  new b2Vec2(1157/ptm_ratio, 540/ptm_ratio)  ] ,
+                                                [   new b2Vec2(1122/ptm_ratio, 593/ptm_ratio)  ,  new b2Vec2(1147/ptm_ratio, 560/ptm_ratio)  ,  new b2Vec2(1137/ptm_ratio, 577/ptm_ratio)  ] ,
+                                                [   new b2Vec2(1146/ptm_ratio, 429/ptm_ratio)  ,  new b2Vec2(1156/ptm_ratio, 450/ptm_ratio)  ,  new b2Vec2(1162/ptm_ratio, 473/ptm_ratio)  ,  new b2Vec2(1162/ptm_ratio, 518/ptm_ratio)  ,  new b2Vec2(1056/ptm_ratio, 358/ptm_ratio)  ,  new b2Vec2(1086/ptm_ratio, 374/ptm_ratio)  ,  new b2Vec2(1111/ptm_ratio, 390/ptm_ratio)  ,  new b2Vec2(1130/ptm_ratio, 407/ptm_ratio)  ] ,
+                                                [   new b2Vec2(921/ptm_ratio, 309/ptm_ratio)  ,  new b2Vec2(967/ptm_ratio, 322/ptm_ratio)  ,  new b2Vec2(1018/ptm_ratio, 341/ptm_ratio)  ,  new b2Vec2(1018/ptm_ratio, 650/ptm_ratio)  ,  new b2Vec2(938/ptm_ratio, 678/ptm_ratio)  ,  new b2Vec2(901/ptm_ratio, 687/ptm_ratio)  ,  new b2Vec2(716/ptm_ratio, 702/ptm_ratio)  ,  new b2Vec2(878/ptm_ratio, 299/ptm_ratio)  ] ,
+                                                [   new b2Vec2(1162/ptm_ratio, 518/ptm_ratio)  ,  new b2Vec2(1162/ptm_ratio, 473/ptm_ratio)  ,  new b2Vec2(1164/ptm_ratio, 495/ptm_ratio)  ] ,
+                                                [   new b2Vec2(1018/ptm_ratio, 650/ptm_ratio)  ,  new b2Vec2(1018/ptm_ratio, 341/ptm_ratio)  ,  new b2Vec2(1056/ptm_ratio, 358/ptm_ratio)  ] ,
+                                                [   new b2Vec2(938/ptm_ratio, 678/ptm_ratio)  ,  new b2Vec2(1018/ptm_ratio, 650/ptm_ratio)  ,  new b2Vec2(980/ptm_ratio, 665/ptm_ratio)  ] ,
+                                                [   new b2Vec2(829/ptm_ratio, 699/ptm_ratio)  ,  new b2Vec2(792/ptm_ratio, 702/ptm_ratio)  ,  new b2Vec2(753/ptm_ratio, 703/ptm_ratio)  ,  new b2Vec2(716/ptm_ratio, 702/ptm_ratio)  ,  new b2Vec2(901/ptm_ratio, 687/ptm_ratio)  ,  new b2Vec2(866/ptm_ratio, 694/ptm_ratio)  ]
+											]
+
+										]
+ ,
+										[
+											// density, friction, restitution
+                                            2, 0, 0,
+                                            // categoryBits, maskBits, groupIndex, isSensor
+											1, 65535, 0, false,
+											'POLYGON',
+
+                                            // vertexes of decomposed polygons
+                                            [
+
+                                                [   new b2Vec2(554/ptm_ratio, 605/ptm_ratio)  ,  new b2Vec2(201/ptm_ratio, 764/ptm_ratio)  ,  new b2Vec2(203/ptm_ratio, 753/ptm_ratio)  ]
+											]
+
+										]
+ ,
+										[
+											// density, friction, restitution
+                                            2, 0, 0,
+                                            // categoryBits, maskBits, groupIndex, isSensor
+											1, 65535, 0, false,
+											'POLYGON',
+
+                                            // vertexes of decomposed polygons
+                                            [
+
+                                                [   new b2Vec2(794/ptm_ratio, 496/ptm_ratio)  ,  new b2Vec2(645/ptm_ratio, 282/ptm_ratio)  ,  new b2Vec2(659/ptm_ratio, 279/ptm_ratio)  ]
+											]
+
+										]
+ ,
+										[
+											// density, friction, restitution
+                                            2, 0, 0,
+                                            // categoryBits, maskBits, groupIndex, isSensor
+											1, 65535, 0, false,
 											'CIRCLE',
 
                                             // center, radius
-                                            new b2Vec2(-10.000/ptm_ratio,722.000/ptm_ratio),
-                                            10.000/ptm_ratio
-
-										]
- ,
-										[
-											// density, friction, restitution
-                                            2, 0, 0,
-                                            // categoryBits, maskBits, groupIndex, isSensor
-											1, 65535, 0, false,
-											'CIRCLE',
-
-                                            // center, radius
-                                            new b2Vec2(-10.000/ptm_ratio,722.000/ptm_ratio),
-                                            10.000/ptm_ratio
+                                            new b2Vec2(1030.545/ptm_ratio,496.364/ptm_ratio),
+                                            117.004/ptm_ratio
 
 										]
  ,
@@ -120,19 +215,7 @@ package
                                             // vertexes of decomposed polygons
                                             [
 
-                                                [   new b2Vec2(153/ptm_ratio, 379/ptm_ratio)  ,  new b2Vec2(161/ptm_ratio, 368/ptm_ratio)  ,  new b2Vec2(178.66667175293/ptm_ratio, 358/ptm_ratio)  ,  new b2Vec2(230/ptm_ratio, 374/ptm_ratio)  ,  new b2Vec2(190/ptm_ratio, 447/ptm_ratio)  ,  new b2Vec2(158/ptm_ratio, 422/ptm_ratio)  ,  new b2Vec2(149/ptm_ratio, 400/ptm_ratio)  ] ,
-                                                [   new b2Vec2(211/ptm_ratio, 359/ptm_ratio)  ,  new b2Vec2(230/ptm_ratio, 374/ptm_ratio)  ,  new b2Vec2(178.66667175293/ptm_ratio, 358/ptm_ratio)  ,  new b2Vec2(196/ptm_ratio, 355.333343505859/ptm_ratio)  ] ,
-                                                [   new b2Vec2(487/ptm_ratio, 472/ptm_ratio)  ,  new b2Vec2(494/ptm_ratio, 490/ptm_ratio)  ,  new b2Vec2(496/ptm_ratio, 509/ptm_ratio)  ,  new b2Vec2(346/ptm_ratio, 539/ptm_ratio)  ,  new b2Vec2(278/ptm_ratio, 504/ptm_ratio)  ,  new b2Vec2(458/ptm_ratio, 447/ptm_ratio)  ,  new b2Vec2(475/ptm_ratio, 457/ptm_ratio)  ] ,
-                                                [   new b2Vec2(399/ptm_ratio, 565/ptm_ratio)  ,  new b2Vec2(375/ptm_ratio, 554/ptm_ratio)  ,  new b2Vec2(346/ptm_ratio, 539/ptm_ratio)  ,  new b2Vec2(496/ptm_ratio, 509/ptm_ratio)  ,  new b2Vec2(491/ptm_ratio, 530/ptm_ratio)  ,  new b2Vec2(464/ptm_ratio, 563/ptm_ratio)  ,  new b2Vec2(445/ptm_ratio, 571/ptm_ratio)  ,  new b2Vec2(421/ptm_ratio, 572/ptm_ratio)  ] ,
-                                                [   new b2Vec2(464/ptm_ratio, 563/ptm_ratio)  ,  new b2Vec2(491/ptm_ratio, 530/ptm_ratio)  ,  new b2Vec2(481/ptm_ratio, 548/ptm_ratio)  ] ,
-                                                [   new b2Vec2(178.66667175293/ptm_ratio, 358/ptm_ratio)  ,  new b2Vec2(161/ptm_ratio, 368/ptm_ratio)  ,  new b2Vec2(170/ptm_ratio, 361/ptm_ratio)  ] ,
-                                                [   new b2Vec2(230/ptm_ratio, 374/ptm_ratio)  ,  new b2Vec2(247/ptm_ratio, 386/ptm_ratio)  ,  new b2Vec2(233/ptm_ratio, 481/ptm_ratio)  ,  new b2Vec2(210/ptm_ratio, 464/ptm_ratio)  ,  new b2Vec2(190/ptm_ratio, 447/ptm_ratio)  ] ,
-                                                [   new b2Vec2(268/ptm_ratio, 396/ptm_ratio)  ,  new b2Vec2(233/ptm_ratio, 481/ptm_ratio)  ,  new b2Vec2(247/ptm_ratio, 386/ptm_ratio)  ] ,
-                                                [   new b2Vec2(332/ptm_ratio, 426/ptm_ratio)  ,  new b2Vec2(278/ptm_ratio, 504/ptm_ratio)  ,  new b2Vec2(253.33332824707/ptm_ratio, 492/ptm_ratio)  ,  new b2Vec2(233/ptm_ratio, 481/ptm_ratio)  ,  new b2Vec2(268/ptm_ratio, 396/ptm_ratio)  ] ,
-                                                [   new b2Vec2(332/ptm_ratio, 426/ptm_ratio)  ,  new b2Vec2(458/ptm_ratio, 447/ptm_ratio)  ,  new b2Vec2(278/ptm_ratio, 504/ptm_ratio)  ] ,
-                                                [   new b2Vec2(458/ptm_ratio, 447/ptm_ratio)  ,  new b2Vec2(418/ptm_ratio, 439/ptm_ratio)  ,  new b2Vec2(438/ptm_ratio, 440/ptm_ratio)  ] ,
-                                                [   new b2Vec2(391/ptm_ratio, 435/ptm_ratio)  ,  new b2Vec2(332/ptm_ratio, 426/ptm_ratio)  ,  new b2Vec2(364/ptm_ratio, 430/ptm_ratio)  ] ,
-                                                [   new b2Vec2(458/ptm_ratio, 447/ptm_ratio)  ,  new b2Vec2(391/ptm_ratio, 435/ptm_ratio)  ,  new b2Vec2(418/ptm_ratio, 439/ptm_ratio)  ]
+                                                [   new b2Vec2(389/ptm_ratio, 632/ptm_ratio)  ,  new b2Vec2(378/ptm_ratio, 616/ptm_ratio)  ,  new b2Vec2(447/ptm_ratio, 568/ptm_ratio)  ]
 											]
 
 										]
@@ -147,15 +230,7 @@ package
                                             // vertexes of decomposed polygons
                                             [
 
-                                                [   new b2Vec2(709/ptm_ratio, 306/ptm_ratio)  ,  new b2Vec2(747/ptm_ratio, 338/ptm_ratio)  ,  new b2Vec2(569/ptm_ratio, 577/ptm_ratio)  ,  new b2Vec2(523/ptm_ratio, 581/ptm_ratio)  ,  new b2Vec2(563/ptm_ratio, 374/ptm_ratio)  ,  new b2Vec2(583/ptm_ratio, 342/ptm_ratio)  ,  new b2Vec2(649/ptm_ratio, 299/ptm_ratio)  ,  new b2Vec2(681/ptm_ratio, 297/ptm_ratio)  ] ,
-                                                [   new b2Vec2(415/ptm_ratio, 441/ptm_ratio)  ,  new b2Vec2(439/ptm_ratio, 438/ptm_ratio)  ,  new b2Vec2(374/ptm_ratio, 471/ptm_ratio)  ,  new b2Vec2(379/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(398/ptm_ratio, 447/ptm_ratio)  ] ,
-                                                [   new b2Vec2(767/ptm_ratio, 393/ptm_ratio)  ,  new b2Vec2(764/ptm_ratio, 419/ptm_ratio)  ,  new b2Vec2(754/ptm_ratio, 445/ptm_ratio)  ,  new b2Vec2(715/ptm_ratio, 495/ptm_ratio)  ,  new b2Vec2(649/ptm_ratio, 546/ptm_ratio)  ,  new b2Vec2(569/ptm_ratio, 577/ptm_ratio)  ,  new b2Vec2(747/ptm_ratio, 338/ptm_ratio)  ,  new b2Vec2(762/ptm_ratio, 365/ptm_ratio)  ] ,
-                                                [   new b2Vec2(747/ptm_ratio, 338/ptm_ratio)  ,  new b2Vec2(709/ptm_ratio, 306/ptm_ratio)  ,  new b2Vec2(730/ptm_ratio, 319/ptm_ratio)  ] ,
-                                                [   new b2Vec2(374/ptm_ratio, 544/ptm_ratio)  ,  new b2Vec2(366/ptm_ratio, 524/ptm_ratio)  ,  new b2Vec2(431/ptm_ratio, 573/ptm_ratio)  ,  new b2Vec2(413/ptm_ratio, 570/ptm_ratio)  ,  new b2Vec2(396/ptm_ratio, 564/ptm_ratio)  ,  new b2Vec2(384/ptm_ratio, 556/ptm_ratio)  ] ,
-                                                [   new b2Vec2(366/ptm_ratio, 524/ptm_ratio)  ,  new b2Vec2(363/ptm_ratio, 509/ptm_ratio)  ,  new b2Vec2(364/ptm_ratio, 496/ptm_ratio)  ,  new b2Vec2(485/ptm_ratio, 430/ptm_ratio)  ,  new b2Vec2(527/ptm_ratio, 410/ptm_ratio)  ,  new b2Vec2(523/ptm_ratio, 581/ptm_ratio)  ,  new b2Vec2(477/ptm_ratio, 582/ptm_ratio)  ,  new b2Vec2(431/ptm_ratio, 573/ptm_ratio)  ] ,
-                                                [   new b2Vec2(485/ptm_ratio, 430/ptm_ratio)  ,  new b2Vec2(364/ptm_ratio, 496/ptm_ratio)  ,  new b2Vec2(367/ptm_ratio, 485/ptm_ratio)  ,  new b2Vec2(374/ptm_ratio, 471/ptm_ratio)  ,  new b2Vec2(439/ptm_ratio, 438/ptm_ratio)  ] ,
-                                                [   new b2Vec2(649/ptm_ratio, 299/ptm_ratio)  ,  new b2Vec2(583/ptm_ratio, 342/ptm_ratio)  ,  new b2Vec2(606/ptm_ratio, 318/ptm_ratio)  ,  new b2Vec2(624/ptm_ratio, 307/ptm_ratio)  ] ,
-                                                [   new b2Vec2(563/ptm_ratio, 374/ptm_ratio)  ,  new b2Vec2(523/ptm_ratio, 581/ptm_ratio)  ,  new b2Vec2(527/ptm_ratio, 410/ptm_ratio)  ]
+                                                [   new b2Vec2(758/ptm_ratio, 752/ptm_ratio)  ,  new b2Vec2(742/ptm_ratio, 753/ptm_ratio)  ,  new b2Vec2(743/ptm_ratio, 535/ptm_ratio)  ]
 											]
 
 										]
@@ -170,49 +245,7 @@ package
                                             // vertexes of decomposed polygons
                                             [
 
-                                                [   new b2Vec2(150/ptm_ratio, 388/ptm_ratio)  ,  new b2Vec2(165/ptm_ratio, 364/ptm_ratio)  ,  new b2Vec2(208/ptm_ratio, 330/ptm_ratio)  ,  new b2Vec2(200/ptm_ratio, 457/ptm_ratio)  ,  new b2Vec2(173/ptm_ratio, 436/ptm_ratio)  ,  new b2Vec2(159/ptm_ratio, 423/ptm_ratio)  ,  new b2Vec2(150/ptm_ratio, 405/ptm_ratio)  ] ,
-                                                [   new b2Vec2(165/ptm_ratio, 364/ptm_ratio)  ,  new b2Vec2(150/ptm_ratio, 388/ptm_ratio)  ,  new b2Vec2(155/ptm_ratio, 375/ptm_ratio)  ] ,
-                                                [   new b2Vec2(208/ptm_ratio, 330/ptm_ratio)  ,  new b2Vec2(241/ptm_ratio, 306/ptm_ratio)  ,  new b2Vec2(284/ptm_ratio, 279/ptm_ratio)  ,  new b2Vec2(338/ptm_ratio, 251/ptm_ratio)  ,  new b2Vec2(407/ptm_ratio, 224/ptm_ratio)  ,  new b2Vec2(277/ptm_ratio, 510/ptm_ratio)  ,  new b2Vec2(234/ptm_ratio, 482/ptm_ratio)  ,  new b2Vec2(200/ptm_ratio, 457/ptm_ratio)  ] ,
-                                                [   new b2Vec2(469/ptm_ratio, 207/ptm_ratio)  ,  new b2Vec2(527/ptm_ratio, 196/ptm_ratio)  ,  new b2Vec2(483/ptm_ratio, 589/ptm_ratio)  ,  new b2Vec2(426/ptm_ratio, 575/ptm_ratio)  ,  new b2Vec2(352/ptm_ratio, 548/ptm_ratio)  ,  new b2Vec2(314/ptm_ratio, 530/ptm_ratio)  ,  new b2Vec2(277/ptm_ratio, 510/ptm_ratio)  ,  new b2Vec2(407/ptm_ratio, 224/ptm_ratio)  ] ,
-                                                [   new b2Vec2(1031/ptm_ratio, 354/ptm_ratio)  ,  new b2Vec2(1038/ptm_ratio, 396/ptm_ratio)  ,  new b2Vec2(1036/ptm_ratio, 419/ptm_ratio)  ,  new b2Vec2(1021/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(963/ptm_ratio, 277/ptm_ratio)  ,  new b2Vec2(982/ptm_ratio, 288/ptm_ratio)  ,  new b2Vec2(1003/ptm_ratio, 306/ptm_ratio)  ,  new b2Vec2(1021/ptm_ratio, 330/ptm_ratio)  ] ,
-                                                [   new b2Vec2(1038/ptm_ratio, 396/ptm_ratio)  ,  new b2Vec2(1031/ptm_ratio, 354/ptm_ratio)  ,  new b2Vec2(1037/ptm_ratio, 375/ptm_ratio)  ] ,
-                                                [   new b2Vec2(582/ptm_ratio, 190/ptm_ratio)  ,  new b2Vec2(642/ptm_ratio, 189/ptm_ratio)  ,  new b2Vec2(706/ptm_ratio, 194/ptm_ratio)  ,  new b2Vec2(751/ptm_ratio, 200/ptm_ratio)  ,  new b2Vec2(589/ptm_ratio, 603/ptm_ratio)  ,  new b2Vec2(533/ptm_ratio, 598/ptm_ratio)  ,  new b2Vec2(483/ptm_ratio, 589/ptm_ratio)  ,  new b2Vec2(527/ptm_ratio, 196/ptm_ratio)  ] ,
-                                                [   new b2Vec2(971/ptm_ratio, 512/ptm_ratio)  ,  new b2Vec2(933/ptm_ratio, 532/ptm_ratio)  ,  new b2Vec2(891/ptm_ratio, 551/ptm_ratio)  ,  new b2Vec2(811/ptm_ratio, 579/ptm_ratio)  ,  new b2Vec2(589/ptm_ratio, 603/ptm_ratio)  ,  new b2Vec2(1021/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(1010/ptm_ratio, 478/ptm_ratio)  ,  new b2Vec2(995/ptm_ratio, 495/ptm_ratio)  ] ,
-                                                [   new b2Vec2(794/ptm_ratio, 210/ptm_ratio)  ,  new b2Vec2(840/ptm_ratio, 223/ptm_ratio)  ,  new b2Vec2(891/ptm_ratio, 242/ptm_ratio)  ,  new b2Vec2(929/ptm_ratio, 259/ptm_ratio)  ,  new b2Vec2(1021/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(589/ptm_ratio, 603/ptm_ratio)  ,  new b2Vec2(751/ptm_ratio, 200/ptm_ratio)  ] ,
-                                                [   new b2Vec2(1021/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(1036/ptm_ratio, 419/ptm_ratio)  ,  new b2Vec2(1031/ptm_ratio, 441/ptm_ratio)  ] ,
-                                                [   new b2Vec2(1021/ptm_ratio, 463/ptm_ratio)  ,  new b2Vec2(929/ptm_ratio, 259/ptm_ratio)  ,  new b2Vec2(963/ptm_ratio, 277/ptm_ratio)  ] ,
-                                                [   new b2Vec2(811/ptm_ratio, 579/ptm_ratio)  ,  new b2Vec2(891/ptm_ratio, 551/ptm_ratio)  ,  new b2Vec2(853/ptm_ratio, 566/ptm_ratio)  ] ,
-                                                [   new b2Vec2(702/ptm_ratio, 600/ptm_ratio)  ,  new b2Vec2(665/ptm_ratio, 603/ptm_ratio)  ,  new b2Vec2(626/ptm_ratio, 604/ptm_ratio)  ,  new b2Vec2(589/ptm_ratio, 603/ptm_ratio)  ,  new b2Vec2(811/ptm_ratio, 579/ptm_ratio)  ,  new b2Vec2(774/ptm_ratio, 588/ptm_ratio)  ,  new b2Vec2(739/ptm_ratio, 595/ptm_ratio)  ]
-											]
-
-										]
- ,
-										[
-											// density, friction, restitution
-                                            2, 0, 0,
-                                            // categoryBits, maskBits, groupIndex, isSensor
-											1, 65535, 0, false,
-											'POLYGON',
-
-                                            // vertexes of decomposed polygons
-                                            [
-
-                                                [   new b2Vec2(430/ptm_ratio, 504/ptm_ratio)  ,  new b2Vec2(201/ptm_ratio, 576/ptm_ratio)  ,  new b2Vec2(203/ptm_ratio, 565/ptm_ratio)  ]
-											]
-
-										]
- ,
-										[
-											// density, friction, restitution
-                                            2, 0, 0,
-                                            // categoryBits, maskBits, groupIndex, isSensor
-											1, 65535, 0, false,
-											'POLYGON',
-
-                                            // vertexes of decomposed polygons
-                                            [
-
-                                                [   new b2Vec2(672/ptm_ratio, 385/ptm_ratio)  ,  new b2Vec2(698/ptm_ratio, 147/ptm_ratio)  ,  new b2Vec2(713/ptm_ratio, 148/ptm_ratio)  ]
+                                                [   new b2Vec2(820/ptm_ratio, 502/ptm_ratio)  ,  new b2Vec2(842/ptm_ratio, 264/ptm_ratio)  ,  new b2Vec2(858/ptm_ratio, 266/ptm_ratio)  ]
 											]
 
 										]

@@ -7,7 +7,7 @@
         <script src="libs/jquery.hotkeys.js"></script>
         <script type="text/javascript" src="libs/jsxgraphcore.js"></script>
         <script src="libs/d3.v2.js"></script>
-        <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
+        <script src="libs/Box2dWeb-2.1.a.3.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
         <script src="semni.data.js"></script>
         <script src="main.js"></script>
@@ -97,8 +97,8 @@
                     <button id="add_box" onClick="physics.createBox()">create box</button><br/>
                     <br/>
          
-                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.100" step="0.001" onchange="set_friction(parseFloat(this.value))" />
-                    <span id="friction_val">0.100</span><br/>
+                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.030" step="0.001" onchange="set_friction(parseFloat(this.value))" />
+                    <span id="friction_val">0.030</span><br/>
 
                     <label for="stiction_param">stiction</label> <input id="stiction_param" type="range" min="0" max="5" value="0.6" step="0.1" onchange="set_stiction(parseFloat(this.value))" />
                     <span id="stiction_val">0.100</span><br/>            
@@ -338,7 +338,7 @@
                     }
 
                     xdata.push(physics.lower_joint.GetJointAngle())
-                    ydata.push(physics.lower_joint.angle_speed_csl)
+                    ydata.push(physics.lower_joint.angle_diff_csl)
                     
                     if (!g) {                   // If the curve does not exist yet, create it.
                         g = brd.create('curve', [xdata,ydata], {strokeWidth:1, strokeColor:'red'}); 
@@ -351,7 +351,7 @@
                     if (zdata.length==200) {
                         zdata.shift()
                     }
-                    angle_speed = physics.lower_joint.angle_speed_csl
+                    angle_speed = physics.lower_joint.angle_diff_csl
                     if (!angle_speed)
                         angle_speed=0
                     

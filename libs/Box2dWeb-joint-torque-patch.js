@@ -55,8 +55,7 @@
 
       //apply torque
       if (this.m_applyTorque){
-          this.m_additionalImpulse = this.m_applyTorque * step.dt
-          impulse = this.m_additionalImpulse
+          impulse = this.m_applyTorque * step.dt
           w1 += i1 * impulse
           w2 -= i2 * impulse
           this.m_applyTorque = 0
