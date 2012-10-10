@@ -6,8 +6,9 @@
         <script src="libs/jquery.min.js"></script>
         <script src="libs/jquery.hotkeys.js"></script>
         <script type="text/javascript" src="libs/jsxgraphcore.js"></script>
+        <!-- TODO: minify stuff -->
         <script src="libs/d3.v2.js"></script>
-        <script src="libs/Box2dWeb-2.1.a.3.js"></script>
+        <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
         <script src="semni.data.js"></script>
         <script src="main.js"></script>
@@ -107,8 +108,8 @@
                     <span id="stiction_epsilon_val">0.010</span><br/><br/>
 
 
-                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="1" style="width:60px;"/>
-                    <label for="gf_param_upper">g<sub>f</sub></label> <input id="gf_param_upper" type="text" value="1.0025" style="width:60px;"/>
+                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="18" style="width:60px;"/>
+                    <label for="gf_param_upper">g<sub>f</sub></label> <input id="gf_param_upper" type="text" value="1.001" style="width:60px;"/>
                     <label for="gb_param_upper">g<sub>b</sub></label> <input id="gb_param_upper" type="text" value="0" style="width:60px;"/>
                     <label for="gain_param_upper">gain</label> <input id="gain_param_upper" type="text" value="1" style="width:60px;"/>
                     <button id="set_csl_params_upper">set</button> <br/>
@@ -127,8 +128,8 @@
                     <span id="mode_val_upper"></span> <span id="csl_mode_name_upper">contraction</span><br/>
 
 
-                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="2" style="width:60px;"/>
-                    <label for="gf_param_lower">g<sub>f</sub></label> <input id="gf_param_lower" type="text" value="1.0006" style="width:60px;"/>
+                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="18" style="width:60px;"/>
+                    <label for="gf_param_lower">g<sub>f</sub></label> <input id="gf_param_lower" type="text" value="1.001" style="width:60px;"/>
                     <label for="gb_param_lower">g<sub>b</sub></label> <input id="gb_param_lower" type="text" value="0" style="width:60px;"/>
                     <label for="gain_param_lower">gain</label> <input id="gain_param_lower" type="text" value="1" style="width:60px;"/>
                     <button id="set_csl_params_lower">set</button> <br/>
@@ -202,7 +203,7 @@
         </div>
 
         <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;/&phi;'<button id="clear_phase">clear</button></div>
-        <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled" checked="checked">motor torque upper (green) and lower (blue)</div>
+        <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled">motor torque upper (green) and lower (blue)</div>
         <div id="state_to_mode_mapping"><input type="checkbox" id="phase_space_2_enabled">phase space U/&phi;'<br/></div>
         <script>
             //use d3 for state_to_mode_mapping
@@ -292,7 +293,7 @@
 
 
             //use jsxgraph for phase spaces
-            var phase_space_enabled=false,motor_torque_enabled=true,phase_space_2_enabled=false,brd,brd2,g,g2,g3,g4,xdata=[],ydata=[],zdata=[{'U':0, 'phidot':0}],i,xdata2=[],ydata2=[],ydata3=[]
+            var phase_space_enabled=false,motor_torque_enabled=false,phase_space_2_enabled=false,brd,brd2,g,g2,g3,g4,xdata=[],ydata=[],zdata=[{'U':0, 'phidot':0}],i,xdata2=[],ydata2=[],ydata3=[]
 
             JXG.Options.showCopyright = false
             JXG.Options.zoom.wheel = true
@@ -368,47 +369,48 @@
                 }
             }
 
-            for(i=0; i<1; i=i+0.002){
+            for(i=0; i<1; i=i+0.001){
                 xdata2.push(i)
             }
-            brd2 = JXG.JSXGraph.initBoard('motor_torque_plot', {boundingbox:[0,0.50,2,-0.50], axis:true})
+            brd2 = JXG.JSXGraph.initBoard('motor_torque_plot', {boundingbox:[0,2,5,-2], axis:true})
             function draw_motor_torque(){
-                if(motor_torque_enabled){
-                    if (ydata2.length==500) {
-                        ydata2.shift()
-                        ydata3.shift()
-                    }
+                if (ydata2.length==1000) {
+                    ydata2.shift()
+                    ydata3.shift()
+                }
 
-                    if (physics.pend_style == 3) {
+                if (physics.pend_style == 3) {
+                    //semni
+                    if (physics.body2.motor_control)
+                        ydata2.push(physics.body2.motor_control)
+                    else
+                        ydata2.push(0)
+                        
+                    if (physics.body3.motor_control)
+                        ydata3.push(physics.body3.motor_control)
+                    else
+                        ydata3.push(0)
+                } else {
+                    if (physics.body.motor_control) {
+                        ydata2.push(physics.body.motor_control)
+                    } else {
                         if (physics.body2.motor_control)
                             ydata2.push(physics.body2.motor_control)
                         else
                             ydata2.push(0)
-                            
-                        if (physics.body3.motor_control)
-                            ydata3.push(physics.body3.motor_control)
+                    }                            
+
+                    if (physics.body && physics.body.U_csl) {
+                        ydata3.push(physics.body.U_csl)
+                    } else {
+                        if (physics.body3 && physics.body3.U_csl)
+                            ydata3.push(physics.body3.U_csl)
                         else
                             ydata3.push(0)
-                    } else {
-                        if (physics.body.motor_control) {
-                            ydata2.push(physics.body.motor_control)
-                        } else {
-                            if (physics.body2.motor_control)
-                                ydata2.push(physics.body2.motor_control)
-                            else
-                                ydata2.push(0)
-                        }                            
+                    }
+                } 
 
-                        if (physics.body && physics.body.U_csl) {
-                            ydata3.push(physics.body.U_csl)
-                        } else {
-                            if (physics.body3 && physics.body3.U_csl)
-                                ydata3.push(physics.body3.U_csl)
-                            else
-                                ydata3.push(0)
-                        }
-                    } 
-
+                if(motor_torque_enabled){
                     if (!g3) {                   // If the curve does not exist yet, create it.
                         g3 = brd2.create('curve', [xdata2,ydata2], {strokeWidth:1, strokeColor:'blue'}); 
                     } 
@@ -416,7 +418,7 @@
                         g4 = brd2.create('curve', [xdata2,ydata3], {strokeWidth:1, strokeColor:'green'}); 
                     } 
 
-                    if (physics.lower_joint.csl_active)
+                    //if (physics.lower_joint.csl_active)
                         brd2.update(); 
                 }
             }

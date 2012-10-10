@@ -75,7 +75,7 @@ map_mode_to_gi = (mode) ->
   if mode < 0
     mode * 3
   else
-    1.1 + (0.001 * mode)
+    18 + (5 * mode)
 
 map_mode_to_gf = (mode) ->
   #double pendulum
@@ -171,7 +171,7 @@ class physics
       
     fixDef = new b2FixtureDef
     fixDef.density = 10
-    fixDef.friction = 0.9
+    fixDef.friction = 0.2
     fixDef.restitution = 0.01
     @fixDef = fixDef
     
@@ -203,6 +203,7 @@ class physics
     @run = true
     @step = false
     @pend_style = 0
+    @recordPhase = false
   
   createBox: =>
     fixDef = new b2FixtureDef
@@ -366,18 +367,20 @@ class physics
     #body: 120 g
     #arm at body: 135 g
     #second arm: 177 g 
-
+    #
+    #min/max angle of lower arm: -3.2421 and 1.90816 
+                                
     #create body
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_dynamicBody
     x0 = @ground_bodyDef.position.x
-    y0 = @ground_bodyDef.position.y - 0.7
+    y0 = @ground_bodyDef.position.y - 0.5
     bodyDef.position.Set(x0,y0)
     @body = @world.CreateBody(bodyDef)
 
     @fixDef = new b2FixtureDef
-    @fixDef.density = 0.99
-    @fixDef.friction = 0.6
+    @fixDef.density = 0.96  #0.99
+    @fixDef.friction = 0.2
     @fixDef.restitution = 0.1
     @fixDef.filter.groupIndex = -1  #negative groups never collide with each other
     @fixDef.shape = new b2PolygonShape
@@ -421,12 +424,11 @@ class physics
     #upper arm (connected to body)
     bodyDef2 = new b2BodyDef
     bodyDef2.type = b2Body.b2_dynamicBody
-    #bodyDef2.position.Set(x0, y0)
     @body2 = @world.CreateBody(bodyDef2)
 
     @fixDef2 = new b2FixtureDef
-    @fixDef2.density = 4.35
-    @fixDef2.friction = 0.6
+    @fixDef2.density = 4.2 #4.35
+    @fixDef2.friction = 0.2
     @fixDef2.restitution = 0.1
     @fixDef2.filter.groupIndex = -1
     @fixDef2.shape = new b2PolygonShape
@@ -466,14 +468,10 @@ class physics
     #jointDef.anchor = new b2Vec2(vertices[3].x, vertices[3].y)
     jointDef.collideConnected = true
 
-    #simple friction with box2d possiblities (dry)
+    #simple friction with box2d possiblities (dry + stiction)
     jointDef.maxMotorTorque = 0.100
     jointDef.motorSpeed = 0.0
     jointDef.enableMotor = true
-
-    #jointDef.upperAngle = 0.157
-    #jointDef.lowerAngle = -1.487
-    #jointDef.enableLimit = true
     @upper_joint = @world.CreateJoint(jointDef)
     
     #initialize
@@ -493,8 +491,8 @@ class physics
     @body3 = @world.CreateBody(bodyDef3)
     
     @fixDef3 = new b2FixtureDef
-    @fixDef3.density = 10.9
-    @fixDef3.friction = 0.6
+    @fixDef3.density = 11.35  #10.9
+    @fixDef3.friction = 0.2
     @fixDef3.restitution = 0.2
     @fixDef3.filter.groupIndex = -1
     @fixDef3.shape = new b2PolygonShape
@@ -535,10 +533,10 @@ class physics
     jointDef.maxMotorTorque = 0.02
     jointDef.motorSpeed = 0.0
     jointDef.enableMotor = true
-
-    #jointDef.upperAngle = 9.27
-    #jointDef.lowerAngle = 4.57
-    #jointDef.enableLimit = true
+    
+    jointDef.upperAngle = 1.90816
+    jointDef.lowerAngle = -3.2421
+    jointDef.enableLimit = true
     @lower_joint = @world.CreateJoint(jointDef)
     
     @lower_joint.angle_speed = 0
@@ -589,8 +587,8 @@ class physics
     jointDef.motorSpeed = 0.0
     jointDef.enableMotor = true
 
-    #jointDef.upperAngle = 0.157
-    #jointDef.lowerAngle = -1.487
+    #jointDef.upperAngle = 2.0692624
+    #jointDef.lowerAngle = -1.90816
     #jointDef.enableLimit = true
     @lower_joint = @world.CreateJoint(jointDef)
     
@@ -601,6 +599,9 @@ class physics
     @lower_joint.csl_sign = 1
     @lower_joint.gain = 1
     @lower_joint.gb = 0
+  
+  toggleRecorder: =>
+    @recordPhase = !@recordPhase
 
   getNoisyAngle: (bodyJoint) =>
     #sensor noise
@@ -615,27 +616,23 @@ class physics
       $("#set_csl_params_lower").trigger('click')
     if @upper_joint
       $("#set_csl_params_upper").trigger('click')
+    unless bodyJoint.last_angle?
+      bodyJoint.last_angle = bodyJoint.GetJointAngle()
+    bodyObject.U_csl = 0
 
   CSL: (gi, gf, gb, angle_speed, gain=1, bodyObject) =>
+    unless bodyObject.last_integrated?
+      bodyObject.last_integrated = 0
     #csl controller
     vel = gi * angle_speed
     sum = vel + bodyObject.last_integrated
     bodyObject.last_integrated = gf * sum
-    if @pend_style is 3
-      limit = 12
-    else
-      limit = 3
-    return @clip((sum * gain) + gb, limit)
+    return @clip((sum * gain) + gb, 12)    #limit csl output to 12 Volts
 
   updateCSL: (bodyObject, bodyJoint) =>
-    if not bodyObject.last_integrated? or not bodyJoint.csl_active
-      bodyObject.last_integrated = 0
-      bodyObject.U_csl = 0
-
-    if not bodyJoint.last_angle?
-      bodyJoint.last_angle = bodyJoint.GetJointAngle()
-
     bodyJoint.angle_diff_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle
+    bodyJoint.last_angle = bodyJoint.GetJointAngle()
+
     if bodyJoint.csl_active
       bodyObject.U_csl = @CSL(
         bodyJoint.gi, bodyJoint.gf, bodyJoint.gb,
@@ -644,7 +641,6 @@ class physics
         bodyObject
       )
     draw_phase_space() if not isMouseDown or not mouseJoint
-    bodyJoint.last_angle = bodyJoint.GetJointAngle()
     
     #calm down if contraction goes out of bounds
     #if Math.abs(bodyObject.motor_control) > 0.5
@@ -670,10 +666,9 @@ class physics
   updateMotor: (bodyObject, bodyJoint) =>
     # motor model
     U_csl = bodyObject.U_csl
-    I_t = (U_csl - (kb*(-bodyJoint.angle_diff_csl/dt)))*(1/R)     #U_csl-(R*I_tm1)-(kb*bodyJoint.angle_diff_csl)
+    I_t = (U_csl - (kb*(-bodyJoint.GetJointSpeed())))*(1/R)     #U_csl-(R*I_tm1)-(kb*bodyJoint.angle_diff_csl)
     bodyObject.motor_control = km * I_t
-    if bodyObject.motor_control
-      bodyJoint.m_applyTorque = bodyObject.motor_control #* bodyJoint.csl_sign
+    bodyJoint.m_applyTorque = bodyObject.motor_control #* bodyJoint.csl_sign
 
   clip: (value, cap=1) => Math.max(-cap, Math.min(cap, value))
   sgn: (value) => if value > 0 then 1 else if value < 0 then -1 else 0
@@ -735,7 +730,7 @@ class physics
   #update simulation and display loop
   was_static = false
   update: =>
-    ## update physics and display stuff (~60 Hz loop)
+    ## update physics and display stuff (~60 Hz loop, depends on refresh rate)
     window.stats.begin()
 
     if (@run or @step) and @pend_style
@@ -770,35 +765,36 @@ class physics
       if @pend_style is 1
         if map_state_to_mode
           @updateMode @body, @lower_joint
-
-      if @pend_style is 2
+      else if @pend_style is 2
         if map_state_to_mode
           @updateMode @body, @lower_joint
           @updateMode @body2, @upper_joint
 
+      if @recordPhase
+        console.log(-@body.GetAngle() + " " + -@upper_joint.GetJointAngle() + " " + -@lower_joint.GetJointAngle())
+
       #1000 Hz loop
       i = 0
       while i < steps_per_frame
-        if @pend_style is 1
+        if @pend_style is 3
+          @updateCSL @body2, @lower_joint
+          @updateCSL @body3, @upper_joint
+          @updateMotor @body2, @lower_joint
+          @updateMotor @body3, @upper_joint
+        else if @pend_style is 1
           @updateCSL @body, @lower_joint
           @updateMotor @body, @lower_joint
           @applyFriction @body, @lower_joint
-        if @pend_style is 2
+        else if @pend_style is 2
           @updateCSL @body, @lower_joint
           @updateCSL @body2, @upper_joint
           @updateMotor @body, @lower_joint
           @updateMotor @body2, @upper_joint
           @applyFriction @body, @lower_joint
           @applyFriction @body2, @upper_joint
-        if @pend_style is 3
-          @updateCSL @body2, @lower_joint
-          @updateCSL @body3, @upper_joint
-          @updateMotor @body2, @lower_joint
-          @updateMotor @body3, @upper_joint
-        if @pend_style is 4
+        else if @pend_style is 4
           @updateCSL @body, @lower_joint
           @updateMotor @body, @lower_joint
-          
 
         @world.Step(
           dt,             #timestep (1 / fps)
@@ -813,6 +809,7 @@ class physics
 
     requestAnimFrame @update
     window.stats.end()
+
 
 $ ->
   #get initial friction params

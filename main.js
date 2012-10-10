@@ -89,7 +89,7 @@ map_mode_to_gi = function(mode) {
   if (mode < 0) {
     return mode * 3;
   } else {
-    return 1.1 + (0.001 * mode);
+    return 18 + (5 * mode);
   }
 };
 
@@ -186,6 +186,8 @@ physics = (function() {
 
     this.getNoisyAngle = __bind(this.getNoisyAngle, this);
 
+    this.toggleRecorder = __bind(this.toggleRecorder, this);
+
     this.createTestBoxes = __bind(this.createTestBoxes, this);
 
     this.createSemni = __bind(this.createSemni, this);
@@ -211,7 +213,7 @@ physics = (function() {
     this.world = new b2World(new b2Vec2(0, 9.81), false);
     fixDef = new b2FixtureDef;
     fixDef.density = 10;
-    fixDef.friction = 0.9;
+    fixDef.friction = 0.2;
     fixDef.restitution = 0.01;
     this.fixDef = fixDef;
     this.ground_height = 0.03;
@@ -237,6 +239,7 @@ physics = (function() {
     this.run = true;
     this.step = false;
     this.pend_style = 0;
+    this.recordPhase = false;
   }
 
   physics.prototype.createBox = function() {
@@ -368,12 +371,12 @@ physics = (function() {
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_dynamicBody;
     x0 = this.ground_bodyDef.position.x;
-    y0 = this.ground_bodyDef.position.y - 0.7;
+    y0 = this.ground_bodyDef.position.y - 0.5;
     bodyDef.position.Set(x0, y0);
     this.body = this.world.CreateBody(bodyDef);
     this.fixDef = new b2FixtureDef;
-    this.fixDef.density = 0.99;
-    this.fixDef.friction = 0.6;
+    this.fixDef.density = 0.96;
+    this.fixDef.friction = 0.2;
     this.fixDef.restitution = 0.1;
     this.fixDef.filter.groupIndex = -1;
     this.fixDef.shape = new b2PolygonShape;
@@ -408,8 +411,8 @@ physics = (function() {
     bodyDef2.type = b2Body.b2_dynamicBody;
     this.body2 = this.world.CreateBody(bodyDef2);
     this.fixDef2 = new b2FixtureDef;
-    this.fixDef2.density = 4.35;
-    this.fixDef2.friction = 0.6;
+    this.fixDef2.density = 4.2;
+    this.fixDef2.friction = 0.2;
     this.fixDef2.restitution = 0.1;
     this.fixDef2.filter.groupIndex = -1;
     this.fixDef2.shape = new b2PolygonShape;
@@ -454,8 +457,8 @@ physics = (function() {
     bodyDef3.type = b2Body.b2_dynamicBody;
     this.body3 = this.world.CreateBody(bodyDef3);
     this.fixDef3 = new b2FixtureDef;
-    this.fixDef3.density = 10.9;
-    this.fixDef3.friction = 0.6;
+    this.fixDef3.density = 11.35;
+    this.fixDef3.friction = 0.2;
     this.fixDef3.restitution = 0.2;
     this.fixDef3.filter.groupIndex = -1;
     this.fixDef3.shape = new b2PolygonShape;
@@ -489,6 +492,9 @@ physics = (function() {
     jointDef.maxMotorTorque = 0.02;
     jointDef.motorSpeed = 0.0;
     jointDef.enableMotor = true;
+    jointDef.upperAngle = 1.90816;
+    jointDef.lowerAngle = -3.2421;
+    jointDef.enableLimit = true;
     this.lower_joint = this.world.CreateJoint(jointDef);
     this.lower_joint.angle_speed = 0;
     this.lower_joint.csl_active = false;
@@ -541,6 +547,10 @@ physics = (function() {
     return this.lower_joint.gb = 0;
   };
 
+  physics.prototype.toggleRecorder = function() {
+    return this.recordPhase = !this.recordPhase;
+  };
+
   physics.prototype.getNoisyAngle = function(bodyJoint) {
     var rand;
     rand = 0;
@@ -553,42 +563,37 @@ physics = (function() {
       $("#set_csl_params_lower").trigger('click');
     }
     if (this.upper_joint) {
-      return $("#set_csl_params_upper").trigger('click');
+      $("#set_csl_params_upper").trigger('click');
     }
+    if (bodyJoint.last_angle == null) {
+      bodyJoint.last_angle = bodyJoint.GetJointAngle();
+    }
+    return bodyObject.U_csl = 0;
   };
 
   physics.prototype.CSL = function(gi, gf, gb, angle_speed, gain, bodyObject) {
-    var limit, sum, vel;
+    var sum, vel;
     if (gain == null) {
       gain = 1;
+    }
+    if (bodyObject.last_integrated == null) {
+      bodyObject.last_integrated = 0;
     }
     vel = gi * angle_speed;
     sum = vel + bodyObject.last_integrated;
     bodyObject.last_integrated = gf * sum;
-    if (this.pend_style === 3) {
-      limit = 12;
-    } else {
-      limit = 3;
-    }
-    return this.clip((sum * gain) + gb, limit);
+    return this.clip((sum * gain) + gb, 12);
   };
 
   physics.prototype.updateCSL = function(bodyObject, bodyJoint) {
-    if (!(bodyObject.last_integrated != null) || !bodyJoint.csl_active) {
-      bodyObject.last_integrated = 0;
-      bodyObject.U_csl = 0;
-    }
-    if (!(bodyJoint.last_angle != null)) {
-      bodyJoint.last_angle = bodyJoint.GetJointAngle();
-    }
     bodyJoint.angle_diff_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle;
+    bodyJoint.last_angle = bodyJoint.GetJointAngle();
     if (bodyJoint.csl_active) {
       bodyObject.U_csl = this.CSL(bodyJoint.gi, bodyJoint.gf, bodyJoint.gb, bodyJoint.angle_diff_csl, bodyJoint.gain, bodyObject);
     }
     if (!isMouseDown || !mouseJoint) {
-      draw_phase_space();
+      return draw_phase_space();
     }
-    return bodyJoint.last_angle = bodyJoint.GetJointAngle();
   };
 
   km = 10.7 * 193 * 0.4 / 1000;
@@ -600,11 +605,9 @@ physics = (function() {
   physics.prototype.updateMotor = function(bodyObject, bodyJoint) {
     var I_t, U_csl;
     U_csl = bodyObject.U_csl;
-    I_t = (U_csl - (kb * (-bodyJoint.angle_diff_csl / dt))) * (1 / R);
+    I_t = (U_csl - (kb * (-bodyJoint.GetJointSpeed()))) * (1 / R);
     bodyObject.motor_control = km * I_t;
-    if (bodyObject.motor_control) {
-      return bodyJoint.m_applyTorque = bodyObject.motor_control;
-    }
+    return bodyJoint.m_applyTorque = bodyObject.motor_control;
   };
 
   physics.prototype.clip = function(value, cap) {
@@ -706,35 +709,34 @@ physics = (function() {
         if (map_state_to_mode) {
           this.updateMode(this.body, this.lower_joint);
         }
-      }
-      if (this.pend_style === 2) {
+      } else if (this.pend_style === 2) {
         if (map_state_to_mode) {
           this.updateMode(this.body, this.lower_joint);
           this.updateMode(this.body2, this.upper_joint);
         }
       }
+      if (this.recordPhase) {
+        console.log(-this.body.GetAngle() + " " + -this.upper_joint.GetJointAngle() + " " + -this.lower_joint.GetJointAngle());
+      }
       i = 0;
       while (i < steps_per_frame) {
-        if (this.pend_style === 1) {
+        if (this.pend_style === 3) {
+          this.updateCSL(this.body2, this.lower_joint);
+          this.updateCSL(this.body3, this.upper_joint);
+          this.updateMotor(this.body2, this.lower_joint);
+          this.updateMotor(this.body3, this.upper_joint);
+        } else if (this.pend_style === 1) {
           this.updateCSL(this.body, this.lower_joint);
           this.updateMotor(this.body, this.lower_joint);
           this.applyFriction(this.body, this.lower_joint);
-        }
-        if (this.pend_style === 2) {
+        } else if (this.pend_style === 2) {
           this.updateCSL(this.body, this.lower_joint);
           this.updateCSL(this.body2, this.upper_joint);
           this.updateMotor(this.body, this.lower_joint);
           this.updateMotor(this.body2, this.upper_joint);
           this.applyFriction(this.body, this.lower_joint);
           this.applyFriction(this.body2, this.upper_joint);
-        }
-        if (this.pend_style === 3) {
-          this.updateCSL(this.body2, this.lower_joint);
-          this.updateCSL(this.body3, this.upper_joint);
-          this.updateMotor(this.body2, this.lower_joint);
-          this.updateMotor(this.body3, this.upper_joint);
-        }
-        if (this.pend_style === 4) {
+        } else if (this.pend_style === 4) {
           this.updateCSL(this.body, this.lower_joint);
           this.updateMotor(this.body, this.lower_joint);
         }
