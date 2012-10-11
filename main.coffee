@@ -47,110 +47,6 @@ window.requestAnimFrame = (->
     window.setTimeout callback, 1000 / 60
 )()
 
-set_preset = (w0, w1, w2, w0_abs, w1_abs) ->
-  $("#w0").val(w0).trigger("change")
-  $("#w1").val(w1).trigger("change")
-  $("#w2").val(w2).trigger("change")
-
-  if w0_abs == true
-    $("#w0_abs").attr("checked", "checked").trigger("change")
-  else
-    $("#w0_abs").attr("checked", null).trigger("change")
-
-  if w1_abs == true
-    $("#w1_abs").attr("checked", "checked").trigger("change")
-  else
-    $("#w1_abs").attr("checked", null).trigger("change")
-
-  draw_state_to_mode_mapping()
-
-map_mode_to_gi = (mode) ->
-  #double pendulum
-  #if mode < 0
-  #  mode * 3
-  #else
-  #  mode * 0.7
-
-  #single pendulum
-  if mode < 0
-    mode * 3
-  else
-    18 + (5 * mode)
-
-map_mode_to_gf = (mode) ->
-  #double pendulum
-  #if mode > 1
-  #  mode * 0.01 + 1
-  #else if mode < 0
-  #  0
-  #else
-  #  mode
-  
-  #single pendulum
-  if mode > 1
-    mode * 0.0006 + 1
-  else if mode < 0
-    0
-  else
-    mode
-
-
-map_mode = (bodyJoint, mode, joint=bodyJoint.joint_name) ->
-  #re-calc gi and gf from joints mode parameter and save in bodyJoint
-  #bodyJoint should have a useful joint_name set (lower, upper, depends on dom elements)
-
-  #support:      gi < 0, gf = 0
-  #release:      gi > 0, 0 <= gf < 1
-  #hold:         gi > 0, gf = 1
-  #contraction:  gi > 0, gf > 1
-  
-  if not mode?
-    mode = parseFloat($("#mode_param_#{joint}").val())
-
-  gi = map_mode_to_gi(mode)
-  gf = map_mode_to_gf(mode)
-
-  $("#gi_param_#{joint}").val gi
-  $("#gf_param_#{joint}").val gf
-  $("#mode_param_#{joint}").val mode
-  $("#mode_val_#{joint}").html mode.toFixed(2)
-
-  if gi < 0 and gf is 0
-    $("#csl_mode_name_#{joint}").html "support"
-  else if gi > 0 and 0 <= gf < 1
-    $("#csl_mode_name_#{joint}").html "release"
-  else if gi > 0 and gf is 1
-    $("#csl_mode_name_#{joint}").html "hold"
-  else if gi > 0 and gf > 1
-    $("#csl_mode_name_#{joint}").html "contraction"
-  else
-    $("#csl_mode_name_#{joint}").html "?"
-
-  if bodyJoint
-    bodyJoint.gi = gi
-    bodyJoint.gf = gf
-
-
-set_friction = (newBeta) ->
-  beta = newBeta
-  $("#friction_val").html beta.toFixed(3)
-  if physics.pend_style is 3
-    physics.upper_joint.m_maxMotorTorque = beta
-    physics.lower_joint.m_maxMotorTorque = beta
-  if physics.pend_style is 4
-    physics.lower_joint.m_maxMotorTorque = beta
-
-set_stiction = (newAlpha) ->
-  alpha = newAlpha
-  $("#stiction_val").html alpha.toFixed(3)
-  
-set_stiction_vel = (newGamma) ->
-  gamma = newGamma
-  $("#stiction_epsilon_val").html gamma.toFixed(3)
-
-myon_precision = (number) ->
-  Math.floor(number * 10000) / 10000
-
 class physics
   constructor: ->
     ###
@@ -169,9 +65,10 @@ class physics
       false                  #allow sleep
     )
       
+    @set_posture = false
     fixDef = new b2FixtureDef
     fixDef.density = 10
-    fixDef.friction = 0.2
+    fixDef.friction = 0.3
     fixDef.restitution = 0.01
     @fixDef = fixDef
     
@@ -619,12 +516,13 @@ class physics
     unless bodyJoint.last_angle?
       bodyJoint.last_angle = bodyJoint.GetJointAngle()
     bodyObject.U_csl = 0
+    bodyObject.last_integrated = 0
 
-  CSL: (gi, gf, gb, angle_speed, gain=1, bodyObject) =>
+  CSL: (gi, gf, gb, angle_diff, gain=1, bodyObject) =>
     unless bodyObject.last_integrated?
       bodyObject.last_integrated = 0
     #csl controller
-    vel = gi * angle_speed
+    vel = gi * angle_diff
     sum = vel + bodyObject.last_integrated
     bodyObject.last_integrated = gf * sum
     return @clip((sum * gain) + gb, 12)    #limit csl output to 12 Volts
@@ -640,7 +538,7 @@ class physics
         bodyJoint.gain,
         bodyObject
       )
-    draw_phase_space() if not isMouseDown or not mouseJoint
+    draw_phase_space()
     
     #calm down if contraction goes out of bounds
     #if Math.abs(bodyObject.motor_control) > 0.5
@@ -666,48 +564,32 @@ class physics
   updateMotor: (bodyObject, bodyJoint) =>
     # motor model
     U_csl = bodyObject.U_csl
-    I_t = (U_csl - (kb*(-bodyJoint.GetJointSpeed())))*(1/R)     #U_csl-(R*I_tm1)-(kb*bodyJoint.angle_diff_csl)
+    I_t = (U_csl - (kb*(-bodyJoint.GetJointSpeed())))*(1/R)  #U_csl-(R*I_tm1)-(kb*bodyJoint.angle_diff_csl)
     bodyObject.motor_control = km * I_t
     bodyJoint.m_applyTorque = bodyObject.motor_control #* bodyJoint.csl_sign
 
   clip: (value, cap=1) => Math.max(-cap, Math.min(cap, value))
   sgn: (value) => if value > 0 then 1 else if value < 0 then -1 else 0
-  ### 
-  G = 0.0     #gaussian y offset (>0 results in dry friction component)
-  gaussian: (v) => Math.min(1, 1.1 * Math.exp(- Math.pow( (v/gamma), 2 ))+G)
-  applyFriction: (bodyObject, bodyJoint) =>
-    #csl hold friction model, crap because of time dependent behaviour
-    v = -bodyObject.GetAngularVelocity()
-    u = @clip(v+bodyObject.z2)
-    bodyObject.z2 = u * @gaussian(v)
-
-    #sticky_damping = 30*alpha*@gaussian(-v)*v
-    t_sticky = alpha * bodyObject.z2 #+ sticky_damping
-    t_fluid = beta * v
-    
-    bodyObject.ApplyTorque(t_fluid + t_sticky)
-  ###
-  
-  
+  #G = 0.0     #gaussian y offset (>0 results in dry friction component)
+  #gaussian: (v) => Math.min(1, 1.1 * Math.exp(- Math.pow( (v/gamma), 2 ))+G)
   #close_to_zero: (value) => if Math.abs(value) < 1e-4 then true else false
   applyFriction: (bodyObject, bodyJoint) =>
-    #friction model 
     v = -bodyJoint.GetJointSpeed()
 
-    #sticky friction
+    #sticky friction, would need to set impulse/velocity zero when force applied
     #if @close_to_zero(bodyJoint.m_impulse.x)
     #  bodyJoint.m_impulse.x = 0
     #  bodyObject.SetAngularVelocity(0)
     #else
     #fluid/gliding friction
-    fg = -v * beta / 2
+    fg = -v * beta*2
 
     #dry friction
-    fd = @sgn(-v) * (beta / 10)
+    fd = @sgn(-v) * (beta*2)
     #fd = 0
 
     if not isMouseDown
-      bodyObject.ApplyTorque(fg + fd)
+      bodyJoint.m_applyTorque = fg + fd
 
   calcMode: (motor_control, angle_speed) =>
     mc = if w0_abs then Math.abs(motor_control) else motor_control
@@ -796,6 +678,12 @@ class physics
           @updateCSL @body, @lower_joint
           @updateMotor @body, @lower_joint
 
+
+        if @set_posture
+          x0 = @ground_bodyDef.position.x
+          y0 = @ground_bodyDef.position.y - 0.8
+          @body.SetPositionAndAngle(new b2Vec2(x0,y0), 0)
+
         @world.Step(
           dt,             #timestep (1 / fps)
           10,             #velocity iterations
@@ -809,6 +697,155 @@ class physics
 
     requestAnimFrame @update
     window.stats.end()
+
+set_preset = (w0, w1, w2, w0_abs, w1_abs) ->
+  $("#w0").val(w0).trigger("change")
+  $("#w1").val(w1).trigger("change")
+  $("#w2").val(w2).trigger("change")
+
+  if w0_abs == true
+    $("#w0_abs").attr("checked", "checked").trigger("change")
+  else
+    $("#w0_abs").attr("checked", null).trigger("change")
+
+  if w1_abs == true
+    $("#w1_abs").attr("checked", "checked").trigger("change")
+  else
+    $("#w1_abs").attr("checked", null).trigger("change")
+
+  draw_state_to_mode_mapping()
+
+map_mode_to_gi = (mode) ->
+  #double pendulum
+  #if mode < 0
+  #  mode * 3
+  #else
+  #  mode * 0.7
+
+  #single pendulum
+  if mode < 0
+    mode * 3
+  else
+    18 + (5 * mode)
+
+map_mode_to_gf = (mode) ->
+  #double pendulum
+  #if mode > 1
+  #  mode * 0.01 + 1
+  #else if mode < 0
+  #  0
+  #else
+  #  mode
+  
+  #single pendulum
+  if mode > 1
+    mode * 0.0006 + 1
+  else if mode < 0
+    0
+  else
+    mode
+
+map_mode = (bodyJoint, mode, joint=bodyJoint.joint_name) ->
+  #re-calc gi and gf from joints mode parameter and save in bodyJoint
+  #bodyJoint should have a useful joint_name set (lower, upper, depends on dom elements)
+
+  #support:      gi < 0, gf = 0
+  #release:      gi > 0, 0 <= gf < 1
+  #hold:         gi > 0, gf = 1
+  #contraction:  gi > 0, gf > 1
+  
+  if not mode?
+    mode = parseFloat($("#mode_param_#{joint}").val())
+
+  gi = map_mode_to_gi(mode)
+  gf = map_mode_to_gf(mode)
+
+  $("#gi_param_#{joint}").val gi
+  $("#gf_param_#{joint}").val gf
+  $("#mode_param_#{joint}").val mode
+  $("#mode_val_#{joint}").html mode.toFixed(2)
+
+  if gi < 0 and gf is 0
+    $("#csl_mode_name_#{joint}").html "support"
+  else if gi > 0 and 0 <= gf < 1
+    $("#csl_mode_name_#{joint}").html "release"
+  else if gi > 0 and gf is 1
+    $("#csl_mode_name_#{joint}").html "hold"
+  else if gi > 0 and gf > 1
+    $("#csl_mode_name_#{joint}").html "contraction"
+  else
+    $("#csl_mode_name_#{joint}").html "?"
+
+  if bodyJoint
+    bodyJoint.gi = gi
+    bodyJoint.gf = gf
+
+
+set_friction = (newBeta) ->
+  beta = newBeta
+  $("#friction_val").html beta.toFixed(3)
+  if physics.pend_style is 3
+    physics.upper_joint.m_maxMotorTorque = beta
+    physics.lower_joint.m_maxMotorTorque = beta
+  if physics.pend_style is 4
+    physics.lower_joint.m_maxMotorTorque = beta
+
+set_stiction = (newAlpha) ->
+  alpha = newAlpha
+  $("#stiction_val").html alpha.toFixed(3)
+  
+set_stiction_vel = (newGamma) ->
+  gamma = newGamma
+  $("#stiction_epsilon_val").html gamma.toFixed(3)
+
+myon_precision = (number) ->
+  Math.floor(number * 10000) / 10000
+
+set_posture = (bodyAngle, hipAngle, kneeAngle, hipCsl, kneeCsl) ->
+  #TODO, how to properly set joint angles?
+  physics.set_posture = not physics.set_posture
+  #physics.body2.SetAngle(hipAngle)
+  #physics.body3.SetAngle(kneeAngle)
+
+set_csl_modes = (hipCSL, kneeCSL) ->
+  #set ABC learning modes for exploration
+  release_bias_hip = 0.8
+  release_bias_knee = 0.7
+  release_gf = 0.99
+  contract_gf_hip = 1.0023
+  contract_gf_knee = 1.0015
+  
+  if hipCSL is "r+"
+    gf = release_gf
+    gb = release_bias_hip
+  else if hipCSL is "r-"
+    gf = release_gf
+    gb = -release_bias_hip
+  else if hipCSL is "c"
+    gf = contract_gf_hip
+    gb = 0
+ 
+  $("#gf_param_upper").val(gf)
+  physics.upper_joint.gf = gf
+  
+  $("#gb_param_upper").val(gb)
+  physics.upper_joint.gb = gb
+
+  if kneeCSL is "r+"
+    gf = release_gf
+    gb = release_bias_knee
+  else if kneeCSL is "r-"
+    gf = release_gf
+    gb = -release_bias_knee
+  else if kneeCSL is "c"
+    gf = contract_gf_knee
+    gb = 0
+  
+  $("#gf_param_lower").val(gf)
+  physics.lower_joint.gf = gf
+  
+  $("#gb_param_lower").val(gb)
+  physics.lower_joint.gb = gb
 
 
 $ ->
