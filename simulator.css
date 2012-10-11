@@ -1,5 +1,15 @@
 body {
-    width: 1200px;
+    min-width: 1200px;
+}
+
+canvas {
+}
+#view_controls {
+    width: 50px;
+    float: left;
+}
+#view_controls button {
+    width: 45px;
 }
 
 input[type="range"] {
@@ -51,7 +61,7 @@ input[type="range"] {
 #phase_space_plot {
     width:300px;
     height:300px;
-    margin-right:10px;
+    margin-right: 5px;
     margin-bottom: 10px;
     float:left;
     background-color:lightgrey;

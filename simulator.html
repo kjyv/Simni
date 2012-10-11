@@ -1,4 +1,13 @@
 <!DOCTYPE html>
+<!-- 
+
+CSL Playground
+Simulate various actuated shapes with a simple motor model and a CSL implementation.
+
+Stefan Bethge, 2012
+Neurorobotics Research Laboratory, Berlin
+
+-->
 <html>
    <head>
         <title>CSL Playground</title>
@@ -18,6 +27,25 @@
     <body>
         <div id="left-side">
             <canvas id="canvas" width="750" height="400" style="float:left;"></canvas>
+            <div id="view_controls">
+                Zoom:
+                <button onclick="physics.debugDraw.SetDrawScale(physics.debugDraw.GetDrawScale() + 20)">+</button>
+                <br/>
+                <button onclick="physics.debugDraw.SetDrawScale(physics.debugDraw.GetDrawScale() - 20)">-</button>
+                <br/>
+                <br/>
+
+                Flags:
+                <button onclick="physics.debugDraw.m_drawFlags ^= b2DebugDraw.e_jointBit"><span style="font-size: 3em">∢</span></button><br/>
+                <button onclick="physics.debugDraw.m_drawFlags ^= b2DebugDraw.e_centerOfMassBit">COM</button>
+                <br/>
+                <br/>
+
+                Objects:
+                <button id="add_box" onClick="physics.createBox()">Box</button>
+                <button id="add_circle" onClick="physics.createCircle()">Circle</button><br/>
+                <br/>
+            </div>
             <div id="bottom-panel">
                 <div id="controls">
                     <select id="pendulum_style" onchange="isMouseDown = false">
@@ -64,6 +92,8 @@
                                         $("#map_state_to_mode_panel").fadeIn("fast")
                                         $("#state_to_mode_presets").fadeIn("fast")
                                         $("#state_to_mode_mapping").fadeIn("fast")
+                                        
+                                    $("#stiction_params").fadeIn "fast"
                                     
 
                                 else if style is "2"
@@ -76,14 +106,15 @@
                                 else if style is "3"
                                     physics.pend_style = 3
                                     physics.createSemni()
+                                    $("#state_to_mode_presets").fadeOut "fast"
+                                    $("#state_to_mode_mapping").fadeOut "fast"
+                                    $("#stiction_params").fadeOut "fast"
                                     $("#map_state_to_mode_panel").fadeOut "fast", ->
-                                        $("#state_to_mode_presets").fadeOut "fast", ->
-                                            $("#state_to_mode_mapping").fadeOut "fast", ->
-                                                $("#semni_posture_controls").fadeIn "fast"
+                                        $("#semni_posture_controls").fadeIn "fast"
                                     
                                 else if style is "4"
                                     physics.pend_style = 4
-                                    physics.createTestBoxes() 
+                                    physics.createTestBoxes()
 
                             $("#pendulum_style").trigger('change')
                             #set initial csl params from abc modes for semni
@@ -94,6 +125,7 @@
                     <button id="toggle_pause" class="toggle-button" onClick="physics.run = !physics.run">pause/run simulation [p]</button> 
                     <button id="next_step" onClick="physics.step = true">next step(s) [n]</button><br/>            
                     <button id="toggle_csl" class="toggle-button">toggle CSL [t]</button>
+                    <button id="toggle_bounce" class="toggle-button">toggle bounce controller [b]</button>
                     <script type="text/coffeescript">
                         $ ->
                             $("#toggle_csl").on 'click', ->
@@ -104,19 +136,24 @@
                                     physics.toggleCSL physics.body, physics.lower_joint
                                     if physics.upper_joint
                                         physics.toggleCSL physics.body2, physics.upper_joint
+                                        
+                            $("#toggle_bounce").on 'click', ->
+                                if physics.pend_style is 3
+                                    physics.toggleBounce physics.body2, physics.upper_joint
+                                    physics.toggleBounce physics.body3, physics.lower_joint
                     </script>
-                    <button id="apply_torque" onClick="physics.body.ApplyTorque(0.01)">apply torque (+0.01)</button> 
-                    <button id="add_box" onClick="physics.createBox()">create box</button><br/>
                     <br/>
          
                     <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.020" step="0.001" onchange="set_friction(parseFloat(this.value))" />
                     <span id="friction_val">0.020</span><br/>
 
-                    <label for="stiction_param">stiction</label> <input id="stiction_param" type="range" min="0" max="5" value="0.6" step="0.1" onchange="set_stiction(parseFloat(this.value))" />
-                    <span id="stiction_val">0.100</span><br/>            
-                    
-                    <label for="stiction_epsilon">stiction plateau</label> <input id="stiction_epsilon" type="range" min="0.005" max="0.2" value="0.006" step="0.001" onchange="set_stiction_vel(parseFloat(this.value))" />
-                    <span id="stiction_epsilon_val">0.010</span><br/><br/>
+                    <div id="stiction_params">
+                        <label for="stiction_param">stiction</label> <input id="stiction_param" type="range" min="0" max="5" value="0.6" step="0.1" onchange="set_stiction(parseFloat(this.value))" />
+                        <span id="stiction_val">0.100</span><br/>            
+                        
+                        <label for="stiction_epsilon">stiction plateau</label> <input id="stiction_epsilon" type="range" min="0.005" max="0.2" value="0.006" step="0.001" onchange="set_stiction_vel(parseFloat(this.value))" />
+                        <span id="stiction_epsilon_val">0.010</span><br/><br/>
+                    </div>
 
 
                     <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="25" style="width:60px;"/>
@@ -230,7 +267,7 @@
             </div>
         </div>
 
-        <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;/&phi;'<button id="clear_phase">clear</button></div>
+        <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;<sub>hip</sub>/&phi; <sub>knee</sub><button id="clear_phase">clear</button></div>
         <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled">motor torque upper (green) and lower (blue)</div>
         <div id="state_to_mode_mapping" style="display:none;"><input type="checkbox" id="phase_space_2_enabled">phase space U/&phi;'<br/></div>
         <script>
@@ -323,11 +360,14 @@
             //use jsxgraph for phase spaces
             var phase_space_enabled=false,motor_torque_enabled=false,phase_space_2_enabled=false,brd,brd2,g,g2,g3,g4,xdata=[],ydata=[],zdata=[{'U':0, 'phidot':0}],i,xdata2=[],ydata2=[],ydata3=[]
 
+            //show every nth-frame
+            var update_skip=update_skip_2=update_skip_initial=15
+
             JXG.Options.showCopyright = false
             JXG.Options.zoom.wheel = true
             JXG.Options.axis.withLabel = false
 
-            brd = JXG.JSXGraph.initBoard('phase_space_plot', {boundingbox:[-1.2,0.01,1.2,-0.01], axis:true})
+            brd = JXG.JSXGraph.initBoard('phase_space_plot', {boundingbox:[-1.2,2,1.2,-2], axis:true})
                             
             $("#clear_phase").click(function(){
                 lastx = xdata.pop()
@@ -343,6 +383,7 @@
             
             $("#motor_torque_enabled").on('click', function(){
                 motor_torque_enabled= !motor_torque_enabled
+                isMouseDown = false
             })
             
             $("#phase_space_2_enabled").on('click', function(){
@@ -366,14 +407,23 @@
                         ydata.shift()
                     }
 
-                    xdata.push(physics.lower_joint.GetJointAngle())
-                    ydata.push(physics.lower_joint.angle_diff_csl)
+                    if (physics.pend_style == 3) { 
+                        xdata.push(physics.lower_joint.GetJointAngle())
+                        ydata.push(physics.upper_joint.GetJointAngle())
+                    } else if (physics.pend_style == 1) {
+                        xdata.push(physics.lower_joint.GetJointAngle())
+                        ydata.push(0)
+                        //brd.setBoundingBox([-2,2,2,-2])
+                    }
                     
                     if (!g) {                   // If the curve does not exist yet, create it.
                         g = brd.create('curve', [xdata,ydata], {strokeWidth:1, strokeColor:'red'}); 
                     }
 
-                    brd.update();
+                    //don't draw every frame
+                    if (update_skip == 0) {
+                        brd.update()
+                    }
                 }
                 
                 if(phase_space_2_enabled) {
@@ -384,20 +434,29 @@
                     if (!angle_speed)
                         angle_speed=0
                     
-                    if (physics.body.motor_control)
-                        Uval = physics.body.motor_control
+                    if (physics.body.motor_torque)
+                        Uval = physics.body.motor_torque
                     else
-                        Uval = physics.body2.motor_control
+                        Uval = physics.body2.motor_torque
 
                     zdata.push({'U':Uval, 'phidot': angle_speed })
 
-                    path
-                      .attr("d", line)
-                      .attr("transform", null)
+                    //don't draw every frame
+                    if (update_skip == 0) {
+                        path
+                          .attr("d", line)
+                          .attr("transform", null)
+                    } 
+                }
+
+                if (update_skip == 0) {
+                    update_skip = update_skip_initial
+                } else {
+                    update_skip--
                 }
             }
 
-            for(i=0; i<1; i=i+0.001){
+            for(i=0; i<3; i=i+0.003){
                 xdata2.push(i)
             }
             brd2 = JXG.JSXGraph.initBoard('motor_torque_plot', {boundingbox:[0,2,5,-2], axis:true})
@@ -409,21 +468,21 @@
 
                 if (physics.pend_style == 3) {
                     //semni
-                    if (physics.body2.motor_control)
-                        ydata2.push(physics.body2.motor_control)
+                    if (physics.body2.motor_torque)
+                        ydata2.push(physics.body2.motor_torque)
                     else
                         ydata2.push(0)
                         
-                    if (physics.body3.motor_control)
-                        ydata3.push(physics.body3.motor_control)
+                    if (physics.body3.motor_torque)
+                        ydata3.push(physics.body3.motor_torque)
                     else
                         ydata3.push(0)
                 } else {
-                    if (physics.body.motor_control) {
-                        ydata2.push(physics.body.motor_control)
+                    if (physics.body.motor_torque) {
+                        ydata2.push(physics.body.motor_torque)
                     } else {
-                        if (physics.body2.motor_control)
-                            ydata2.push(physics.body2.motor_control)
+                        if (physics.body2.motor_torque)
+                            ydata2.push(physics.body2.motor_torque)
                         else
                             ydata2.push(0)
                     }                            
@@ -446,8 +505,13 @@
                         g4 = brd2.create('curve', [xdata2,ydata3], {strokeWidth:1, strokeColor:'green'}); 
                     } 
 
-                    //if (physics.lower_joint.csl_active)
+                    //don't draw every frame
+                    if (update_skip_2 == 0) {
                         brd2.update(); 
+                        update_skip_2 = update_skip_initial
+                    } else {
+                        update_skip_2--
+                    } 
                 }
             }
 
@@ -460,7 +524,7 @@
             if (!angle_speed)
                 angle_speed=0
 
-            zdata.push({'U':physics.body.motor_control, 'phidot': angle_speed })
+            zdata.push({'U':physics.body.motor_torque, 'phidot': angle_speed })
             */
         </script>
 
@@ -493,6 +557,10 @@
                 //keyboard shortcuts
                 $(document).bind('keydown', 't', function (evt){
                    $('#toggle_csl').click(); return false;
+                })
+                
+                $(document).bind('keydown', 'b', function (evt){
+                   $('#toggle_bounce').click(); return false;
                 })
                 
                 $(document).bind('keydown', 'p', function (evt){

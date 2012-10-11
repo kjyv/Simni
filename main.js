@@ -86,9 +86,13 @@ physics = (function() {
 
     this.updateMotor = __bind(this.updateMotor, this);
 
-    this.updateCSL = __bind(this.updateCSL, this);
+    this.updateController = __bind(this.updateController, this);
+
+    this.Bounce = __bind(this.Bounce, this);
 
     this.CSL = __bind(this.CSL, this);
+
+    this.toggleBounce = __bind(this.toggleBounce, this);
 
     this.toggleCSL = __bind(this.toggleCSL, this);
 
@@ -104,6 +108,8 @@ physics = (function() {
 
     this.createSimplePendulum = __bind(this.createSimplePendulum, this);
 
+    this.createCircle = __bind(this.createCircle, this);
+
     this.createBox = __bind(this.createBox, this);
 
     /*
@@ -117,7 +123,7 @@ physics = (function() {
          Material ICE    = new Material(0.92f,  0.01f, 0.1f,  false, true,  true,  new Color(0, 146, 220, 200)); // Medium weight, slippery surface.
     */
 
-    var bodyDef, debugDraw, fixDef;
+    var bodyDef, fixDef;
     this.world = new b2World(new b2Vec2(0, 9.81), false);
     this.set_posture = false;
     fixDef = new b2FixtureDef;
@@ -126,7 +132,7 @@ physics = (function() {
     fixDef.restitution = 0.01;
     this.fixDef = fixDef;
     this.ground_height = 0.03;
-    this.ground_width = 1;
+    this.ground_width = 3;
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_staticBody;
     bodyDef.position.x = 1;
@@ -137,14 +143,13 @@ physics = (function() {
     this.ground = this.world.CreateBody(bodyDef);
     this.ground_bodyDef = bodyDef;
     this.ground.CreateFixture(fixDef);
-    debugDraw = new b2DebugDraw();
-    debugDraw.SetSprite(document.getElementById("canvas").getContext("2d"));
-    this.drawScale = 300;
-    debugDraw.SetDrawScale(this.drawScale);
-    debugDraw.SetFillAlpha(0.5);
-    debugDraw.SetLineThickness(1.0);
-    debugDraw.SetFlags(b2DebugDraw.e_shapeBit);
-    this.world.SetDebugDraw(debugDraw);
+    this.debugDraw = new b2DebugDraw();
+    this.debugDraw.SetSprite(document.getElementById("canvas").getContext("2d"));
+    this.debugDraw.SetDrawScale(300);
+    this.debugDraw.SetFillAlpha(0.3);
+    this.debugDraw.SetLineThickness(1.0);
+    this.debugDraw.AppendFlags(b2DebugDraw.e_shapeBit);
+    this.world.SetDebugDraw(this.debugDraw);
     this.run = true;
     this.step = false;
     this.pend_style = 0;
@@ -159,7 +164,23 @@ physics = (function() {
     fixDef.restitution = 0.2;
     this.fixDef = fixDef;
     fixDef.shape = new b2PolygonShape;
-    fixDef.shape.SetAsBox(0.30, 0.14);
+    fixDef.shape.SetAsBox(0.1, 0.1);
+    bodyDef = new b2BodyDef;
+    bodyDef.type = b2Body.b2_staticBody;
+    bodyDef.position.Set(1.3, 0.8);
+    box = this.world.CreateBody(bodyDef);
+    return box.CreateFixture(fixDef);
+  };
+
+  physics.prototype.createCircle = function() {
+    var bodyDef, box, fixDef;
+    fixDef = new b2FixtureDef;
+    fixDef.density = 1;
+    fixDef.friction = 0.3;
+    fixDef.restitution = 0.2;
+    this.fixDef = fixDef;
+    fixDef.shape = new b2CircleShape;
+    fixDef.shape.m_radius = 0.12;
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_staticBody;
     bodyDef.position.Set(1.3, 0.8);
@@ -185,7 +206,7 @@ physics = (function() {
     this.body = this.world.CreateBody(bodyDef);
     line = this.body.CreateFixture(this.fixDef);
     this.body.z2 = 0;
-    this.body.motor_control = 0;
+    this.body.motor_torque = 0;
     this.body.I_tm1 = 0;
     this.body.U_csl = 0;
     this.fixDef.shape = new b2CircleShape(mass_size);
@@ -197,6 +218,7 @@ physics = (function() {
     this.lower_joint = this.world.CreateJoint(jointDef);
     this.lower_joint.angle_speed = 0;
     this.lower_joint.csl_active = false;
+    this.lower_joint.bounce_active = false;
     this.lower_joint.joint_name = 'lower';
     this.lower_joint.csl_sign = 1;
     this.lower_joint.gain = 1;
@@ -221,7 +243,7 @@ physics = (function() {
     this.body = this.world.CreateBody(bodyDef);
     line = this.body.CreateFixture(this.fixDef);
     this.body.z2 = 0;
-    this.body.motor_control = 0;
+    this.body.motor_torque = 0;
     this.body.I_tm1 = 0;
     this.body.U_csl = 0;
     jointDef = new b2RevoluteJointDef();
@@ -230,6 +252,7 @@ physics = (function() {
     this.lower_joint = this.world.CreateJoint(jointDef);
     this.lower_joint.angle_speed = 0;
     this.lower_joint.csl_active = false;
+    this.lower_joint.bounce_active = false;
     this.lower_joint.joint_name = 'lower';
     this.lower_joint.csl_sign = 1;
     this.lower_joint.gain = 1;
@@ -245,13 +268,14 @@ physics = (function() {
     this.body2 = this.world.CreateBody(bodyDef);
     line2 = this.body2.CreateFixture(this.fixDef);
     this.body2.z2 = 0;
-    this.body2.motor_control = 0;
+    this.body2.motor_torque = 0;
     jointDef = new b2RevoluteJointDef();
     jointDef.Initialize(this.body2, this.body, pend_vertices[0]);
     jointDef.collideConnected = false;
     this.upper_joint = this.world.CreateJoint(jointDef);
     this.upper_joint.angle_speed = 0;
     this.upper_joint.csl_active = false;
+    this.upper_joint.bounce_active = false;
     this.upper_joint.joint_name = 'upper';
     this.upper_joint.csl_sign = 1;
     this.upper_joint.gain = 1;
@@ -305,15 +329,9 @@ physics = (function() {
     md.center.Set(contourCenter.x, contourCenter.y);
     md.I = this.body.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y);
     this.body.SetMassData(md);
-    this.fixDef.density = 0.00001;
-    this.fixDef.shape = new b2CircleShape;
-    this.fixDef.shape.m_p.Set(contourCenter.x, contourCenter.y);
-    this.fixDef.shape.m_radius = 0.01;
-    this.fixDef.filter.groupIndex = -1;
-    this.body.CreateFixture(this.fixDef);
     this.body.z2 = 0;
-    this.body.last_motor_control = 0;
-    this.body.motor_control = 0;
+    this.body.last_motor_torque = 0;
+    this.body.motor_torque = 0;
     this.body.I_tm1 = 0;
     this.body.U_csl = 0;
     bodyDef2 = new b2BodyDef;
@@ -335,17 +353,12 @@ physics = (function() {
     md.center.Set(arm1Center.x, arm1Center.y);
     md.I = this.body2.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y);
     this.body2.SetMassData(md);
-    this.fixDef2.density = 0.00001;
-    this.fixDef2.shape = new b2CircleShape;
-    this.fixDef2.shape.m_p.Set(arm1Center.x, arm2Center.y);
-    this.fixDef2.shape.m_radius = 0.01;
-    this.fixDef2.filter.groupIndex = -1;
-    this.body2.CreateFixture(this.fixDef2);
     this.body2.z2 = 0;
-    this.body2.last_motor_control = 0;
-    this.body2.motor_control = 0;
+    this.body2.last_motor_torque = 0;
+    this.body2.motor_torque = 0;
     this.body2.I_tm1 = 0;
     this.body2.U_csl = 0;
+    this.body2.bounce_sign = 1;
     jointDef = new b2RevoluteJointDef();
     jointDef.bodyA = this.body;
     jointDef.bodyB = this.body2;
@@ -358,6 +371,7 @@ physics = (function() {
     this.upper_joint = this.world.CreateJoint(jointDef);
     this.upper_joint.angle_speed = 0;
     this.upper_joint.csl_active = false;
+    this.upper_joint.bounce_active = false;
     this.upper_joint.joint_name = 'upper';
     this.upper_joint.csl_sign = 1;
     this.upper_joint.gain = 1;
@@ -381,17 +395,12 @@ physics = (function() {
     md.center.Set(arm2Center.x, arm2Center.y);
     md.I = this.body3.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y);
     this.body3.SetMassData(md);
-    this.fixDef3.density = 0.00001;
-    this.fixDef3.shape = new b2CircleShape;
-    this.fixDef3.shape.m_p.Set(arm2Center.x, arm2Center.y);
-    this.fixDef3.shape.m_radius = 0.01;
-    this.fixDef3.filter.groupIndex = -1;
-    this.body3.CreateFixture(this.fixDef3);
     this.body3.z2 = 0;
-    this.body3.last_motor_control = 0;
-    this.body3.motor_control = 0;
+    this.body3.last_motor_torque = 0;
+    this.body3.motor_torque = 0;
     this.body3.I_tm1 = 0;
     this.body3.U_csl = 0;
+    this.body3.bounce_sign = 1;
     jointDef = new b2RevoluteJointDef();
     jointDef.bodyA = this.body2;
     jointDef.bodyB = this.body3;
@@ -407,6 +416,7 @@ physics = (function() {
     this.lower_joint = this.world.CreateJoint(jointDef);
     this.lower_joint.angle_speed = 0;
     this.lower_joint.csl_active = false;
+    this.lower_joint.bounce_active = false;
     this.lower_joint.joint_name = 'lower';
     this.lower_joint.csl_sign = 1;
     this.lower_joint.gain = 1;
@@ -450,6 +460,7 @@ physics = (function() {
     this.lower_joint = this.world.CreateJoint(jointDef);
     this.lower_joint.angle_speed = 0;
     this.lower_joint.csl_active = false;
+    this.lower_joint.bounce_active = false;
     this.lower_joint.joint_name = 'lower';
     this.lower_joint.csl_sign = 1;
     this.lower_joint.gain = 1;
@@ -467,6 +478,9 @@ physics = (function() {
   };
 
   physics.prototype.toggleCSL = function(bodyObject, bodyJoint) {
+    if (bodyJoint.bounce_active) {
+      $("#toggle_bounce").click();
+    }
     bodyJoint.csl_active = !bodyJoint.csl_active;
     if (this.lower_joint) {
       $("#set_csl_params_lower").trigger('click');
@@ -477,6 +491,15 @@ physics = (function() {
     if (bodyJoint.last_angle == null) {
       bodyJoint.last_angle = bodyJoint.GetJointAngle();
     }
+    bodyObject.U_csl = 0;
+    return bodyObject.last_integrated = 0;
+  };
+
+  physics.prototype.toggleBounce = function(bodyObject, bodyJoint) {
+    if (bodyJoint.csl_active) {
+      $("#toggle_csl").click();
+    }
+    bodyJoint.bounce_active = !bodyJoint.bounce_active;
     bodyObject.U_csl = 0;
     return bodyObject.last_integrated = 0;
   };
@@ -492,30 +515,43 @@ physics = (function() {
     vel = gi * angle_diff;
     sum = vel + bodyObject.last_integrated;
     bodyObject.last_integrated = gf * sum;
-    return this.clip((sum * gain) + gb, 12);
+    return (sum * gain) + gb;
   };
 
-  physics.prototype.updateCSL = function(bodyObject, bodyJoint) {
+  physics.prototype.Bounce = function(vs, angle_diff, bodyObject) {
+    var gain;
+    gain = 0.3;
+    if (Math.abs(bodyObject.motor_torque) > 0.7) {
+      bodyObject.bounce_sign = bodyObject.bounce_sign * -1;
+      bodyObject.last_integrated = 0;
+    }
+    bodyObject.last_integrated = 8 * (angle_diff - vs) + bodyObject.last_integrated;
+    return bodyObject.last_integrated * bodyObject.bounce_sign * gain;
+  };
+
+  physics.prototype.updateController = function(bodyObject, bodyJoint) {
     bodyJoint.angle_diff_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle;
     bodyJoint.last_angle = bodyJoint.GetJointAngle();
     if (bodyJoint.csl_active) {
-      bodyObject.U_csl = this.CSL(bodyJoint.gi, bodyJoint.gf, bodyJoint.gb, bodyJoint.angle_diff_csl, bodyJoint.gain, bodyObject);
+      return bodyObject.U_csl = this.CSL(bodyJoint.gi, bodyJoint.gf, bodyJoint.gb, bodyJoint.angle_diff_csl, bodyJoint.gain, bodyObject);
+    } else if (bodyJoint.bounce_active) {
+      return bodyObject.U_csl = this.Bounce(0.0008, bodyJoint.angle_diff_csl, bodyObject);
     }
-    return draw_phase_space();
   };
 
-  km = 10.7 * 193 * 0.4 / 1000;
+  km = 10.7 * 193 * 0.55 / 1000;
 
   kb = 2.07;
 
   R = 8.3;
 
   physics.prototype.updateMotor = function(bodyObject, bodyJoint) {
-    var I_t, U_csl;
+    var I_t, U_csl, U_effective;
     U_csl = bodyObject.U_csl;
-    I_t = (U_csl - (kb * (-bodyJoint.GetJointSpeed()))) * (1 / R);
-    bodyObject.motor_control = km * I_t;
-    return bodyJoint.m_applyTorque = bodyObject.motor_control;
+    U_effective = this.clip(U_csl - (kb * (-bodyJoint.GetJointSpeed())), 12);
+    I_t = U_effective * (1 / R);
+    bodyObject.motor_torque = km * I_t;
+    return bodyJoint.m_applyTorque = bodyObject.motor_torque;
   };
 
   physics.prototype.clip = function(value, cap) {
@@ -545,16 +581,16 @@ physics = (function() {
     }
   };
 
-  physics.prototype.calcMode = function(motor_control, angle_speed) {
+  physics.prototype.calcMode = function(motor_torque, angle_speed) {
     var as, mc, mode;
-    mc = w0_abs ? Math.abs(motor_control) : motor_control;
+    mc = w0_abs ? Math.abs(motor_torque) : motor_torque;
     as = w1_abs ? Math.abs(angle_speed) : angle_speed;
     return mode = w0 * mc + w1 * as + w2;
   };
 
   physics.prototype.updateMode = function(bodyObject, bodyJoint) {
     var mode;
-    mode = this.calcMode(bodyObject.motor_control, bodyJoint.angle_diff_csl);
+    mode = this.calcMode(bodyObject.motor_torque, bodyJoint.angle_diff_csl);
     mode = this.clip(mode, 3);
     return map_mode(bodyJoint, mode);
   };
@@ -612,23 +648,23 @@ physics = (function() {
       i = 0;
       while (i < steps_per_frame) {
         if (this.pend_style === 3) {
-          this.updateCSL(this.body2, this.lower_joint);
-          this.updateCSL(this.body3, this.upper_joint);
+          this.updateController(this.body2, this.lower_joint);
+          this.updateController(this.body3, this.upper_joint);
           this.updateMotor(this.body2, this.lower_joint);
           this.updateMotor(this.body3, this.upper_joint);
         } else if (this.pend_style === 1) {
-          this.updateCSL(this.body, this.lower_joint);
+          this.updateController(this.body, this.lower_joint);
           this.updateMotor(this.body, this.lower_joint);
           this.applyFriction(this.body, this.lower_joint);
         } else if (this.pend_style === 2) {
-          this.updateCSL(this.body, this.lower_joint);
-          this.updateCSL(this.body2, this.upper_joint);
+          this.updateController(this.body, this.lower_joint);
+          this.updateController(this.body2, this.upper_joint);
           this.updateMotor(this.body, this.lower_joint);
           this.updateMotor(this.body2, this.upper_joint);
           this.applyFriction(this.body, this.lower_joint);
           this.applyFriction(this.body2, this.upper_joint);
         } else if (this.pend_style === 4) {
-          this.updateCSL(this.body, this.lower_joint);
+          this.updateController(this.body, this.lower_joint);
           this.updateMotor(this.body, this.lower_joint);
         }
         if (this.set_posture) {
@@ -641,6 +677,7 @@ physics = (function() {
       }
       this.world.ClearForces();
       this.world.DrawDebugData();
+      draw_phase_space();
       draw_motor_torque();
     }
     requestAnimFrame(this.update);
@@ -863,8 +900,8 @@ $(function() {
     return mouseY = undefined;
   }), true);
   handleMouseMove = function(e) {
-    mouseX = (e.clientX - canvasPosition.x) / physics.drawScale;
-    return mouseY = (e.clientY - canvasPosition.y) / physics.drawScale;
+    mouseX = (e.clientX - canvasPosition.x) / physics.debugDraw.GetDrawScale();
+    return mouseY = (e.clientY - canvasPosition.y) / physics.debugDraw.GetDrawScale();
   };
   physics.getBodyAtMouse = function() {
     var aabb;
