@@ -394,6 +394,7 @@ class physics
     @upper_joint.angle_speed = 0
     @upper_joint.csl_active = false
     @upper_joint.bounce_active = false
+    @upper_joint.bounce_vel = 0.0003
     @upper_joint.joint_name = 'upper'
     @upper_joint.csl_sign = 1
     @upper_joint.gain = 1
@@ -460,6 +461,7 @@ class physics
     @lower_joint.angle_speed = 0
     @lower_joint.csl_active = false
     @lower_joint.bounce_active = false
+    @lower_joint.bounce_vel = 0.0004
     @lower_joint.joint_name = 'lower'
     @lower_joint.csl_sign = 1
     @lower_joint.gain = 1
@@ -561,14 +563,13 @@ class physics
     return (sum * gain) + gb
 
   Bounce: (vs, angle_diff, bodyObject) =>
-    gain = 0.3
     #turn around on stall
-    if Math.abs(bodyObject.motor_torque) > 0.7
+    if Math.abs(bodyObject.motor_torque) > 0.8
       bodyObject.bounce_sign = bodyObject.bounce_sign * -1
       bodyObject.last_integrated = 0
 
-    bodyObject.last_integrated = 8*(angle_diff-vs)+bodyObject.last_integrated
-    return bodyObject.last_integrated*bodyObject.bounce_sign*gain
+    bodyObject.last_integrated += 30*(angle_diff-(vs*bodyObject.bounce_sign))
+    return bodyObject.last_integrated
 
   updateController: (bodyObject, bodyJoint) =>
     bodyJoint.angle_diff_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle
@@ -582,7 +583,7 @@ class physics
         bodyObject
       )
     else if bodyJoint.bounce_active
-      bodyObject.U_csl = @Bounce(0.0008, bodyJoint.angle_diff_csl, bodyObject)
+      bodyObject.U_csl = @Bounce(bodyJoint.bounce_vel, bodyJoint.angle_diff_csl, bodyObject)
     
     #calm down if contraction goes out of bounds
     #if Math.abs(bodyObject.motor_torque) > 0.5

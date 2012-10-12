@@ -372,6 +372,7 @@ physics = (function() {
     this.upper_joint.angle_speed = 0;
     this.upper_joint.csl_active = false;
     this.upper_joint.bounce_active = false;
+    this.upper_joint.bounce_vel = 0.0003;
     this.upper_joint.joint_name = 'upper';
     this.upper_joint.csl_sign = 1;
     this.upper_joint.gain = 1;
@@ -417,6 +418,7 @@ physics = (function() {
     this.lower_joint.angle_speed = 0;
     this.lower_joint.csl_active = false;
     this.lower_joint.bounce_active = false;
+    this.lower_joint.bounce_vel = 0.0004;
     this.lower_joint.joint_name = 'lower';
     this.lower_joint.csl_sign = 1;
     this.lower_joint.gain = 1;
@@ -519,14 +521,12 @@ physics = (function() {
   };
 
   physics.prototype.Bounce = function(vs, angle_diff, bodyObject) {
-    var gain;
-    gain = 0.3;
-    if (Math.abs(bodyObject.motor_torque) > 0.7) {
+    if (Math.abs(bodyObject.motor_torque) > 0.8) {
       bodyObject.bounce_sign = bodyObject.bounce_sign * -1;
       bodyObject.last_integrated = 0;
     }
-    bodyObject.last_integrated = 8 * (angle_diff - vs) + bodyObject.last_integrated;
-    return bodyObject.last_integrated * bodyObject.bounce_sign * gain;
+    bodyObject.last_integrated += 30 * (angle_diff - (vs * bodyObject.bounce_sign));
+    return bodyObject.last_integrated;
   };
 
   physics.prototype.updateController = function(bodyObject, bodyJoint) {
@@ -535,7 +535,7 @@ physics = (function() {
     if (bodyJoint.csl_active) {
       return bodyObject.U_csl = this.CSL(bodyJoint.gi, bodyJoint.gf, bodyJoint.gb, bodyJoint.angle_diff_csl, bodyJoint.gain, bodyObject);
     } else if (bodyJoint.bounce_active) {
-      return bodyObject.U_csl = this.Bounce(0.0008, bodyJoint.angle_diff_csl, bodyObject);
+      return bodyObject.U_csl = this.Bounce(bodyJoint.bounce_vel, bodyJoint.angle_diff_csl, bodyObject);
     }
   };
 
