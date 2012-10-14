@@ -299,12 +299,16 @@ physics = (function() {
 
   physics.prototype.upper_joint = null;
 
-  physics.prototype.createSemni = function() {
-    var bodyDef, bodyDef2, bodyDef3, fixture, jointDef, md, x0, y0, _i, _j, _k, _len, _len1, _len2;
+  physics.prototype.createSemni = function(x0, y0) {
+    var bodyDef, bodyDef2, bodyDef3, fixture, jointDef, md, _i, _j, _k, _len, _len1, _len2;
+    if (x0 == null) {
+      x0 = 1;
+    }
+    if (y0 == null) {
+      y0 = 0.5;
+    }
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_dynamicBody;
-    x0 = this.ground_bodyDef.position.x;
-    y0 = this.ground_bodyDef.position.y - 0.5;
     bodyDef.position.Set(x0, y0);
     this.body = this.world.CreateBody(bodyDef);
     this.fixDef = new b2FixtureDef;
@@ -353,6 +357,7 @@ physics = (function() {
     md.center.Set(arm1Center.x, arm1Center.y);
     md.I = this.body2.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y);
     this.body2.SetMassData(md);
+    this.body2.SetPositionAndAngle(new b2Vec2(arm1Center.x, arm1Center.y), 0);
     this.body2.z2 = 0;
     this.body2.last_motor_torque = 0;
     this.body2.motor_torque = 0;
@@ -396,6 +401,7 @@ physics = (function() {
     md.center.Set(arm2Center.x, arm2Center.y);
     md.I = this.body3.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y);
     this.body3.SetMassData(md);
+    this.body3.SetPositionAndAngle(new b2Vec2(arm1Center.x, arm1Center.y), 0);
     this.body3.z2 = 0;
     this.body3.last_motor_torque = 0;
     this.body3.motor_torque = 0;
@@ -598,7 +604,7 @@ physics = (function() {
   was_static = false;
 
   physics.prototype.update = function() {
-    var body, i, md, x0, y0;
+    var body, i, md;
     window.stats.begin();
     if ((this.run || this.step) && this.pend_style) {
       this.step = false;
@@ -666,11 +672,6 @@ physics = (function() {
         } else if (this.pend_style === 4) {
           this.updateController(this.body, this.lower_joint);
           this.updateMotor(this.body, this.lower_joint);
-        }
-        if (this.set_posture) {
-          x0 = this.ground_bodyDef.position.x;
-          y0 = this.ground_bodyDef.position.y - 0.8;
-          this.body.SetPositionAndAngle(new b2Vec2(x0, y0), 0);
         }
         this.world.Step(dt, 10, 10);
         i++;
@@ -781,7 +782,16 @@ myon_precision = function(number) {
 };
 
 set_posture = function(bodyAngle, hipAngle, kneeAngle, hipCsl, kneeCsl) {
-  return physics.set_posture = !physics.set_posture;
+  var p, x0, y0;
+  p = physics;
+  p.world.DestroyBody(p.body3);
+  p.world.DestroyJoint(p.lower_joint);
+  p.world.DestroyBody(p.body2);
+  p.world.DestroyJoint(p.upper_joint);
+  p.world.DestroyBody(p.body);
+  x0 = 0.516;
+  y0 = 0.76;
+  return p.createSemni(x0, y0);
 };
 
 set_csl_modes = function(hipCSL, kneeCSL) {

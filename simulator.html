@@ -45,6 +45,9 @@ Neurorobotics Research Laboratory, Berlin
                 <button id="add_box" onClick="physics.createBox()">Box</button>
                 <button id="add_circle" onClick="physics.createCircle()">Circle</button><br/>
                 <br/>
+
+                Semni:
+                <button id="posture_0" onclick="set_posture(0,0,0, false, false)">Zero</button>
             </div>
             <div id="bottom-panel">
                 <div id="controls">
@@ -248,8 +251,6 @@ Neurorobotics Research Laboratory, Berlin
                     <button id="preset_4" onclick="set_preset(81,-3676,-0.5,false,false)">Preset 4</button>r right, s left
                 </div>
                 <div id="semni_posture_controls">
-                    <button id="posture_0" onclick="set_posture(0,0,0, false, false)">Zero Position</button>
-                    <br/>
                     <br/>
                     <label for="csl_mode_hip">Hip</label>:
                         <select id="csl_mode_hip" onchange="set_csl_modes($('#csl_mode_hip').val(),$('#csl_mode_knee').val()); isMouseDown = false">

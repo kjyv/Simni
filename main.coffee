@@ -277,19 +277,20 @@ class physics
   ###
 
   upper_joint: null
-  createSemni: =>
+  createSemni: (x0=1,y0=0.5) =>
     #semni overall weight: 432 g
     #body: 120 g
     #arm at body: 135 g
     #second arm: 177 g 
-    #
     #min/max angle of lower arm: -3.2421 and 1.90816 
+    #
+    #TODO: 
+    #determine proper friction values (joints and surfaces)
+    #
                                 
     #create body
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_dynamicBody
-    x0 = @ground_bodyDef.position.x
-    y0 = @ground_bodyDef.position.y - 0.5
     bodyDef.position.Set(x0,y0)
     @body = @world.CreateBody(bodyDef)
 
@@ -350,13 +351,14 @@ class physics
     for fixture in arm1ContourConvex
       @fixDef2.shape.SetAsArray(fixture, fixture.length)
       @body2.CreateFixture(@fixDef2)
-    
+ 
     #set center of mass
     md = new b2MassData()
     @body2.GetMassData(md)
     md.center.Set(arm1Center.x, arm1Center.y)
     md.I = @body2.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y)
     @body2.SetMassData(md)
+    @body2.SetPositionAndAngle(new b2Vec2(arm1Center.x, arm1Center.y), 0)
 
     #show center of mass
     #@fixDef2.density = 0.00001
@@ -424,6 +426,8 @@ class physics
     md.center.Set(arm2Center.x, arm2Center.y)
     md.I = @body3.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y)
     @body3.SetMassData(md)
+    
+    @body3.SetPositionAndAngle(new b2Vec2(arm1Center.x, arm1Center.y), 0)
 
     #show center of mass
     #@fixDef3.density = 0.00001
@@ -724,12 +728,6 @@ class physics
           @updateController @body, @lower_joint
           @updateMotor @body, @lower_joint
 
-
-        if @set_posture
-          x0 = @ground_bodyDef.position.x
-          y0 = @ground_bodyDef.position.y - 0.8
-          @body.SetPositionAndAngle(new b2Vec2(x0,y0), 0)
-
         @world.Step(
           dt,             #timestep (1 / fps)
           10,             #velocity iterations
@@ -850,10 +848,20 @@ myon_precision = (number) ->
   Math.floor(number * 10000) / 10000
 
 set_posture = (bodyAngle, hipAngle, kneeAngle, hipCsl, kneeCsl) ->
-  #TODO, how to properly set joint angles?
-  physics.set_posture = not physics.set_posture
-  #physics.body2.SetAngle(hipAngle)
-  #physics.body3.SetAngle(kneeAngle)
+  #TODO, hm, how to properly set joint angles? sum angles going up from body
+  p = physics
+
+  p.world.DestroyBody p.body3
+  p.world.DestroyJoint p.lower_joint
+  p.world.DestroyBody p.body2
+  p.world.DestroyJoint p.upper_joint
+  p.world.DestroyBody p.body
+
+  x0 = 0.516
+  y0 = 0.76
+
+  #p.body.SetPositionAndAngle(new b2Vec2(x0,y0), 0)
+  p.createSemni(x0,y0)
 
 set_csl_modes = (hipCSL, kneeCSL) ->
   #set ABC learning modes for exploration
