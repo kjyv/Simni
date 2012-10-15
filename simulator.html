@@ -17,7 +17,7 @@ Neurorobotics Research Laboratory, Berlin
         <script type="text/javascript" src="libs/jsxgraphcore.js"></script>
         <!-- TODO: minify stuff -->
         <script src="libs/d3.v2.js"></script>
-        <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
+        <script src="libs/Box2dWeb-2.1.a.3.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
         <script src="semni.data.js"></script>
         <script src="main.js"></script>
@@ -55,7 +55,6 @@ Neurorobotics Research Laboratory, Berlin
                         <option value="1">Single Pendulum</option>
                         <option value="2">Double Pendulum</option>
                         <option value="3" selected="selected">Semni</option>
-                        <option value="4">Box/Joint Test</option>
                     </select><br/>
                     <script type="text/coffeescript">
                         $ ->
@@ -86,7 +85,7 @@ Neurorobotics Research Laboratory, Berlin
 
                                 if style is "1"
                                     physics.pend_style = 1
-                                    physics.createSimplePendulum()
+                                    physics.createPendulum()
               
                                     #get initial gi/gf from current mode setting
                                     map_mode physics.lower_joint
@@ -114,10 +113,6 @@ Neurorobotics Research Laboratory, Berlin
                                     $("#stiction_params").fadeOut "fast"
                                     $("#map_state_to_mode_panel").fadeOut "fast", ->
                                         $("#semni_posture_controls").fadeIn "fast"
-                                    
-                                else if style is "4"
-                                    physics.pend_style = 4
-                                    physics.createTestBoxes()
 
                             $("#pendulum_style").trigger('change')
                             #set initial csl params from abc modes for semni
@@ -147,8 +142,8 @@ Neurorobotics Research Laboratory, Berlin
                     </script>
                     <br/>
          
-                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.020" step="0.001" onchange="set_friction(parseFloat(this.value))" />
-                    <span id="friction_val">0.020</span><br/>
+                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.084" step="0.001" onchange="set_friction(parseFloat(this.value))" />
+                    <span id="friction_val">0.084</span><br/>
 
                     <div id="stiction_params">
                         <label for="stiction_param">stiction</label> <input id="stiction_param" type="range" min="0" max="5" value="0.6" step="0.1" onchange="set_stiction(parseFloat(this.value))" />
@@ -159,7 +154,7 @@ Neurorobotics Research Laboratory, Berlin
                     </div>
 
 
-                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="25" style="width:60px;"/>
+                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="40" style="width:60px;"/>
                     <label for="gf_param_upper">g<sub>f</sub></label> <input id="gf_param_upper" type="text" value="0.1" style="width:60px;"/>
                     <label for="gb_param_upper">g<sub>b</sub></label> <input id="gb_param_upper" type="text" value="1" style="width:60px;"/>
                     <label for="gain_param_upper">gain</label> <input id="gain_param_upper" type="text" value="1" style="width:60px;"/>
@@ -179,7 +174,7 @@ Neurorobotics Research Laboratory, Berlin
                     <span id="mode_val_upper"></span> <span id="csl_mode_name_upper">contraction</span><br/>
 
 
-                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="25" style="width:60px;"/>
+                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="40" style="width:60px;"/>
                     <label for="gf_param_lower">g<sub>f</sub></label> <input id="gf_param_lower" type="text" value="0.1" style="width:60px;"/>
                     <label for="gb_param_lower">g<sub>b</sub></label> <input id="gb_param_lower" type="text" value="1" style="width:60px;"/>
                     <label for="gain_param_lower">gain</label> <input id="gain_param_lower" type="text" value="1" style="width:60px;"/>

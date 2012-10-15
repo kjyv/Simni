@@ -1,16 +1,20 @@
 # vim: set expandtab ts=2 sw=2:
 
 dt = 1/960  #update frequency in hz
-#we want a ~1000hz simulation but only have <= 60 fps from the browser
-#so we need to call step 16 times with 60*16 = 960 updates/s
+#if we want a ~960hz simulation but only have <= 60 fps from the browser
+#we need to call step 16 times with 60*16 = 960 updates/s
 steps_per_frame = 16
 
 b2Vec2 = Box2D.Common.Math.b2Vec2
+b2Color = Box2D.Common.b2Color
 b2AABB = Box2D.Collision.b2AABB
+b2Transform = Box2D.Common.Math.b2Transform
 b2BodyDef = Box2D.Dynamics.b2BodyDef
 b2Body = Box2D.Dynamics.b2Body
 b2FixtureDef = Box2D.Dynamics.b2FixtureDef
 b2Fixture = Box2D.Dynamics.b2Fixture
+b2Shape = Box2D.Collision.Shapes.b2Shape
+b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
 b2World = Box2D.Dynamics.b2World
 b2MassData = Box2D.Collision.Shapes.b2MassData
 b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
@@ -49,17 +53,6 @@ window.requestAnimFrame = (->
 
 class physics
   constructor: ->
-    ###
-    #                               dens    frict  rest    
-     Material DEFAULT= new Material(1.00f,  0.30f, 0.1f,  false, true,  true,  Color.GRAY);
-     Material METAL  = new Material(7.85f,  0.20f, 0.2f,  false, false, false, Color.LIGHT_GRAY); // Heavy, inert.
-     Material STONE  = new Material(2.40f,  0.50f, 0.1f,  false, false, false, Color.DARK_GRAY); // Heavy, inert.
-     Material WOOD   = new Material(0.53f,  0.40f, 0.15f, false, true,  false, new Color(150, 98, 0)); // Medium weight, mostly inert.
-     Material GLASS  = new Material(2.50f,  0.10f, 0.2f,  false, true,  true,  new Color(0, 0, 220, 128)); // Heavy, transparent.
-     Material RUBBER = new Material(1.50f,  0.80f, 0.4f,  false, false, false, new Color(20, 20, 20)); // Medium weight, inert, bouncy.
-     Material ICE    = new Material(0.92f,  0.01f, 0.1f,  false, true,  true,  new Color(0, 146, 220, 200)); // Medium weight, slippery surface.
-    ###
-   
     @world = new b2World(
       new b2Vec2(0, 9.81),    #gravity
       false                  #allow sleep
@@ -68,7 +61,7 @@ class physics
     @set_posture = false
     fixDef = new b2FixtureDef
     fixDef.density = 10
-    fixDef.friction = 0.3
+    fixDef.friction = 0.43
     fixDef.restitution = 0.01
     @fixDef = fixDef
     
@@ -91,7 +84,7 @@ class physics
     #setup debug draw
     @debugDraw = new b2DebugDraw()
     @debugDraw.SetSprite document.getElementById("canvas").getContext("2d")
-    @debugDraw.SetDrawScale 300
+    @debugDraw.SetDrawScale 280
     @debugDraw.SetFillAlpha 0.3
     @debugDraw.SetLineThickness 1.0
     @debugDraw.AppendFlags b2DebugDraw.e_shapeBit
@@ -135,15 +128,15 @@ class physics
     box.CreateFixture fixDef
 
   lower_joint: null
-  createSimplePendulum: =>
+  createPendulum: =>
     #create pendulum line
-    pend_length = 0.5
-    mass_size = 0.05
+    pend_length = 0.400
+    mass_size = 0.03
     damping = 0   #custom friction is used instead (further down)
 
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_dynamicBody
-    @fixDef.density = 25
+    @fixDef.density = 35
     @fixDef.shape = new b2PolygonShape
     pend_vertices = new Array(
       #don't "touch" the ground so we don't get collisions while rotating
@@ -169,8 +162,11 @@ class physics
     
     #rotating joint
     jointDef = new b2RevoluteJointDef()
-    jointDef.Initialize @body, @ground, pend_vertices[0]
+    jointDef.Initialize @ground, @body, pend_vertices[0]
     jointDef.collideConnected = true
+    jointDef.maxMotorTorque = beta
+    jointDef.motorSpeed = 0.0
+    jointDef.enableMotor = true
     @lower_joint = @world.CreateJoint(jointDef)
 
     #initialize
@@ -181,6 +177,7 @@ class physics
     @lower_joint.csl_sign = 1
     @lower_joint.gain = 1
     @lower_joint.gb = 0
+    
 
   upper_joint: null
   createDoublePendulum: =>
@@ -287,7 +284,18 @@ class physics
     #TODO: 
     #determine proper friction values (joints and surfaces)
     #
-                                
+    bodyDensity = 0.96  #0.99
+    bodyFriction = 0.25
+    bodyResitution = 0.1
+
+    upperArmDensity = 4.2 #4.35
+    upperArmFriction =  0.25
+    upperArmRestitution = 0.1
+
+    lowerArmDensity = 11.35 #10.9
+    lowerArmFriction = 0.25
+    lowerArmRestitution = 0.2
+    
     #create body
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_dynamicBody
@@ -295,9 +303,9 @@ class physics
     @body = @world.CreateBody(bodyDef)
 
     @fixDef = new b2FixtureDef
-    @fixDef.density = 0.96  #0.99
-    @fixDef.friction = 0.2
-    @fixDef.restitution = 0.1
+    @fixDef.density = bodyDensity
+    @fixDef.friction = bodyFriction
+    @fixDef.restitution = bodyResitution
     @fixDef.filter.groupIndex = -1  #negative groups never collide with each other
     @fixDef.shape = new b2PolygonShape
     #@fixDef.shape.SetAsArray contour, contour.length
@@ -327,13 +335,6 @@ class physics
     #@fixDef.shape.m_radius = 0.01
     #@fixDef.filter.groupIndex = -1
     #@body.CreateFixture(@fixDef)
-    
-    #initialise friction and motor state
-    @body.z2 = 0
-    @body.last_motor_torque = 0
-    @body.motor_torque = 0
-    @body.I_tm1 = 0
-    @body.U_csl = 0
 
     ###################
 
@@ -343,9 +344,9 @@ class physics
     @body2 = @world.CreateBody(bodyDef2)
 
     @fixDef2 = new b2FixtureDef
-    @fixDef2.density = 4.2 #4.35
-    @fixDef2.friction = 0.2
-    @fixDef2.restitution = 0.1
+    @fixDef2.density = upperArmDensity
+    @fixDef2.friction = upperArmFriction
+    @fixDef2.restitution = upperArmRestitution
     @fixDef2.filter.groupIndex = -1
     @fixDef2.shape = new b2PolygonShape
     for fixture in arm1ContourConvex
@@ -381,13 +382,13 @@ class physics
     #jointDef.Initialize @body, @body2, vertices2[0]
     jointDef.bodyA = @body
     jointDef.bodyB = @body2
-    jointDef.localAnchorA.Set(arm1JointAnchor.x, arm1JointAnchor.y)  #point on arm that is attached to body
-    jointDef.localAnchorB.Set(arm1JointAnchor.x, arm1JointAnchor.y)  #point on the body that arm is attached to 
+    jointDef.localAnchorA.Set(arm1JointAnchor.x, arm1JointAnchor.y) #point on arm that is attached to body
+    jointDef.localAnchorB.Set(arm1JointAnchor.x, arm1JointAnchor.y) #point on the body that arm is attached to 
     #jointDef.anchor = new b2Vec2(vertices[3].x, vertices[3].y)
     jointDef.collideConnected = true
 
     #simple friction with box2d possiblities (dry + stiction)
-    jointDef.maxMotorTorque = 0.100
+    jointDef.maxMotorTorque = beta
     jointDef.motorSpeed = 0.0
     jointDef.enableMotor = true
     @upper_joint = @world.CreateJoint(jointDef)
@@ -399,8 +400,6 @@ class physics
     @upper_joint.bounce_vel = 0.0003
     @upper_joint.joint_name = 'upper'
     @upper_joint.csl_sign = 1
-    @upper_joint.gain = 1
-    @upper_joint.gb = 0
     
     #####
 
@@ -411,9 +410,9 @@ class physics
     @body3 = @world.CreateBody(bodyDef3)
     
     @fixDef3 = new b2FixtureDef
-    @fixDef3.density = 11.35  #10.9
-    @fixDef3.friction = 0.2
-    @fixDef3.restitution = 0.2
+    @fixDef3.density = lowerArmDensity
+    @fixDef3.friction = lowerArmFriction
+    @fixDef3.restitution = lowerArmRestitution
     @fixDef3.filter.groupIndex = -1
     @fixDef3.shape = new b2PolygonShape
     for fixture in arm2ContourConvex
@@ -453,7 +452,8 @@ class physics
     jointDef.localAnchorA.Set(arm2JointAnchor.x, arm2JointAnchor.y)
     jointDef.localAnchorB.Set(arm2JointAnchor.x, arm2JointAnchor.y)
     jointDef.collideConnected = false
-    jointDef.maxMotorTorque = 0.02
+
+    jointDef.maxMotorTorque = beta
     jointDef.motorSpeed = 0.0
     jointDef.enableMotor = true
     
@@ -468,64 +468,6 @@ class physics
     @lower_joint.bounce_vel = 0.0004
     @lower_joint.joint_name = 'lower'
     @lower_joint.csl_sign = 1
-    @lower_joint.gain = 1
-    @lower_joint.gb = 0
-
-
-  createTestBoxes: =>
-    bodyDef = new b2BodyDef
-    bodyDef.type = b2Body.b2_dynamicBody
-    bodyDef.position.Set(0.5, 0.5)
-    @body = @world.CreateBody(bodyDef)
-
-    @fixDef = new b2FixtureDef
-    @fixDef.density = 1
-    @fixDef.friction = 0.5
-    @fixDef.restitution = 0.1
-    @fixDef.filter.groupIndex = -1
-    @fixDef.shape = new b2PolygonShape
-    @fixDef.shape.SetAsBox(0.1,0.2)
-    @body.CreateFixture(@fixDef)
-    #####
-    bodyDef = new b2BodyDef
-    bodyDef.type = b2Body.b2_dynamicBody
-    @body2 = @world.CreateBody(bodyDef)
-
-    @fixDef = new b2FixtureDef
-    @fixDef.density = 1
-    @fixDef.friction = 0.5
-    @fixDef.restitution = 0.1
-    @fixDef.filter.groupIndex = -1
-    @fixDef.shape = new b2PolygonShape
-    @fixDef.shape.SetAsBox(0.1,0.2)
-    @body2.CreateFixture(@fixDef)
-    #####
-
-    jointDef = new b2RevoluteJointDef()
-    jointDef.bodyA = @body2
-    jointDef.bodyB = @body
-    jointDef.localAnchorA.Set(0.04, 0.09)  #point on arm that is attached to body
-    jointDef.localAnchorB.Set(0.04, 0.09)  #point on the body that arm is attached to 
-    jointDef.collideConnected = false
-
-    #simple friction with box2d possiblities (dry)
-    jointDef.maxMotorTorque = beta #0.100
-    jointDef.motorSpeed = 0.0
-    jointDef.enableMotor = true
-
-    #jointDef.upperAngle = 2.0692624
-    #jointDef.lowerAngle = -1.90816
-    #jointDef.enableLimit = true
-    @lower_joint = @world.CreateJoint(jointDef)
-    
-    #initialize
-    @lower_joint.angle_speed = 0
-    @lower_joint.csl_active = false
-    @lower_joint.bounce_active = false
-    @lower_joint.joint_name = 'lower'
-    @lower_joint.csl_sign = 1
-    @lower_joint.gain = 1
-    @lower_joint.gb = 0
   
   toggleRecorder: =>
     @recordPhase = !@recordPhase
@@ -604,42 +546,29 @@ class physics
     # 5 unset stable and could-be stable flag if any new value is too far away from initial position    
     
   #motor constants
-  km = 10.7 * 193 * 0.55 / 1000   #torque constant, km_RX28 = 0.0107, includes ratio * efficiency, M=km*I  
-  #kb = km            #back emf constant, kn in maxon Documents
-  kb = 2.07           #889/60*2*pi * 193
-  #L = 0.208 / 1000   #L_RX28 = 0.208 mH; 
-  #L_inv = 1000       #L_inv = 5.004807, SciCos variant: 4854
-  R = 8.3            #R_RX28 = 8.3 ohm
+  km = 1.393        #(10.7 / 1000) * 194.57 * 0.625   #torque constant, km_RE-MAX = 0.0107
+  kb = 2.563        #back emf, RE-MAX 889/(60*2*%pi*180) * 194.57 = 2.549
+  R = 9.5948        #R_RE-MAX = 8.3 ohm, R_65 = R_25 * (1+0.0039*(65-25)) (assume mean temp of 65°)
   updateMotor: (bodyObject, bodyJoint) =>
     # motor model
     U_csl = bodyObject.U_csl
     U_effective = @clip(U_csl - (kb*(-bodyJoint.GetJointSpeed())), 12)   #limit to max battery voltage
-    I_t = U_effective*(1/R)  #U_csl-(R*I_tm1)-(kb*bodyJoint.angle_diff_csl)
-    bodyObject.motor_torque = km * I_t
-    bodyJoint.m_applyTorque = bodyObject.motor_torque #* bodyJoint.csl_sign
+    I_t = U_effective*(1/R)
+    bodyObject.motor_torque = km * I_t  #TODO: km efficiency is dependent on torque 
+    bodyJoint.m_applyTorque += bodyObject.motor_torque #* bodyJoint.csl_sign
 
   clip: (value, cap=1) => Math.max(-cap, Math.min(cap, value))
   sgn: (value) => if value > 0 then 1 else if value < 0 then -1 else 0
-  #G = 0.0     #gaussian y offset (>0 results in dry friction component)
-  #gaussian: (v) => Math.min(1, 1.1 * Math.exp(- Math.pow( (v/gamma), 2 ))+G)
-  #close_to_zero: (value) => if Math.abs(value) < 1e-4 then true else false
   applyFriction: (bodyObject, bodyJoint) =>
     v = -bodyJoint.GetJointSpeed()
-
-    #sticky friction, would need to set impulse/velocity zero when force applied
-    #if @close_to_zero(bodyJoint.m_impulse.x)
-    #  bodyJoint.m_impulse.x = 0
-    #  bodyObject.SetAngularVelocity(0)
-    #else
     #fluid/gliding friction
-    fg = -v * beta*2
+    fg = -v * beta
 
-    #dry friction
-    fd = @sgn(-v) * (beta*2)
-    #fd = 0
+    #dry friction (box2d joint motor provides dry and sticky already)
+    #fd = @sgn(-v) * (beta*2)
+    fd = 0
 
-    if not isMouseDown
-      bodyJoint.m_applyTorque = fg + fd
+    bodyJoint.m_applyTorque += fg + fd
 
   calcMode: (motor_torque, angle_speed) =>
     mc = if w0_abs then Math.abs(motor_torque) else motor_torque
@@ -661,6 +590,10 @@ class physics
 
   #update simulation and display loop
   was_static = false
+  deltaPassed = Treal[0][14]
+  j = 0
+  s = null
+  c = new b2Color(0.3,0.3,0.5)
   update: =>
     ## update physics and display stuff (~60 Hz loop, depends on refresh rate)
     window.stats.begin()
@@ -693,7 +626,7 @@ class physics
           @world.DestroyJoint mouseJoint
           mouseJoint = null
 
-      # recalc csl, 60 Hz
+      # recalc slow stuff, 60 Hz
       if @pend_style is 1
         if map_state_to_mode
           @updateMode @body, @lower_joint
@@ -705,7 +638,7 @@ class physics
       if @recordPhase
         console.log(-@body.GetAngle() + " " + -@upper_joint.GetJointAngle() + " " + -@lower_joint.GetJointAngle())
 
-      #1000 Hz loop
+      #recalc quick stuff, 60 Hz * 16 = 960 Hz loop
       i = 0
       while i < steps_per_frame
         if @pend_style is 3
@@ -713,6 +646,8 @@ class physics
           @updateController @body3, @upper_joint
           @updateMotor @body2, @lower_joint
           @updateMotor @body3, @upper_joint
+          #@applyFriction @body2, @lower_joint
+          #@applyFriction @body3, @upper_joint
         else if @pend_style is 1
           @updateController @body, @lower_joint
           @updateMotor @body, @lower_joint
@@ -724,19 +659,58 @@ class physics
           @updateMotor @body2, @upper_joint
           @applyFriction @body, @lower_joint
           @applyFriction @body2, @upper_joint
-        else if @pend_style is 4
-          @updateController @body, @lower_joint
-          @updateMotor @body, @lower_joint
 
         @world.Step(
-          dt,             #timestep (1 / fps)
-          10,             #velocity iterations
-          10              #position iterations
+          dt,              #timestep (advance timestep ms further in this step)
+          10,              #velocity iterations
+          10               #position iterations
         )
         i++
 
       @world.ClearForces()
       @world.DrawDebugData()
+
+      ###
+      #trace player
+      if not p?
+        px = 0.7
+        py = 0.7
+      if j < Treal.length
+        deltaPassed -= (1/60)*1000
+        if deltaPassed <= 0
+          j++
+          deltaPassed = 100
+
+        #set shadow semni to positions of next trace frame        
+        f = @body.GetFixtureList()
+        while f
+          bodyA = Math.PI+Math.atan2(Treal[j][7], Treal[j][6])
+          s = f.GetShape()
+          if s.m_type == b2Shape.e_polygonShape
+            s.m_centroid.x = 0
+            s.m_centroid.y = 0
+          xf = new b2Transform()
+          xf.position = new b2Vec2(px,py)
+          xf.R.Set(bodyA)
+          @world.DrawShape(s, xf, c)
+          f = f.m_next
+        f = @body2.GetFixtureList()
+        while f
+          s = f.GetShape()
+          xf = new b2Transform()
+          xf.position = new b2Vec2(px,py)
+          xf.R.Set(bodyA + 2*Math.PI*Treal[j][10])
+          @world.DrawShape(s, xf, c)
+          f = f.m_next
+        f = @body3.GetFixtureList()
+        while f
+          s = f.GetShape()
+          xf = new b2Transform()
+          xf.position = new b2Vec2(px,py)
+          xf.R.Set(bodyA + 2*Math.PI*Treal[j][11])
+          @world.DrawShape(s, xf, c)
+          f = f.m_next
+      ###
 
       draw_phase_space()
       draw_motor_torque()
@@ -833,7 +807,7 @@ set_friction = (newBeta) ->
   if physics.pend_style is 3
     physics.upper_joint.m_maxMotorTorque = beta
     physics.lower_joint.m_maxMotorTorque = beta
-  if physics.pend_style is 4
+  else
     physics.lower_joint.m_maxMotorTorque = beta
 
 set_stiction = (newAlpha) ->
@@ -849,6 +823,7 @@ myon_precision = (number) ->
 
 set_posture = (bodyAngle, hipAngle, kneeAngle, hipCsl, kneeCsl) ->
   #TODO, hm, how to properly set joint angles? sum angles going up from body
+  #body.SetTransform could help
   p = physics
 
   p.world.DestroyBody p.body3
@@ -865,11 +840,11 @@ set_posture = (bodyAngle, hipAngle, kneeAngle, hipCsl, kneeCsl) ->
 
 set_csl_modes = (hipCSL, kneeCSL) ->
   #set ABC learning modes for exploration
-  release_bias_hip = 0.8
-  release_bias_knee = 0.7
+  release_bias_hip = 1
+  release_bias_knee = 0.9
   release_gf = 0.99
-  contract_gf_hip = 1.0023
-  contract_gf_knee = 1.0015
+  contract_gf_hip = 1.003
+  contract_gf_knee = 1.0025
   
   if hipCSL is "r+"
     gf = release_gf
