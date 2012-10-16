@@ -17,12 +17,15 @@ Neurorobotics Research Laboratory, Berlin
         <script type="text/javascript" src="libs/jsxgraphcore.js"></script>
         <!-- TODO: minify stuff -->
         <script src="libs/d3.v2.js"></script>
-        <script src="libs/Box2dWeb-2.1.a.3.js"></script>
+        <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
         <script src="semni.data.js"></script>
-        <script src="main.js"></script>
+        <script src="physics.js"></script>
+        <script src="ui.js"></script>
         <link rel="stylesheet" type="text/css" href="libs/jsxgraph.css" />
         <link rel="stylesheet" type="text/css" href="simulator.css" />
+        <script type="text/coffeescript">
+        </script>
     </head>
     <body>
         <div id="left-side">
@@ -47,7 +50,7 @@ Neurorobotics Research Laboratory, Berlin
                 <br/>
 
                 Semni:
-                <button id="posture_0" onclick="set_posture(0,0,0, false, false)">Zero</button>
+                <button id="posture_0" onclick="ui.set_posture(0,0,0, false, false)">Zero</button>
             </div>
             <div id="bottom-panel">
                 <div id="controls">
@@ -58,6 +61,7 @@ Neurorobotics Research Laboratory, Berlin
                     </select><br/>
                     <script type="text/coffeescript">
                         $ ->
+                            #create physic bodies depending on selection
                             $("#pendulum_style").on 'change', ->
                                 if physics.lower_joint and physics.lower_joint.csl_active
                                     $("#toggle_csl").click()
@@ -88,29 +92,25 @@ Neurorobotics Research Laboratory, Berlin
                                     physics.createPendulum()
               
                                     #get initial gi/gf from current mode setting
-                                    map_mode physics.lower_joint
+                                    ui.map_mode physics.lower_joint
                                     
                                     $("#semni_posture_controls").fadeOut "fast", ->
                                         $("#map_state_to_mode_panel").fadeIn("fast")
                                         $("#state_to_mode_presets").fadeIn("fast")
                                         $("#state_to_mode_mapping").fadeIn("fast")
                                         
-                                    $("#stiction_params").fadeIn "fast"
-                                    
-
                                 else if style is "2"
                                     physics.pend_style = 2
 
                                     physics.createDoublePendulum()
-                                    map_mode physics.lower_joint
-                                    map_mode physics.upper_joint
+                                    ui.map_mode physics.lower_joint
+                                    ui.map_mode physics.upper_joint
                                     
                                 else if style is "3"
                                     physics.pend_style = 3
                                     physics.createSemni()
                                     $("#state_to_mode_presets").fadeOut "fast"
                                     $("#state_to_mode_mapping").fadeOut "fast"
-                                    $("#stiction_params").fadeOut "fast"
                                     $("#map_state_to_mode_panel").fadeOut "fast", ->
                                         $("#semni_posture_controls").fadeIn "fast"
 
@@ -118,6 +118,8 @@ Neurorobotics Research Laboratory, Berlin
                             #set initial csl params from abc modes for semni
                             if physics.pend_style is 3
                                 $('#csl_mode_hip').trigger("change")
+                            #set initial friction from slider
+                            $("#friction_param").trigger("change")
 
                     </script>
                     <button id="toggle_pause" class="toggle-button" onClick="physics.run = !physics.run">pause/run simulation [p]</button> 
@@ -142,19 +144,10 @@ Neurorobotics Research Laboratory, Berlin
                     </script>
                     <br/>
          
-                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.084" step="0.001" onchange="set_friction(parseFloat(this.value))" />
-                    <span id="friction_val">0.084</span><br/>
+                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.035" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
+                    <span id="friction_val">0.035</span><br/>
 
-                    <div id="stiction_params">
-                        <label for="stiction_param">stiction</label> <input id="stiction_param" type="range" min="0" max="5" value="0.6" step="0.1" onchange="set_stiction(parseFloat(this.value))" />
-                        <span id="stiction_val">0.100</span><br/>            
-                        
-                        <label for="stiction_epsilon">stiction plateau</label> <input id="stiction_epsilon" type="range" min="0.005" max="0.2" value="0.006" step="0.001" onchange="set_stiction_vel(parseFloat(this.value))" />
-                        <span id="stiction_epsilon_val">0.010</span><br/><br/>
-                    </div>
-
-
-                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="40" style="width:60px;"/>
+                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="50" style="width:60px;"/>
                     <label for="gf_param_upper">g<sub>f</sub></label> <input id="gf_param_upper" type="text" value="0.1" style="width:60px;"/>
                     <label for="gb_param_upper">g<sub>b</sub></label> <input id="gb_param_upper" type="text" value="1" style="width:60px;"/>
                     <label for="gain_param_upper">gain</label> <input id="gain_param_upper" type="text" value="1" style="width:60px;"/>
@@ -170,11 +163,11 @@ Neurorobotics Research Laboratory, Berlin
                         })
                     </script>
 
-                    <label for="mode_param_upper">csl mode hip</label> <input id="mode_param_upper" type="range" min="-2" max="3" value="1.2" step="0.005" onchange="if(physics.upper_joint){map_mode(physics.upper_joint)}" />
+                    <label for="mode_param_upper">csl mode hip</label> <input id="mode_param_upper" type="range" min="-2" max="3" value="1.2" step="0.005" onchange="if(physics.upper_joint){ui.map_mode(physics.upper_joint)}" />
                     <span id="mode_val_upper"></span> <span id="csl_mode_name_upper">contraction</span><br/>
 
 
-                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="40" style="width:60px;"/>
+                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="50" style="width:60px;"/>
                     <label for="gf_param_lower">g<sub>f</sub></label> <input id="gf_param_lower" type="text" value="0.1" style="width:60px;"/>
                     <label for="gb_param_lower">g<sub>b</sub></label> <input id="gb_param_lower" type="text" value="1" style="width:60px;"/>
                     <label for="gain_param_lower">gain</label> <input id="gain_param_lower" type="text" value="1" style="width:60px;"/>
@@ -190,7 +183,7 @@ Neurorobotics Research Laboratory, Berlin
                         })
                     </script>
                     
-                    <label for="mode_param_lower">csl mode knee</label> <input id="mode_param_lower" type="range" min="-2" max="3" value="1.01" step="0.005" onchange="map_mode(physics.lower_joint)" />
+                    <label for="mode_param_lower">csl mode knee</label> <input id="mode_param_lower" type="range" min="-2" max="3" value="1.01" step="0.005" onchange="ui.map_mode(physics.lower_joint)" />
                     <span id="mode_val_lower"></span> <span id="csl_mode_name_lower">contraction</span><br/>
                 </div>
 
@@ -240,21 +233,21 @@ Neurorobotics Research Laboratory, Berlin
                 </script>
                 <div id="state_to_mode_presets" style="display:none;">
                     <br/>
-                    <button id="preset_1" onclick="set_preset(114,52,0.25,false,false)">Preset 1</button>left down-c<br/>
-                    <button id="preset_2" onclick="set_preset(-811,-162,-1.08,false,false)">Preset 2</button>s right, c up,</br>f=0.018<br/>
-                    <button id="preset_3" onclick="set_preset(450,0,1.001,true,true)">Preset 3</button>self-inhibit c,<br/>f=0.022<br/>
-                    <button id="preset_4" onclick="set_preset(81,-3676,-0.5,false,false)">Preset 4</button>r right, s left
+                    <button id="preset_1" onclick="ui.set_preset(114,52,0.25,false,false)">Preset 1</button>left down-c<br/>
+                    <button id="preset_2" onclick="ui.set_preset(-811,-162,-1.08,false,false)">Preset 2</button>s right, c up,</br>f=0.018<br/>
+                    <button id="preset_3" onclick="ui.set_preset(450,0,1.001,true,true)">Preset 3</button>self-inhibit c,<br/>f=0.022<br/>
+                    <button id="preset_4" onclick="ui.set_preset(81,-3676,-0.5,false,false)">Preset 4</button>r right, s left
                 </div>
                 <div id="semni_posture_controls">
                     <br/>
                     <label for="csl_mode_hip">Hip</label>:
-                        <select id="csl_mode_hip" onchange="set_csl_modes($('#csl_mode_hip').val(),$('#csl_mode_knee').val()); isMouseDown = false">
+                        <select id="csl_mode_hip" onchange="ui.set_csl_modes($('#csl_mode_hip').val(),$('#csl_mode_knee').val()); isMouseDown = false">
                             <option value="r+" checked="checked">r+</option>
                             <option value="r-">r-</option>
                             <option value="c">c</option>
                         </select>
                     <label for="csl_mode_knee">Knee</label>:
-                        <select id="csl_mode_knee" onchange="set_csl_modes($('#csl_mode_hip').val(),$('#csl_mode_knee').val()); isMouseDown = false">
+                        <select id="csl_mode_knee" onchange="ui.set_csl_modes($('#csl_mode_hip').val(),$('#csl_mode_knee').val()); isMouseDown = false">
                             <option value="r+" checked="checked">r+</option>
                             <option value="r-">r-</option>
                             <option value="c">c</option>
@@ -483,11 +476,11 @@ Neurorobotics Research Laboratory, Berlin
                             ydata2.push(0)
                     }                            
 
-                    if (physics.body && physics.body.U_csl) {
-                        ydata3.push(physics.body.U_csl)
+                    if (physics.body && physics.body.motor_control) {
+                        ydata3.push(physics.body.motor_control)
                     } else {
-                        if (physics.body3 && physics.body3.U_csl)
-                            ydata3.push(physics.body3.U_csl)
+                        if (physics.body3 && physics.body3.motor_control)
+                            ydata3.push(physics.body3.motor_control)
                         else
                             ydata3.push(0)
                     }
