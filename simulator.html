@@ -13,11 +13,10 @@ Neurorobotics Research Laboratory, Berlin
         <title>CSL Playground</title>
         <script src="libs/jquery.min.js"></script>
         <script src="libs/functional.min.js"></script>
-        <script src="libs/Stats.js"></script>
-        <script src="libs/jquery.hotkeys.js"></script>
-        <script type="text/javascript" src="libs/jsxgraphcore.js"></script>
-        <!-- TODO: minify stuff -->
-        <script src="libs/d3.v2.js"></script>
+        <script src="libs/Stats.min.js"></script>
+        <script src="libs/jquery.hotkeys.min.js"></script>
+        <script  src="libs/jsxgraphcore.js"></script>
+        <script src="libs/d3.v2.min.js"></script>
         <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
         <script src="semni.data.js"></script>
@@ -464,32 +463,33 @@ Neurorobotics Research Laboratory, Berlin
                     ydata3.shift()
                 }
 
-                if (physics.pend_style == 3) {
+                p = physics
+                if (p.pend_style == 3) {
                     //semni
-                    if (physics.body2.motor_torque)
-                        ydata2.push(physics.body2.motor_torque)
+                    if (p.body2.motor_torque)
+                        ydata2.push(p.body2.motor_torque)
                     else
                         ydata2.push(0)
                         
-                    if (physics.body3.motor_torque)
-                        ydata3.push(physics.body3.motor_torque)
+                    if (p.body3.motor_torque)
+                        ydata3.push(p.body3.motor_torque)
                     else
                         ydata3.push(0)
                 } else {
-                    if (physics.body.motor_torque) {
-                        ydata2.push(physics.body.motor_torque)
+                    if (p.body.motor_torque) {
+                        ydata2.push(p.body.motor_torque)
                     } else {
-                        if (physics.body2.motor_torque)
-                            ydata2.push(physics.body2.motor_torque)
+                        if (p.body2.motor_torque)
+                            ydata2.push(p.body2.motor_torque)
                         else
                             ydata2.push(0)
                     }                            
 
-                    if (physics.body && physics.body.motor_control) {
-                        ydata3.push(physics.body.motor_control)
+                    if (p.body && p.body.motor_control) {
+                        ydata3.push(p.body.motor_control)
                     } else {
-                        if (physics.body3 && physics.body3.motor_control)
-                            ydata3.push(physics.body3.motor_control)
+                        if (p.body3 && p.body3.motor_control)
+                            ydata3.push(p.body3.motor_control)
                         else
                             ydata3.push(0)
                     }

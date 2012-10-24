@@ -270,10 +270,10 @@ physics = (function() {
     bodyDensity = 0.96;
     bodyFriction = 0.25;
     bodyRestitution = 0.1;
-    upperArmDensity = 4.2;
+    upperArmDensity = 2.06;
     upperArmFriction = 0.25;
     upperArmRestitution = 0.1;
-    lowerArmDensity = 11.35;
+    lowerArmDensity = 10.9;
     lowerArmFriction = 0.25;
     lowerArmRestitution = 0.2;
     bodyDef = new b2BodyDef;
@@ -328,6 +328,12 @@ physics = (function() {
     this.body2.motor_control = 0;
     this.body2.I_t = 0;
     this.body2.bounce_sign = 1;
+    this.fixDef2.density = 14.2;
+    this.fixDef2.shape = new b2CircleShape;
+    this.fixDef2.shape.m_p.Set(arm1Center.x + 0.02, arm1Center.y + 0.01);
+    this.fixDef2.shape.m_radius = 0.04;
+    this.fixDef2.filter.groupIndex = -1;
+    this.body2.CreateFixture(this.fixDef2);
     jointDef = new b2RevoluteJointDef();
     jointDef.bodyA = this.body;
     jointDef.bodyB = this.body2;
@@ -364,6 +370,15 @@ physics = (function() {
     md.I = this.body3.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y);
     this.body3.SetMassData(md);
     this.body3.SetPositionAndAngle(new b2Vec2(arm1Center.x, arm1Center.y), 0);
+    /*
+        @fixDef3.density = 22.4
+        @fixDef3.shape = new b2CircleShape
+        @fixDef3.shape.m_p.Set(arm2Center.x+0.02, arm2Center.y+0.01)
+        @fixDef3.shape.m_radius = 0.03
+        @fixDef3.filter.groupIndex = -1
+        @body3.CreateFixture(@fixDef3)
+    */
+
     this.body3.z2 = 0;
     this.body3.last_motor_torque = 0;
     this.body3.motor_torque = 0;
@@ -615,15 +630,13 @@ physics = (function() {
         }
       }
       this.logData();
-      i = 0;
-      while (i < steps_per_frame) {
+      i = steps_per_frame;
+      while (i > 0) {
         if (this.pend_style === 3) {
-          this.updateController(this.body2, this.lower_joint);
-          this.updateController(this.body3, this.upper_joint);
-          this.updateMotor(this.body2, this.lower_joint);
-          this.updateMotor(this.body3, this.upper_joint);
-          this.applyFriction(this.body2, this.lower_joint);
-          this.applyFriction(this.body3, this.upper_joint);
+          this.updateController(this.body2, this.upper_joint);
+          this.updateController(this.body3, this.lower_joint);
+          this.updateMotor(this.body2, this.upper_joint);
+          this.updateMotor(this.body3, this.lower_joint);
         } else if (this.pend_style === 1) {
           this.updateController(this.body, this.lower_joint);
           this.updateMotor(this.body, this.lower_joint);
@@ -637,7 +650,7 @@ physics = (function() {
           this.applyFriction(this.body2, this.upper_joint);
         }
         this.world.Step(dt, 10, 10);
-        i++;
+        i--;
       }
       this.world.ClearForces();
       this.ui.update();
