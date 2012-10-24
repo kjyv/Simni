@@ -114,6 +114,8 @@ physics = (function() {
     this.step = false;
     this.pend_style = 0;
     this.recordPhase = false;
+    this.startLog = true;
+    this.logged_data = [];
     this.beta = 0;
   }
 
@@ -428,7 +430,11 @@ physics = (function() {
 
   physics.prototype.logData = function() {
     if (this.recordPhase) {
-      return console.log(-this.body.GetAngle() + " " + -this.upper_joint.GetJointAngle() + " " + -this.lower_joint.GetJointAngle() + " " + this.body2.motor_control + " " + this.body3.motor_control);
+      if (this.startLog) {
+        this.logged_data = [];
+        this.startLog = false;
+      }
+      return this.logged_data.push(-this.body.GetAngle() + " " + -this.upper_joint.GetJointAngle() + " " + -this.lower_joint.GetJointAngle() + " " + this.body2.motor_control + " " + this.body3.motor_control);
     }
   };
 
@@ -512,6 +518,7 @@ physics = (function() {
   };
 
   /*
+    #try to play recorded data from a real semni as polygons in the background
     deltaPassed = Treal[0][14]
     j = 0
     s = null
@@ -577,7 +584,9 @@ physics = (function() {
           md.bodyB = body;
           md.target.Set(mouseX, mouseY);
           md.collideConnected = false;
-          md.maxForce = 100.0 * body.GetMass();
+          md.maxForce = 200.0 * body.GetMass();
+          md.dampingRatio = 2;
+          md.frequencyHz = 20;
           window.mouseJoint = this.world.CreateJoint(md);
           body.SetAwake(true);
         }

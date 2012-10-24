@@ -63,11 +63,15 @@ class physics
     @debugDraw.SetLineThickness 1.0
     @debugDraw.AppendFlags b2DebugDraw.e_shapeBit
     @world.SetDebugDraw @debugDraw
-    @run = true
-    @step = false
-    @pend_style = 0
-    @recordPhase = false
-    @beta = 0
+    
+    #global flags
+    @run = true           #if we are running continuously
+    @step = false         #if we display the next step
+    @pend_style = 0       #what pendulum / robot / etc. model is currently simulated
+    @recordPhase = false  #if we log state data for saving later
+    @startLog = true      #if we start a new log
+    @logged_data = []     #where we log our data
+    @beta = 0             #friction coefficient
   
   ##### methods to create bodies #####
 
@@ -475,7 +479,11 @@ class physics
     
   logData: =>
     if @recordPhase
-      console.log(-@body.GetAngle() + " " + -@upper_joint.GetJointAngle() + " " + -@lower_joint.GetJointAngle()+ " " + @body2.motor_control + " " + @body3.motor_control)
+      if @startLog
+        @logged_data = []
+        @startLog = false
+      
+      @logged_data.push(-@body.GetAngle() + " " + -@upper_joint.GetJointAngle() + " " + -@lower_joint.GetJointAngle()+ " " + @body2.motor_control + " " + @body3.motor_control)
 
   ##### controllers #####
 
@@ -578,6 +586,7 @@ class physics
     map_mode bodyJoint, mode
 
   ###
+  #try to play recorded data from a real semni as polygons in the background
   deltaPassed = Treal[0][14]
   j = 0
   s = null
@@ -643,7 +652,9 @@ class physics
           md.bodyB = body
           md.target.Set mouseX, mouseY
           md.collideConnected = false
-          md.maxForce = 100.0 * body.GetMass()
+          md.maxForce = 200.0 * body.GetMass()
+          md.dampingRatio = 2
+          md.frequencyHz = 20
           window.mouseJoint = @world.CreateJoint(md)
           body.SetAwake true
       if mouseJoint

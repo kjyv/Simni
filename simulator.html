@@ -11,8 +11,9 @@ Neurorobotics Research Laboratory, Berlin
 <html>
    <head>
         <title>CSL Playground</title>
-        <script src="libs/Stats.js"></script>
         <script src="libs/jquery.min.js"></script>
+        <script src="libs/functional.min.js"></script>
+        <script src="libs/Stats.js"></script>
         <script src="libs/jquery.hotkeys.js"></script>
         <script type="text/javascript" src="libs/jsxgraphcore.js"></script>
         <!-- TODO: minify stuff -->
@@ -39,7 +40,7 @@ Neurorobotics Research Laboratory, Berlin
                 <br/>
 
                 Flags:
-                <button onclick="physics.debugDraw.m_drawFlags ^= b2DebugDraw.e_jointBit"><span style="font-size: 3em">∢</span></button><br/>
+                <button onclick="physics.debugDraw.m_drawFlags ^= b2DebugDraw.e_jointBit">Angle</button><br/>
                 <button onclick="physics.debugDraw.m_drawFlags ^= b2DebugDraw.e_centerOfMassBit">COM</button>
                 <br/>
                 <br/>
@@ -51,10 +52,19 @@ Neurorobotics Research Laboratory, Berlin
 
                 Semni:
                 <button id="posture_0" onclick="ui.set_posture(0,0,0, false, false)">Zero</button>
+                <button id="get_posture" onclick="ui.getSemniTransformAsFile()">Save</button>
+                <button id="set_posture" onclick="$('#set_posture_file').click()">Load</button>
+                <input type="file" id="set_posture_file" style="display:none" onchange="ui.setSemniTransformAsFile(this.files)">
+                <br/>
+                <br/>
+
+                Log:
+                <button id="start_log" onclick="ui.toggleRecorder()">Start</button>
+                <button id="get_log" onclick="ui.getLogfile()">Get</button>
             </div>
             <div id="bottom-panel">
                 <div id="controls">
-                    <select id="pendulum_style" onchange="isMouseDown = false">
+                    <select id="pendulum_style">
                         <option value="1">Single Pendulum</option>
                         <option value="2">Double Pendulum</option>
                         <option value="3" selected="selected">Semni</option>
@@ -241,13 +251,13 @@ Neurorobotics Research Laboratory, Berlin
                 <div id="semni_posture_controls">
                     <br/>
                     <label for="csl_mode_hip">Hip</label>:
-                        <select id="csl_mode_hip" onchange="ui.set_csl_modes($('#csl_mode_hip').val(),$('#csl_mode_knee').val()); isMouseDown = false">
+                        <select id="csl_mode_hip" onchange="ui.set_csl_modes($('#csl_mode_hip').val(),$('#csl_mode_knee').val())">
                             <option value="r+" checked="checked">r+</option>
                             <option value="r-">r-</option>
                             <option value="c">c</option>
                         </select>
                     <label for="csl_mode_knee">Knee</label>:
-                        <select id="csl_mode_knee" onchange="ui.set_csl_modes($('#csl_mode_hip').val(),$('#csl_mode_knee').val()); isMouseDown = false">
+                        <select id="csl_mode_knee" onchange="ui.set_csl_modes($('#csl_mode_hip').val(),$('#csl_mode_knee').val())">
                             <option value="r+" checked="checked">r+</option>
                             <option value="r-">r-</option>
                             <option value="c">c</option>
@@ -372,7 +382,6 @@ Neurorobotics Research Laboratory, Berlin
             
             $("#motor_torque_enabled").on('click', function(){
                 motor_torque_enabled= !motor_torque_enabled
-                isMouseDown = false
             })
             
             $("#phase_space_2_enabled").on('click', function(){

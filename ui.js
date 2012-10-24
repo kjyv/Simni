@@ -5,6 +5,16 @@ var ui,
 ui = (function() {
 
   function ui(physics) {
+    this.setSemniTransformAsFile = __bind(this.setSemniTransformAsFile, this);
+
+    this.setSemniTransformAsJSON = __bind(this.setSemniTransformAsJSON, this);
+
+    this.getSemniTransformAsFile = __bind(this.getSemniTransformAsFile, this);
+
+    this.getSemniTransformAsJSON = __bind(this.getSemniTransformAsJSON, this);
+
+    this.getLogfile = __bind(this.getLogfile, this);
+
     this.toggleRecorder = __bind(this.toggleRecorder, this);
 
     this.set_csl_modes = __bind(this.set_csl_modes, this);
@@ -103,8 +113,8 @@ ui = (function() {
         y: y
       };
     };
-    canvasPosition = getElementPosition(document.getElementById("canvas"));
-    document.addEventListener("mousedown", (function(e) {
+    canvasPosition = getElementPosition($('#canvas'));
+    $('#canvas')[0].addEventListener("mousedown", (function(e) {
       window.isMouseDown = true;
       handleMouseMove(e);
       return document.addEventListener("mousemove", handleMouseMove, true);
@@ -272,7 +282,61 @@ ui = (function() {
   };
 
   ui.prototype.toggleRecorder = function() {
+    this.physics.startLog = true;
     return this.physics.recordPhase = !this.physics.recordPhase;
+  };
+
+  ui.prototype.getLogfile = function() {
+    this.physics.recordPhase = false;
+    location.href = 'data:text;charset=utf-8,' + encodeURI(Functional.reduce(function(x, y) {
+      return x + y + "\n";
+    }, "", physics.logged_data));
+  };
+
+  ui.prototype.getSemniTransformAsJSON = function() {
+    var t, t2, t3;
+    t = physics.body.GetTransform();
+    t2 = physics.body2.GetTransform();
+    t3 = physics.body3.GetTransform();
+    return JSON.stringify({
+      "body": t,
+      "body2": t2,
+      "body3": t3
+    });
+  };
+
+  ui.prototype.getSemniTransformAsFile = function() {
+    return location.href = 'data:text;charset=utf-8,' + encodeURI(this.getSemniTransformAsJSON());
+  };
+
+  ui.prototype.setSemniTransformAsJSON = function(tj) {
+    var t;
+    if (tj == null) {
+      tj = null;
+    }
+    t = JSON.parse(tj);
+    physics.body.SetTransform(new b2Transform(t.body.position, t.body.R));
+    physics.body2.SetTransform(new b2Transform(t.body2.position, t.body2.R));
+    return physics.body3.SetTransform(new b2Transform(t.body3.position, t.body3.R));
+  };
+
+  ui.prototype.setSemniTransformAsFile = function(files) {
+    var readFile;
+    readFile = function(file, callback) {
+      var reader;
+      reader = new FileReader();
+      reader.onload = function(evt) {
+        if (typeof callback === "function") {
+          return callback(file, evt);
+        }
+      };
+      return reader.readAsBinaryString(file);
+    };
+    if (files.length > 0) {
+      return readFile(files[0], function(file, evt) {
+        return window.ui.setSemniTransformAsJSON(evt.target.result);
+      });
+    }
   };
 
   return ui;

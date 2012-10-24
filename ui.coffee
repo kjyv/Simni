@@ -75,8 +75,8 @@ class ui
       x: x
       y: y
 
-    canvasPosition = getElementPosition(document.getElementById("canvas"))
-    document.addEventListener "mousedown", ((e) ->
+    canvasPosition = getElementPosition($('#canvas'))
+    $('#canvas')[0].addEventListener "mousedown", ((e) ->
       window.isMouseDown = true
       handleMouseMove e
       document.addEventListener "mousemove", handleMouseMove, true
@@ -268,7 +268,43 @@ class ui
     @physics.lower_joint.gb = gb
   
   toggleRecorder: =>
+    @physics.startLog = true
     @physics.recordPhase = !@physics.recordPhase
+
+  getLogfile: =>
+    @physics.recordPhase = false
+    location.href = 'data:text;charset=utf-8,'+encodeURI Functional.reduce((x, y) ->
+      x + y + "\n"
+    , "", physics.logged_data)
+
+    return
+
+  getSemniTransformAsJSON: =>
+    t = physics.body.GetTransform()
+    t2 = physics.body2.GetTransform()
+    t3 = physics.body3.GetTransform()
+    return JSON.stringify({"body":t,"body2":t2,"body3":t3})
+
+  getSemniTransformAsFile: =>
+    location.href = 'data:text;charset=utf-8,'+encodeURI @getSemniTransformAsJSON()
+  
+  setSemniTransformAsJSON: (tj=null) =>
+    t = JSON.parse(tj)
+    physics.body.SetTransform(new b2Transform(t.body.position, t.body.R))
+    physics.body2.SetTransform(new b2Transform(t.body2.position, t.body2.R))
+    physics.body3.SetTransform(new b2Transform(t.body3.position, t.body3.R))
+    
+  setSemniTransformAsFile: (files) =>
+    readFile = (file, callback) ->
+      reader = new FileReader()
+      reader.onload = (evt) ->
+        callback file, evt  if typeof callback is "function"
+      reader.readAsBinaryString file
+
+    if files.length > 0
+      readFile files[0], (file, evt) ->
+        window.ui.setSemniTransformAsJSON(evt.target.result)
+
 
 #set up 60 fps animation loop (triggers physics)
 window.requestAnimFrame = (->
