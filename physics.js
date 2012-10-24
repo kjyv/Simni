@@ -270,10 +270,10 @@ physics = (function() {
     bodyDensity = 0.96;
     bodyFriction = 0.25;
     bodyRestitution = 0.1;
-    upperArmDensity = 2.06;
+    upperArmDensity = 4.2;
     upperArmFriction = 0.25;
     upperArmRestitution = 0.1;
-    lowerArmDensity = 10.9;
+    lowerArmDensity = 11.35;
     lowerArmFriction = 0.25;
     lowerArmRestitution = 0.2;
     bodyDef = new b2BodyDef;
@@ -328,12 +328,15 @@ physics = (function() {
     this.body2.motor_control = 0;
     this.body2.I_t = 0;
     this.body2.bounce_sign = 1;
-    this.fixDef2.density = 14.2;
-    this.fixDef2.shape = new b2CircleShape;
-    this.fixDef2.shape.m_p.Set(arm1Center.x + 0.02, arm1Center.y + 0.01);
-    this.fixDef2.shape.m_radius = 0.04;
-    this.fixDef2.filter.groupIndex = -1;
-    this.body2.CreateFixture(this.fixDef2);
+    /*
+        @fixDef2.density = 14.2
+        @fixDef2.shape = new b2CircleShape
+        @fixDef2.shape.m_p.Set(arm1Center.x+0.03, arm1Center.y-0.015)
+        @fixDef2.shape.m_radius = 0.04
+        @fixDef2.filter.groupIndex = -1
+        @body2.CreateFixture(@fixDef2)
+    */
+
     jointDef = new b2RevoluteJointDef();
     jointDef.bodyA = this.body;
     jointDef.bodyB = this.body2;
@@ -371,9 +374,9 @@ physics = (function() {
     this.body3.SetMassData(md);
     this.body3.SetPositionAndAngle(new b2Vec2(arm1Center.x, arm1Center.y), 0);
     /*
-        @fixDef3.density = 22.4
+        @fixDef3.density = 22.4  #=72g
         @fixDef3.shape = new b2CircleShape
-        @fixDef3.shape.m_p.Set(arm2Center.x+0.02, arm2Center.y+0.01)
+        @fixDef3.shape.m_p.Set(arm2Center.x-0.04, arm2Center.y-0.01)
         @fixDef3.shape.m_radius = 0.03
         @fixDef3.filter.groupIndex = -1
         @body3.CreateFixture(@fixDef3)
@@ -637,6 +640,8 @@ physics = (function() {
           this.updateController(this.body3, this.lower_joint);
           this.updateMotor(this.body2, this.upper_joint);
           this.updateMotor(this.body3, this.lower_joint);
+          this.applyFriction(this.body2, this.upper_joint);
+          this.applyFriction(this.body3, this.lower_joint);
         } else if (this.pend_style === 1) {
           this.updateController(this.body, this.lower_joint);
           this.updateMotor(this.body, this.lower_joint);

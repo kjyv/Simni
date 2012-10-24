@@ -263,11 +263,11 @@ class physics
     bodyFriction = 0.25
     bodyRestitution = 0.1
 
-    upperArmDensity = 2.06 #=63g #4.2 #4.35
+    upperArmDensity = 4.2 #=135g   #2.06 #=63g   #4.35
     upperArmFriction =  0.25
     upperArmRestitution = 0.1
 
-    lowerArmDensity = 10.9 #=177g #11.35 #=185g 
+    lowerArmDensity = 11.35 #7 #=105g #11.35 #=185g #10.9 #=177g  
     lowerArmFriction = 0.25
     lowerArmRestitution = 0.2
     
@@ -345,12 +345,14 @@ class physics
     @body2.bounce_sign = 1
     
     #add motor mass separately to imitate moment of inertia different from only COM based
+    ###
     @fixDef2.density = 14.2
     @fixDef2.shape = new b2CircleShape
-    @fixDef2.shape.m_p.Set(arm1Center.x+0.02, arm1Center.y+0.01)
+    @fixDef2.shape.m_p.Set(arm1Center.x+0.03, arm1Center.y-0.015)
     @fixDef2.shape.m_radius = 0.04
     @fixDef2.filter.groupIndex = -1
     @body2.CreateFixture(@fixDef2)
+    ###
 
     #connect body and arm with rotating joint
     jointDef = new b2RevoluteJointDef()
@@ -404,9 +406,9 @@ class physics
     
     #add motor mass separately to imitate moment of inertia different from only COM based
     ###
-    @fixDef3.density = 22.4
+    @fixDef3.density = 22.4  #=72g
     @fixDef3.shape = new b2CircleShape
-    @fixDef3.shape.m_p.Set(arm2Center.x+0.02, arm2Center.y+0.01)
+    @fixDef3.shape.m_p.Set(arm2Center.x-0.04, arm2Center.y-0.01)
     @fixDef3.shape.m_radius = 0.03
     @fixDef3.filter.groupIndex = -1
     @body3.CreateFixture(@fixDef3)
@@ -694,8 +696,8 @@ class physics
           @updateController @body3, @lower_joint
           @updateMotor @body2, @upper_joint
           @updateMotor @body3, @lower_joint
-          #@applyFriction @body3, @lower_joint
-          #@applyFriction @body2, @upper_joint
+          @applyFriction @body2, @upper_joint
+          @applyFriction @body3, @lower_joint
         else if @pend_style is 1
           @updateController @body, @lower_joint
           @updateMotor @body, @lower_joint
