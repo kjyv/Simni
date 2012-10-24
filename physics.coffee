@@ -32,7 +32,7 @@ class physics
       
     fixDef = new b2FixtureDef
     fixDef.density = 10
-    fixDef.friction = 0.3
+    fixDef.friction = 0.5
     fixDef.restitution = 0.1
     @fixDef = fixDef
     
