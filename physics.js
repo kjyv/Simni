@@ -41,10 +41,14 @@ b2RevoluteJointDef = Box2D.Dynamics.Joints.b2RevoluteJointDef;
 b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
 
 physics = (function() {
-  var R, R_inv, U_in, fg, kb, km, v, was_static;
+  var MAX_UNIX_TIME, R, R_inv, U_in, e1, e1_body, e2, e2_body, fg, fp_flag, kb, km, time, time2, trajectory, v, was_static;
 
   function physics() {
     this.update = __bind(this.update, this);
+
+    this.detectAttractor = __bind(this.detectAttractor, this);
+
+    this.searchSubarray = __bind(this.searchSubarray, this);
 
     this.updateMode = __bind(this.updateMode, this);
 
@@ -535,6 +539,80 @@ physics = (function() {
     return map_mode(bodyJoint, mode);
   };
 
+  physics.prototype.searchSubarray = function(sub, array) {
+    var eps, found, i, j, _i, _j, _ref, _ref1;
+    eps = 0.008;
+    found = [];
+    for (i = _i = 0, _ref = array.length - sub.length; _i <= _ref; i = _i += 1) {
+      for (j = _j = 0, _ref1 = sub.length - 1; _j <= _ref1; j = _j += 1) {
+        if (Math.abs(sub[j][0] - array[i + j][0]) > eps || Math.abs(sub[j][1] - array[i + j][1]) > eps || Math.abs(sub[j][2] - array[i + j][2]) > eps) {
+          break;
+        }
+      }
+      if (j === sub.length) {
+        found.push(i);
+        i = _i = i + sub.length;
+      }
+    }
+    if (found.length === 0) {
+      return -1;
+    } else {
+      return found;
+    }
+  };
+
+  e1 = 0.02;
+
+  e2 = 0.04;
+
+  e1_body = 0.1;
+
+  e2_body = 0.15;
+
+  fp_flag = false;
+
+  MAX_UNIX_TIME = 1924988399;
+
+  time = time2 = MAX_UNIX_TIME;
+
+  trajectory = [];
+
+  physics.prototype.detectAttractor = function(body, upper_joint, lower_joint) {
+    var d, dp_body, dp_hip, dp_knee, last;
+    dp_body = Math.abs(body.GetAngularVelocity());
+    dp_hip = Math.abs(upper_joint.GetJointSpeed());
+    dp_knee = Math.abs(lower_joint.GetJointSpeed());
+    if (dp_body < e1_body && dp_hip < e1 && dp_knee < e1) {
+      fp_flag = true;
+      if (time2 === MAX_UNIX_TIME) {
+        time2 = new Date().getTime();
+      }
+    }
+    if (dp_body > e2_body || dp_hip > e2 || dp_knee > e2) {
+      fp_flag = false;
+      time2 = MAX_UNIX_TIME;
+    }
+    if ((new Date().getTime() - time2) > 4000 && fp_flag === true) {
+      console.log("found fixpoint");
+      fp_flag = false;
+      time2 = MAX_UNIX_TIME;
+    }
+    if (trajectory.length === 3000) {
+      trajectory.shift();
+    }
+    trajectory.push([dp_body, dp_hip, dp_knee]);
+    if (trajectory.length > 200 && (new Date().getTime() - time) > 2000) {
+      last = trajectory.slice(-40);
+      d = this.searchSubarray(last, trajectory);
+      console.log(d);
+      if (d.length > 3) {
+        console.log("found pose/attractor:" + last.pop());
+        trajectory = [];
+      }
+      return time = new Date().getTime();
+    }
+  };
+
   /*
     #try to play recorded data from a real semni as polygons in the background
     deltaPassed = Treal[0][14]
@@ -631,6 +709,8 @@ physics = (function() {
           this.updateMode(this.body, this.lower_joint);
           this.updateMode(this.body2, this.upper_joint);
         }
+      } else if (this.pend_style === 3 && this.upper_joint.csl_active) {
+        this.detectAttractor(this.body, this.upper_joint, this.lower_joint);
       }
       this.logData();
       i = steps_per_frame;

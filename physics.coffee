@@ -594,6 +594,82 @@ class physics
     mode = @clip(mode, 3)
     map_mode bodyJoint, mode
 
+  searchSubarray: (sub, array) =>
+    eps = 0.008
+    found = []
+    #return index if subarray found
+    for i in [0..array.length-sub.length] by 1
+      for j in [0..sub.length-1] by 1
+        if Math.abs(sub[j][0] - array[i+j][0]) > eps or Math.abs(sub[j][1] - array[i+j][1]) > eps or Math.abs(sub[j][2] - array[i+j][2]) > eps
+          break
+      if j == sub.length
+        found.push i
+        i = _i = i+sub.length
+    
+    if found.length is 0
+      return -1
+    else
+      return found
+
+  e1 = 0.02
+  e2 = 0.04
+  e1_body = 0.1
+  e2_body = 0.15
+  fp_flag = false
+  MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
+  time = time2 = MAX_UNIX_TIME
+  trajectory = []   #last n state points
+  detectAttractor: (body, upper_joint, lower_joint) =>
+    #detect if current csl mode found a posture
+    #TODO:
+    #- gb sometimes is to small to correctly prepare next contraction
+    #- some very slow contraction periodic attractors might not be detected
+    #- only detect posture after a few seconds have passed after switching mode
+    #  (sometimes very quickly same pose is detected again)
+    #- do something if csl hits limit (switch to r of same direction and set bias to current csl value/large value)
+    #- act on detection event following some strategy:
+    #  randomly select next mode or try new mode that we have not seen yet or change joint csl that was
+    #  not changed before
+    #- build graph a found postures
+    dp_body = Math.abs body.GetAngularVelocity()     #dp means ∆φ
+    dp_hip = Math.abs upper_joint.GetJointSpeed()
+    dp_knee = Math.abs lower_joint.GetJointSpeed()
+    
+    #find only fixpoints, find 4 seconds of slow speed
+    if dp_body < e1_body and dp_hip < e1 and dp_knee < e1
+      fp_flag = true
+  
+      if time2 is MAX_UNIX_TIME   #starting to check if we have a fixpoint
+        time2 = new Date().getTime()
+
+    if dp_body > e2_body or dp_hip > e2 or dp_knee > e2
+      fp_flag = false
+      time2 = MAX_UNIX_TIME
+
+    if (new Date().getTime() - time2) > 4000 and fp_flag is true
+      console.log("found fixpoint")
+      fp_flag = false
+      time2 = MAX_UNIX_TIME
+    
+
+    #find attractors, take a sample of trajectory and try to find it multiple times in the
+    #past trajectory (with epsilon), hence (quasi)periodic behaviour
+    if trajectory.length==3000   #corresponds to max periode duration that can be detected
+      trajectory.shift()
+
+    trajectory.push [dp_body, dp_hip, dp_knee]
+
+    if trajectory.length > 200 and (new Date().getTime() - time) > 2000
+      #take last 40 points
+      last = trajectory.slice(-40)
+      d = @searchSubarray last, trajectory
+      console.log(d)
+      if d.length > 3    #need to find sample more than once to be periodic
+        console.log("found pose/attractor:" + last.pop())
+        trajectory = []
+      time = new Date().getTime()
+    
+
   ###
   #try to play recorded data from a real semni as polygons in the background
   deltaPassed = Treal[0][14]
@@ -685,6 +761,8 @@ class physics
         if @map_state_to_mode
           @updateMode @body, @lower_joint
           @updateMode @body2, @upper_joint
+      else if @pend_style is 3 and @upper_joint.csl_active #semni
+        @detectAttractor @body, @upper_joint, @lower_joint
 
       @logData()
 
