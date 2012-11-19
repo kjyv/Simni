@@ -72,6 +72,8 @@ class physics
     @startLog = true      #if we start a new log
     @logged_data = []     #where we log our data
     @beta = 0             #friction coefficient
+
+    @abc = new abc()
   
   ##### methods to create bodies #####
 
@@ -129,11 +131,8 @@ class physics
     @body = @world.CreateBody(bodyDef)
     line = @body.CreateFixture(@fixDef)
     
-    #initialise friction and motor state
+    #initialise friction 
     @body.z2 = 0
-    @body.motor_torque = 0
-    @body.motor_control = 0
-    @body.I_tm1 = 0
 
     #create mass circle
     @fixDef.shape = new b2CircleShape(mass_size)
@@ -157,6 +156,9 @@ class physics
     @lower_joint.csl_sign = 1
     @lower_joint.gain = 1
     @lower_joint.gb = 0
+    @lower_joint.motor_torque = 0
+    @lower_joint.motor_control = 0
+    @lower_joint.I_tm1 = 0
     
   createDoublePendulum: =>
     #create pendulum line
@@ -179,11 +181,8 @@ class physics
     @body = @world.CreateBody(bodyDef)
     line = @body.CreateFixture(@fixDef)
     
-    #initialise friction and motor state
+    #initialise friction
     @body.z2 = 0
-    @body.motor_torque = 0
-    @body.motor_control = 0
-    @body.I_t = 0
     
     #lower rotating joint
     jointDef = new b2RevoluteJointDef()
@@ -199,6 +198,9 @@ class physics
     @lower_joint.csl_sign = 1
     @lower_joint.gain = 1
     @lower_joint.gb = 0
+    @lower_joint.motor_torque = 0
+    @lower_joint.motor_control = 0
+    @lower_joint.I_t = 0
     
     #create mass circle
     @fixDef.shape = new b2CircleShape(mass_size)
@@ -219,7 +221,6 @@ class physics
 
     #initialise friction and motor state
     @body2.z2 = 0
-    @body2.motor_torque = 0
 
     #upper rotating joint
     jointDef = new b2RevoluteJointDef()
@@ -227,13 +228,14 @@ class physics
     jointDef.collideConnected = false
     @upper_joint = @world.CreateJoint(jointDef)
     
+    @upper_joint.joint_name = 'upper'
     @upper_joint.angle_speed = 0
     @upper_joint.csl_active = false
-    @upper_joint.bounce_active = false
-    @upper_joint.joint_name = 'upper'
     @upper_joint.csl_sign = 1
     @upper_joint.gain = 1
     @upper_joint.gb = 0
+    @upper_joint.motor_torque = 0
+    @upper_joint.bounce_active = false
 
     #create upper mass circle
     @fixDef.shape = new b2CircleShape(mass_size)
@@ -338,11 +340,6 @@ class physics
     
     #initialise friction and motor state
     @body2.z2 = 0
-    @body2.last_motor_torque = 0
-    @body2.motor_torque = 0
-    @body2.motor_control = 0
-    @body2.I_t = 0
-    @body2.bounce_sign = 1
     
     #add motor mass separately to imitate moment of inertia different from only COM based
     ###
@@ -371,12 +368,17 @@ class physics
     @upper_joint = @world.CreateJoint(jointDef)
     
     #initialize
+    @upper_joint.joint_name = 'upper'
+    @upper_joint.motor_control = 0
+    @upper_joint.I_t = 0
     @upper_joint.angle_speed = 0
     @upper_joint.csl_active = false
-    @upper_joint.bounce_active = false
-    @upper_joint.bounce_vel = 0.0003
-    @upper_joint.joint_name = 'upper'
     @upper_joint.csl_sign = 1
+    @upper_joint.last_motor_torque = 0
+    @upper_joint.motor_torque = 0
+    @upper_joint.bounce_active = false
+    @upper_joint.bounce_sign = 1
+    @upper_joint.bounce_vel = 0.0003
     
     #####
 
@@ -424,11 +426,6 @@ class physics
 
     #initialise friction and motor state
     @body3.z2 = 0
-    @body3.last_motor_torque = 0
-    @body3.motor_torque = 0
-    @body3.motor_control = 0
-    @body3.I_t = 0
-    @body3.bounce_sign = 1
     
     #lower rotating joint
     jointDef = new b2RevoluteJointDef()
@@ -447,16 +444,21 @@ class physics
     jointDef.enableLimit = true
     @lower_joint = @world.CreateJoint(jointDef)
     
+    @lower_joint.joint_name = 'lower'
+    @lower_joint.motor_control = 0
+    @lower_joint.I_t = 0
     @lower_joint.angle_speed = 0
     @lower_joint.csl_active = false
+    @lower_joint.csl_sign = 1
+    @lower_joint.last_motor_torque = 0
+    @lower_joint.motor_torque = 0
     @lower_joint.bounce_active = false
     @lower_joint.bounce_vel = 0.00047
-    @lower_joint.joint_name = 'lower'
-    @lower_joint.csl_sign = 1
+    @lower_joint.bounce_sign = 1
 
   ##### stuff #####
 
-  toggleCSL: (bodyObject, bodyJoint) =>
+  toggleCSL: (bodyJoint) =>
     if bodyJoint.bounce_active
       $("#toggle_bounce").click()
     bodyJoint.csl_active = not bodyJoint.csl_active
@@ -466,15 +468,15 @@ class physics
       $("#set_csl_params_upper").trigger('click')
     unless bodyJoint.last_angle?
       bodyJoint.last_angle = bodyJoint.GetJointAngle()
-    bodyObject.motor_control = 0
-    bodyObject.last_integrated = 0
+    bodyJoint.motor_control = 0
+    bodyJoint.last_integrated = 0
 
-  toggleBounce: (bodyObject, bodyJoint) =>
+  toggleBounce: (bodyJoint) =>
     if bodyJoint.csl_active
       $("#toggle_csl").click()
     bodyJoint.bounce_active = not bodyJoint.bounce_active
-    bodyObject.motor_control = 0
-    bodyObject.last_integrated = 0
+    bodyJoint.motor_control = 0
+    bodyJoint.last_integrated = 0
   
   getNoisyAngle: (bodyJoint) =>
     #sensor noise
@@ -496,52 +498,37 @@ class physics
 
   ##### controllers #####
 
-  CSL: (gi, gf, gb, angle_diff, gain=1, bodyObject) =>
-    unless bodyObject.last_integrated?
-      bodyObject.last_integrated = 0
+  CSL: (gi, gf, gb, angle_diff, gain=1, bodyJoint) =>
+    unless bodyJoint.last_integrated?
+      bodyJoint.last_integrated = 0
     #csl controller
     vel = gi * angle_diff
-    sum = vel + bodyObject.last_integrated
-    bodyObject.last_integrated = gf * sum
+    sum = vel + bodyJoint.last_integrated
+    bodyJoint.last_integrated = gf * sum
     return (sum * gain) + gb
 
-  Bounce: (vs, angle_diff, bodyObject) =>
+  Bounce: (vs, angle_diff, bodyJoint) =>
     #turn around on stall
-    if Math.abs(bodyObject.motor_torque) > 0.9
-      bodyObject.bounce_sign = bodyObject.bounce_sign * -1
-      bodyObject.last_integrated = 0
+    if Math.abs(bodyJoint.motor_torque) > 0.9
+      bodyJoint.bounce_sign = bodyJoint.bounce_sign * -1
+      bodyJoint.last_integrated = 0
 
-    bodyObject.last_integrated += 35*(angle_diff-(vs*bodyObject.bounce_sign))
-    return bodyObject.last_integrated
+    bodyJoint.last_integrated += 35*(angle_diff-(vs*bodyJoint.bounce_sign))
+    return bodyJoint.last_integrated
 
-  updateController: (bodyObject, bodyJoint) =>
+  updateController: (bodyJoint) =>
     bodyJoint.angle_diff_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle
     bodyJoint.last_angle = bodyJoint.GetJointAngle()
 
     if bodyJoint.csl_active
-      bodyObject.motor_control = @CSL(
+      bodyJoint.motor_control = @CSL(
         bodyJoint.gi, bodyJoint.gf, bodyJoint.gb,
         bodyJoint.angle_diff_csl,
         bodyJoint.gain,
-        bodyObject
+        bodyJoint
       )
     else if bodyJoint.bounce_active
-      bodyObject.motor_control = @Bounce(bodyJoint.bounce_vel, bodyJoint.angle_diff_csl, bodyObject)
-    
-    #calm down if contraction goes out of bounds
-    #if Math.abs(bodyObject.motor_torque) > 0.5
-    #  bodyJoint.csl_sign = if bodyJoint.csl_sign then 0 else 1
-    #  bodyObject.last_integrated = 0
-    #else
-    #  bodyJoint.csl_sign = 1
-
-    #TODO: detect stable poses
-    # 1 compare current to last angle value and set could-be stable flag if we have a small interval
-    # 2a keep first value compare all following values to it and count how many steps have passed
-    # 2b if any new value is out of the allowed interval, set could-be stable flag to false again
-    # 4 if enough steps have passed and and could-be stable flag is still true, set stable flag
-    # 5 unset stable and could-be stable flag if any new value is too far away from initial position    
-    
+      bodyJoint.motor_control = @Bounce(bodyJoint.bounce_vel, bodyJoint.angle_diff_csl, bodyJoint)
 
   ##### motor calculation #####
 
@@ -551,12 +538,12 @@ class physics
   R = 9.59        #R_RE-MAX = 8.3 ohm, R_65 = R_25 * (1+0.0039*(65-25)) (assume mean temp of 65°)
   R_inv = 1/R
   U_in = 0
-  updateMotor: (bodyObject, bodyJoint) =>
+  updateMotor: (bodyJoint) =>
     # motor model
-    U_in = bodyObject.motor_control
-    bodyObject.I_t = @clip(U_in - (kb*(-bodyJoint.GetJointSpeed())), 12)*(R_inv)   #limit to max battery voltage
-    bodyObject.motor_torque = km * bodyObject.I_t
-    bodyJoint.m_applyTorque += bodyObject.motor_torque #* bodyJoint.csl_sign
+    U_in = bodyJoint.motor_control
+    bodyJoint.I_t = @clip(U_in - (kb*(-bodyJoint.GetJointSpeed())), 12)*(R_inv)   #limit to max battery voltage
+    bodyJoint.motor_torque = km * bodyJoint.I_t
+    bodyJoint.m_applyTorque += bodyJoint.motor_torque #* bodyJoint.csl_sign
     return
 
   ##### friction calculation #####
@@ -564,7 +551,7 @@ class physics
   clip: (value, cap=1) => Math.max(-cap, Math.min(cap, value))
   #sgn: (value) => if value > 0 then 1 else if value < 0 then -1 else 0
   v = fg = 0
-  applyFriction: (bodyObject, bodyJoint) =>
+  applyFriction: (bodyJoint) =>
     v = -bodyJoint.GetJointSpeed()
     #fluid/gliding friction
     fg = -v * @beta * 12
@@ -579,96 +566,20 @@ class physics
   calcMode: (motor_torque, angle_speed) =>
     mc = if @w0_abs then Math.abs(motor_torque) else motor_torque
     as = if @w1_abs then Math.abs(angle_speed) else angle_speed
-    mode = w0 * mc + w1 * as + w2
+    mode = @w0 * mc + @w1 * as + @w2
 
-  updateMode: (bodyObject, bodyJoint) =>
+  updateMode: (bodyJoint) =>
     #calc mode from current pendulum state
 
     #w0 = 70  #1.4 angle
     #w1 = 10 #-0.2 angle_speed
     #w2 = -0.2   #-1 bias
-    #mode = w0 * Math.abs(@angle) + w1 * @angle_speed + w2
+    #mode = @w0 * Math.abs(@angle) + @w1 * @angle_speed + @w2
   
-    mode = @calcMode(bodyObject.motor_torque, bodyJoint.angle_diff_csl)
+    mode = @calcMode(bodyJoint.motor_torque, bodyJoint.angle_diff_csl)
     #mode = @clip(mode, 1.3)
     mode = @clip(mode, 3)
-    map_mode bodyJoint, mode
-
-  searchSubarray: (sub, array) =>
-    eps = 0.008
-    found = []
-    #return index if subarray found
-    for i in [0..array.length-sub.length] by 1
-      for j in [0..sub.length-1] by 1
-        if Math.abs(sub[j][0] - array[i+j][0]) > eps or Math.abs(sub[j][1] - array[i+j][1]) > eps or Math.abs(sub[j][2] - array[i+j][2]) > eps
-          break
-      if j == sub.length
-        found.push i
-        i = _i = i+sub.length
-    
-    if found.length is 0
-      return -1
-    else
-      return found
-
-  e1 = 0.02
-  e2 = 0.04
-  e1_body = 0.1
-  e2_body = 0.15
-  fp_flag = false
-  MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
-  time = time2 = MAX_UNIX_TIME
-  trajectory = []   #last n state points
-  detectAttractor: (body, upper_joint, lower_joint) =>
-    #detect if current csl mode found a posture
-    #TODO:
-    #- gb sometimes is to small to correctly prepare next contraction
-    #- some very slow contraction periodic attractors might not be detected
-    #- only detect posture after a few seconds have passed after switching mode
-    #  (sometimes very quickly same pose is detected again)
-    #- do something if csl hits limit (switch to r of same direction and set bias to current csl value/large value)
-    #- act on detection event following some strategy:
-    #  randomly select next mode or try new mode that we have not seen yet or change joint csl that was
-    #  not changed before
-    #- build graph a found postures
-    dp_body = Math.abs body.GetAngularVelocity()     #dp means ∆φ
-    dp_hip = Math.abs upper_joint.GetJointSpeed()
-    dp_knee = Math.abs lower_joint.GetJointSpeed()
-    
-    #find only fixpoints, find 4 seconds of slow speed
-    if dp_body < e1_body and dp_hip < e1 and dp_knee < e1
-      fp_flag = true
-  
-      if time2 is MAX_UNIX_TIME   #starting to check if we have a fixpoint
-        time2 = new Date().getTime()
-
-    if dp_body > e2_body or dp_hip > e2 or dp_knee > e2
-      fp_flag = false
-      time2 = MAX_UNIX_TIME
-
-    if (new Date().getTime() - time2) > 4000 and fp_flag is true
-      console.log("found fixpoint")
-      fp_flag = false
-      time2 = MAX_UNIX_TIME
-    
-
-    #find attractors, take a sample of trajectory and try to find it multiple times in the
-    #past trajectory (with epsilon), hence (quasi)periodic behaviour
-    if trajectory.length==3000   #corresponds to max periode duration that can be detected
-      trajectory.shift()
-
-    trajectory.push [dp_body, dp_hip, dp_knee]
-
-    if trajectory.length > 200 and (new Date().getTime() - time) > 2000
-      #take last 40 points
-      last = trajectory.slice(-40)
-      d = @searchSubarray last, trajectory
-      console.log(d)
-      if d.length > 3    #need to find sample more than once to be periodic
-        console.log("found pose/attractor:" + last.pop())
-        trajectory = []
-      time = new Date().getTime()
-    
+    @ui.map_mode bodyJoint, mode
 
   ###
   #try to play recorded data from a real semni as polygons in the background
@@ -753,16 +664,19 @@ class physics
           @world.DestroyJoint mouseJoint
           window.mouseJoint = null
 
-      # recalc slow stuff, 60 Hz
+      # recalc slow stuff, ~60 Hz
+      # TODO: move this into ui or separate classes (mapping to mode and other
+      # logic is not part of physics)
       if @pend_style is 1
         if @map_state_to_mode
-          @updateMode @body, @lower_joint
+          @updateMode @lower_joint
       else if @pend_style is 2
         if @map_state_to_mode
-          @updateMode @body, @lower_joint
-          @updateMode @body2, @upper_joint
-      else if @pend_style is 3 and @upper_joint.csl_active #semni
-        @detectAttractor @body, @upper_joint, @lower_joint
+          @updateMode @lower_joint
+          @updateMode @upper_joint
+      else if @pend_style is 3   #semni
+        if @upper_joint.csl_active
+          @abc.update @body, @upper_joint, @lower_joint
 
       @logData()
 
@@ -770,23 +684,23 @@ class physics
       i = steps_per_frame
       while i > 0
         if @pend_style is 3  #semni
-          @updateController @body2, @upper_joint
-          @updateController @body3, @lower_joint
-          @updateMotor @body2, @upper_joint
-          @updateMotor @body3, @lower_joint
-          @applyFriction @body2, @upper_joint
-          @applyFriction @body3, @lower_joint
+          @updateController @upper_joint
+          @updateController @lower_joint
+          @updateMotor @upper_joint
+          @updateMotor @lower_joint
+          @applyFriction @upper_joint
+          @applyFriction @lower_joint
         else if @pend_style is 1
-          @updateController @body, @lower_joint
-          @updateMotor @body, @lower_joint
-          @applyFriction @body, @lower_joint
+          @updateController @lower_joint
+          @updateMotor @lower_joint
+          @applyFriction @lower_joint
         else if @pend_style is 2
-          @updateController @body, @lower_joint
-          @updateController @body2, @upper_joint
-          @updateMotor @body, @lower_joint
-          @updateMotor @body2, @upper_joint
-          @applyFriction @body, @lower_joint
-          @applyFriction @body2, @upper_joint
+          @updateController @lower_joint
+          @updateController @upper_joint
+          @updateMotor @lower_joint
+          @updateMotor @upper_joint
+          @applyFriction @lower_joint
+          @applyFriction @upper_joint
 
         @world.Step(
           dt,              #timestep (advance timestep ms further in this step)

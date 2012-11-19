@@ -169,13 +169,13 @@ ui = (function() {
     if (mode < 0) {
       return mode * 3;
     } else {
-      return 18 + (5 * mode);
+      return 15 + (5 * mode);
     }
   };
 
   ui.prototype.map_mode_to_gf = function(mode) {
     if (mode > 1) {
-      return mode * 0.0006 + 1;
+      return mode * 0.00125 + 1;
     } else if (mode < 0) {
       return 0;
     } else {
@@ -191,8 +191,8 @@ ui = (function() {
     if (!(mode != null)) {
       mode = parseFloat($("#mode_param_" + joint).val());
     }
-    gi = map_mode_to_gi(mode);
-    gf = map_mode_to_gf(mode);
+    gi = this.map_mode_to_gi(mode);
+    gf = this.map_mode_to_gf(mode);
     $("#gi_param_" + joint).val(gi);
     $("#gf_param_" + joint).val(gf);
     $("#mode_param_" + joint).val(mode);

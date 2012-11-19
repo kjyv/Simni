@@ -139,7 +139,7 @@ class ui
     if mode < 0
       mode * 3
     else
-      18 + (5 * mode)
+      15 + (5 * mode)
 
   map_mode_to_gf: (mode) =>
     #double pendulum
@@ -152,7 +152,7 @@ class ui
     
     #single pendulum
     if mode > 1
-      mode * 0.0006 + 1
+      mode * 0.00125 + 1
     else if mode < 0
       0
     else
@@ -170,8 +170,8 @@ class ui
     if not mode?
       mode = parseFloat($("#mode_param_#{joint}").val())
 
-    gi = map_mode_to_gi(mode)
-    gf = map_mode_to_gf(mode)
+    gi = @map_mode_to_gi(mode)
+    gf = @map_mode_to_gf(mode)
 
     $("#gi_param_#{joint}").val gi
     $("#gf_param_#{joint}").val gf
