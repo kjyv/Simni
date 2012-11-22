@@ -219,16 +219,13 @@ class ui
     #p.body.SetPositionAndAngle(new b2Vec2(x0,y0), 0)
     p.createSemni(x0,y0)
 
-  set_csl_modes: (hipCSL, kneeCSL) =>
+  set_csl_mode_upper: (hipCSL) =>
     #set ABC learning modes for exploration
-    release_bias_hip = 1
-    release_bias_knee = 0.8
+    release_bias_hip = 0.7
     release_gf = 0.99
     contract_gf_hip = 1.0030 #1.0025 #1.006
-    contract_gf_knee = 1.0020 #1.0015 #1.006
-    gi_hip = 28 #27 #50
-    gi_knee = 28 #26 #50
-
+    gi_hip = 30 #27 #50
+    
     if hipCSL is "r+"
       gf = release_gf
       gb = release_bias_hip
@@ -238,6 +235,9 @@ class ui
     else if hipCSL is "c"
       gf = contract_gf_hip
       gb = 0
+      
+    #re-select select option in case we came from another function
+    $("#csl_mode_hip option[value='" + hipCSL + "']").attr "selected", true
     
     $("#gi_param_upper").val(gi_hip)
     @physics.upper_joint.gi = gi_hip
@@ -247,6 +247,13 @@ class ui
     
     $("#gb_param_upper").val(gb)
     @physics.upper_joint.gb = gb
+    @physics.upper_joint.csl_mode = hipCSL
+
+  set_csl_mode_lower: (kneeCSL) =>
+    release_bias_knee = 0.7
+    contract_gf_knee = 1.0020 #1.0015 #1.006
+    release_gf = 0.99
+    gi_knee = 35 #26 #50
 
     if kneeCSL is "r+"
       gf = release_gf
@@ -257,6 +264,9 @@ class ui
     else if kneeCSL is "c"
       gf = contract_gf_knee
       gb = 0
+
+    #re-select select option in case we came from another function
+    $("#csl_mode_knee option[value='" + kneeCSL + "']").attr 'selected', true
     
     $("#gi_param_lower").val(gi_knee)
     @physics.lower_joint.gi = gi_knee
@@ -266,7 +276,8 @@ class ui
     
     $("#gb_param_lower").val(gb)
     @physics.lower_joint.gb = gb
-  
+    @physics.lower_joint.csl_mode = kneeCSL
+
   toggleRecorder: =>
     @physics.startLog = true
     @physics.recordPhase = !@physics.recordPhase
@@ -275,14 +286,14 @@ class ui
     @physics.recordPhase = false
     location.href = 'data:text;charset=utf-8,'+encodeURI Functional.reduce((x, y) ->
       x + y + "\n"
-    , "", physics.logged_data)
+    , "", @physics.logged_data)
 
     return
 
   getSemniTransformAsJSON: =>
-    t = physics.body.GetTransform()
-    t2 = physics.body2.GetTransform()
-    t3 = physics.body3.GetTransform()
+    t = @physics.body.GetTransform()
+    t2 = @physics.body2.GetTransform()
+    t3 = @physics.body3.GetTransform()
     return JSON.stringify({"body":t,"body2":t2,"body3":t3})
 
   getSemniTransformAsFile: =>
@@ -290,9 +301,9 @@ class ui
   
   setSemniTransformAsJSON: (tj=null) =>
     t = JSON.parse(tj)
-    physics.body.SetTransform(new b2Transform(t.body.position, t.body.R))
-    physics.body2.SetTransform(new b2Transform(t.body2.position, t.body2.R))
-    physics.body3.SetTransform(new b2Transform(t.body3.position, t.body3.R))
+    @physics.body.SetTransform(new b2Transform(t.body.position, t.body.R))
+    @physics.body2.SetTransform(new b2Transform(t.body2.position, t.body2.R))
+    @physics.body3.SetTransform(new b2Transform(t.body3.position, t.body3.R))
     
   setSemniTransformAsFile: (files) =>
     readFile = (file, callback) ->

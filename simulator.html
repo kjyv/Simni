@@ -19,6 +19,8 @@ Neurorobotics Research Laboratory, Berlin
         <script src="libs/d3.v2.min.js"></script>
         <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
+        <script src="libs/arbor.js"></script>  
+        <script src="graph-renderer.js"></script>
         <script src="semni.data.js"></script>
         <script src="abc.js"></script>
         <script src="physics.js"></script>
@@ -128,6 +130,7 @@ Neurorobotics Research Laboratory, Berlin
                             #set initial csl params from abc modes for semni
                             if physics.pend_style is 3
                                 $('#csl_mode_hip').trigger("change")
+                                $('#csl_mode_knee').trigger("change")
                             #set initial friction from slider
                             $("#friction_param").trigger("change")
 
@@ -136,6 +139,7 @@ Neurorobotics Research Laboratory, Berlin
                     <button id="next_step" onClick="physics.step = true">next step(s) [n]</button><br/>            
                     <button id="toggle_csl" class="toggle-button">toggle CSL [t]</button>
                     <button id="toggle_bounce" class="toggle-button">toggle bounce controller [b]</button>
+                    <button id="toggle_explore" class="toggle-button">toggle abc explore [e]</button>
                     <script type="text/coffeescript">
                         $ ->
                             $("#toggle_csl").on 'click', ->
@@ -151,15 +155,19 @@ Neurorobotics Research Laboratory, Berlin
                                 if physics.pend_style is 3
                                     physics.toggleBounce physics.upper_joint
                                     physics.toggleBounce physics.lower_joint
+                                    
+                            $("#toggle_explore").on 'click', ->
+                                if physics.pend_style is 3
+                                    physics.abc.toggleExplore()
                     </script>
                     <br/>
          
-                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.035" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
+                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.030" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
                     <span id="friction_val">0.035</span><br/>
 
-                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="50" style="width:60px;"/>
+                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="30" style="width:60px;"/>
                     <label for="gf_param_upper">g<sub>f</sub></label> <input id="gf_param_upper" type="text" value="0.1" style="width:60px;"/>
-                    <label for="gb_param_upper">g<sub>b</sub></label> <input id="gb_param_upper" type="text" value="1" style="width:60px;"/>
+                    <label for="gb_param_upper">g<sub>b</sub></label> <input id="gb_param_upper" type="text" value="0" style="width:60px;"/>
                     <label for="gain_param_upper">gain</label> <input id="gain_param_upper" type="text" value="1" style="width:60px;"/>
                     <button id="set_csl_params_upper">set</button> <br/>
                     <script>
@@ -177,9 +185,9 @@ Neurorobotics Research Laboratory, Berlin
                     <span id="mode_val_upper"></span> <span id="csl_mode_name_upper">contraction</span><br/>
 
 
-                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="50" style="width:60px;"/>
+                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="30" style="width:60px;"/>
                     <label for="gf_param_lower">g<sub>f</sub></label> <input id="gf_param_lower" type="text" value="0.1" style="width:60px;"/>
-                    <label for="gb_param_lower">g<sub>b</sub></label> <input id="gb_param_lower" type="text" value="1" style="width:60px;"/>
+                    <label for="gb_param_lower">g<sub>b</sub></label> <input id="gb_param_lower" type="text" value="0" style="width:60px;"/>
                     <label for="gain_param_lower">gain</label> <input id="gain_param_lower" type="text" value="1" style="width:60px;"/>
                     <button id="set_csl_params_lower">set</button> <br/>
                     <script>
@@ -251,22 +259,24 @@ Neurorobotics Research Laboratory, Berlin
                 <div id="semni_posture_controls">
                     <br/>
                     <label for="csl_mode_hip">Hip</label>:
-                        <select id="csl_mode_hip" onchange="ui.set_csl_modes($('#csl_mode_hip').val(),$('#csl_mode_knee').val())">
+                        <select id="csl_mode_hip" onchange="ui.set_csl_mode_upper($('#csl_mode_hip').val())">
                             <option value="r+" checked="checked">r+</option>
                             <option value="r-">r-</option>
                             <option value="c">c</option>
                         </select>
                     <label for="csl_mode_knee">Knee</label>:
-                        <select id="csl_mode_knee" onchange="ui.set_csl_modes($('#csl_mode_hip').val(),$('#csl_mode_knee').val())">
+                        <select id="csl_mode_knee" onchange="ui.set_csl_mode_lower($('#csl_mode_knee').val())">
                             <option value="r+" checked="checked">r+</option>
                             <option value="r-">r-</option>
                             <option value="c">c</option>
                         </select>
+
+                    <div id="posture_graph"><canvas width="350" height="373" id="viewport"></canvas></div> 
                 </div>
             </div>
         </div>
 
-        <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;<sub>hip</sub>/&phi; <sub>knee</sub><button id="clear_phase">clear</button></div>
+        <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;<sub>hip</sub>/&phi;<sub>knee</sub><button id="clear_phase">clear</button></div>
         <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled">motor torque upper (green) and lower (blue)</div>
         <div id="state_to_mode_mapping" style="display:none;"><input type="checkbox" id="phase_space_2_enabled">phase space U/&phi;'<br/></div>
         <script>
@@ -547,6 +557,10 @@ Neurorobotics Research Laboratory, Berlin
                 
                 $(document).bind('keydown', 'b', function (evt){
                    $('#toggle_bounce').click(); return false;
+                })
+                
+                $(document).bind('keydown', 'e', function (evt){
+                   $('#toggle_explore').click(); return false;
                 })
                 
                 $(document).bind('keydown', 'p', function (evt){

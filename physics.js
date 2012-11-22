@@ -518,7 +518,7 @@ physics = (function() {
 
   physics.prototype.applyFriction = function(bodyJoint) {
     v = -bodyJoint.GetJointSpeed();
-    fg = -v * this.beta * 12;
+    fg = -v * this.beta * 5;
     return bodyJoint.m_applyTorque += fg;
   };
 
@@ -633,9 +633,7 @@ physics = (function() {
           this.updateMode(this.upper_joint);
         }
       } else if (this.pend_style === 3) {
-        if (this.upper_joint.csl_active) {
-          this.abc.update(this.body, this.upper_joint, this.lower_joint);
-        }
+        this.abc.update(this.body, this.upper_joint, this.lower_joint);
       }
       this.logData();
       i = steps_per_frame;

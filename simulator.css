@@ -77,6 +77,10 @@ input[type="range"] {
     background-color:lightgrey;
 }
 
+#posture_graph {
+    float: left;
+}
+
 #state_to_mode_mapping {
     float:left;
     margin-bottom: 10px;
@@ -145,5 +149,3 @@ circle {
 .hold {
     fill: green;
 }
-
-

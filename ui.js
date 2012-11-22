@@ -17,7 +17,9 @@ ui = (function() {
 
     this.toggleRecorder = __bind(this.toggleRecorder, this);
 
-    this.set_csl_modes = __bind(this.set_csl_modes, this);
+    this.set_csl_mode_lower = __bind(this.set_csl_mode_lower, this);
+
+    this.set_csl_mode_upper = __bind(this.set_csl_mode_upper, this);
 
     this.set_posture = __bind(this.set_posture, this);
 
@@ -238,15 +240,12 @@ ui = (function() {
     return p.createSemni(x0, y0);
   };
 
-  ui.prototype.set_csl_modes = function(hipCSL, kneeCSL) {
-    var contract_gf_hip, contract_gf_knee, gb, gf, gi_hip, gi_knee, release_bias_hip, release_bias_knee, release_gf;
-    release_bias_hip = 1;
-    release_bias_knee = 0.8;
+  ui.prototype.set_csl_mode_upper = function(hipCSL) {
+    var contract_gf_hip, gb, gf, gi_hip, release_bias_hip, release_gf;
+    release_bias_hip = 0.7;
     release_gf = 0.99;
     contract_gf_hip = 1.0030;
-    contract_gf_knee = 1.0020;
-    gi_hip = 28;
-    gi_knee = 28;
+    gi_hip = 30;
     if (hipCSL === "r+") {
       gf = release_gf;
       gb = release_bias_hip;
@@ -257,12 +256,22 @@ ui = (function() {
       gf = contract_gf_hip;
       gb = 0;
     }
+    $("#csl_mode_hip option[value='" + hipCSL + "']").attr("selected", true);
     $("#gi_param_upper").val(gi_hip);
     this.physics.upper_joint.gi = gi_hip;
     $("#gf_param_upper").val(gf);
     this.physics.upper_joint.gf = gf;
     $("#gb_param_upper").val(gb);
     this.physics.upper_joint.gb = gb;
+    return this.physics.upper_joint.csl_mode = hipCSL;
+  };
+
+  ui.prototype.set_csl_mode_lower = function(kneeCSL) {
+    var contract_gf_knee, gb, gf, gi_knee, release_bias_knee, release_gf;
+    release_bias_knee = 0.7;
+    contract_gf_knee = 1.0020;
+    release_gf = 0.99;
+    gi_knee = 35;
     if (kneeCSL === "r+") {
       gf = release_gf;
       gb = release_bias_knee;
@@ -273,12 +282,14 @@ ui = (function() {
       gf = contract_gf_knee;
       gb = 0;
     }
+    $("#csl_mode_knee option[value='" + kneeCSL + "']").attr('selected', true);
     $("#gi_param_lower").val(gi_knee);
     this.physics.lower_joint.gi = gi_knee;
     $("#gf_param_lower").val(gf);
     this.physics.lower_joint.gf = gf;
     $("#gb_param_lower").val(gb);
-    return this.physics.lower_joint.gb = gb;
+    this.physics.lower_joint.gb = gb;
+    return this.physics.lower_joint.csl_mode = kneeCSL;
   };
 
   ui.prototype.toggleRecorder = function() {
@@ -290,14 +301,14 @@ ui = (function() {
     this.physics.recordPhase = false;
     location.href = 'data:text;charset=utf-8,' + encodeURI(Functional.reduce(function(x, y) {
       return x + y + "\n";
-    }, "", physics.logged_data));
+    }, "", this.physics.logged_data));
   };
 
   ui.prototype.getSemniTransformAsJSON = function() {
     var t, t2, t3;
-    t = physics.body.GetTransform();
-    t2 = physics.body2.GetTransform();
-    t3 = physics.body3.GetTransform();
+    t = this.physics.body.GetTransform();
+    t2 = this.physics.body2.GetTransform();
+    t3 = this.physics.body3.GetTransform();
     return JSON.stringify({
       "body": t,
       "body2": t2,
@@ -315,9 +326,9 @@ ui = (function() {
       tj = null;
     }
     t = JSON.parse(tj);
-    physics.body.SetTransform(new b2Transform(t.body.position, t.body.R));
-    physics.body2.SetTransform(new b2Transform(t.body2.position, t.body2.R));
-    return physics.body3.SetTransform(new b2Transform(t.body3.position, t.body3.R));
+    this.physics.body.SetTransform(new b2Transform(t.body.position, t.body.R));
+    this.physics.body2.SetTransform(new b2Transform(t.body2.position, t.body2.R));
+    return this.physics.body3.SetTransform(new b2Transform(t.body3.position, t.body3.R));
   };
 
   ui.prototype.setSemniTransformAsFile = function(files) {

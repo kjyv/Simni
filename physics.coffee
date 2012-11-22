@@ -554,7 +554,7 @@ class physics
   applyFriction: (bodyJoint) =>
     v = -bodyJoint.GetJointSpeed()
     #fluid/gliding friction
-    fg = -v * @beta * 12
+    fg = -v * @beta * 5
 
     #dry friction (box2d joint motor provides dry and sticky already)
     #fd = @sgn(-v) * (@beta)
@@ -675,8 +675,7 @@ class physics
           @updateMode @lower_joint
           @updateMode @upper_joint
       else if @pend_style is 3   #semni
-        if @upper_joint.csl_active
-          @abc.update @body, @upper_joint, @lower_joint
+        @abc.update @body, @upper_joint, @lower_joint
 
       @logData()
 
