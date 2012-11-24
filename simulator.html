@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <!-- 
 
-CSL Playground
 Simulate various actuated shapes with a simple motor model and a CSL implementation.
 
 Stefan Bethge, 2012
@@ -10,14 +9,14 @@ Neurorobotics Research Laboratory, Berlin
 -->
 <html>
    <head>
-        <title>CSL Playground</title>
+        <title>Simni Playground</title>
         <script src="libs/jquery.min.js"></script>
         <script src="libs/functional.min.js"></script>
-        <script src="libs/Stats.js"></script>
+        <script src="libs/Stats.min.js"></script>
         <script src="libs/jquery.hotkeys.min.js"></script>
         <script src="libs/jsxgraphcore.js"></script>
         <script src="libs/d3.v2.min.js"></script>
-        <script src="libs/Box2dWeb-2.1.a.3.js"></script>
+        <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
         <script src="libs/arbor.js"></script>  
         <script src="graph-renderer.js"></script>
@@ -32,7 +31,7 @@ Neurorobotics Research Laboratory, Berlin
     </head>
     <body>
         <div id="left-side">
-            <canvas id="canvas" width="750" height="330" style="float:left;"></canvas>
+            <canvas id="simulation" width="750" height="330" style="float:left;"></canvas>
             <div id="view_controls">
                 Zoom:
                 <button onclick="physics.debugDraw.SetDrawScale(physics.debugDraw.GetDrawScale() + 20)">+</button>
@@ -267,7 +266,10 @@ Neurorobotics Research Laboratory, Berlin
                             <option value="c">c</option>
                         </select>
 
-                    <div id="posture_graph"><canvas width="350" height="245" id="viewport"></canvas></div> 
+                        <div id="posture_graph">
+                            <canvas width="350" height="245" id="viewport"></canvas>
+                            <canvas width="300" height="300" id="tempimage" style="display:none;"></canvas>
+                        </div> 
                 </div>
             </div>
         </div>

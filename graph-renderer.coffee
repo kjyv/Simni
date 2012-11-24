@@ -77,12 +77,20 @@ class Renderer
       # pt:   {x:#, y:#}  node position in screen coords
      
       label = node.data.label
+      image = node.data.imageData
 
-      # draw a rectangle centered at pt
       if label
         w = ctx.measureText(""+label).width + 8
       else
         w = 8
+
+      # draw a rectangle centered at pt
+      if image
+        ctx2 = $("#tempimage")[0].getContext('2d')
+        ctx2.clearRect 0,0, ctx2.canvas.width, ctx2.canvas.height
+        ctx2.putImageData image, 0, 0
+        ctx.drawImage ctx2.canvas, pt.x, pt.y
+      else
 
       ctx.rect pt.x - w / 2, pt.y - w / 2, w, w
       ctx.strokeStyle =  if node.data.color then node.data.color else "black"
@@ -124,7 +132,7 @@ class Renderer
         ctx.arc(x+w, y, w/4, Math.PI, 0.5*Math.PI, false)
         ctx.stroke()
 
-        #TODO: draw arrow
+        #TODO: draw arrow for circles
         #simply draw on top of the box, pointing down
         #might be better to not show two arrows in the same spot though
       else

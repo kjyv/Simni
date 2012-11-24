@@ -104,7 +104,7 @@ physics = (function() {
     this.lower_joint = null;
     this.upper_joint = null;
     this.debugDraw = new b2DebugDraw();
-    this.debugDraw.SetSprite(document.getElementById("canvas").getContext("2d"));
+    this.debugDraw.SetSprite(document.getElementById("simulation").getContext("2d"));
     this.debugDraw.SetDrawScale(260);
     this.debugDraw.SetFillAlpha(0.3);
     this.debugDraw.SetLineThickness(1.0);

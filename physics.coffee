@@ -57,7 +57,7 @@ class physics
 
     #setup debug draw
     @debugDraw = new b2DebugDraw()
-    @debugDraw.SetSprite document.getElementById("canvas").getContext("2d")
+    @debugDraw.SetSprite document.getElementById("simulation").getContext("2d")
     @debugDraw.SetDrawScale 260
     @debugDraw.SetFillAlpha 0.3
     @debugDraw.SetLineThickness 1.0

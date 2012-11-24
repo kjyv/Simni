@@ -69,12 +69,21 @@ Renderer = (function() {
     parent = this;
     ctx = this.ctx;
     this.particleSystem.eachNode(function(node, pt) {
-      var label, w;
+      var ctx2, image, label, w;
       label = node.data.label;
+      image = node.data.imageData;
       if (label) {
         w = ctx.measureText("" + label).width + 8;
       } else {
         w = 8;
+      }
+      if (image) {
+        ctx2 = $("#tempimage")[0].getContext('2d');
+        ctx2.clearRect(0, 0, ctx2.canvas.width, ctx2.canvas.height);
+        ctx2.putImageData(image, 0, 0);
+        ctx.drawImage(ctx2.canvas, pt.x, pt.y);
+      } else {
+
       }
       ctx.rect(pt.x - w / 2, pt.y - w / 2, w, w);
       ctx.strokeStyle = node.data.color ? node.data.color : "black";

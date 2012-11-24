@@ -117,8 +117,8 @@ ui = (function() {
         y: y
       };
     };
-    canvasPosition = getElementPosition($('#canvas'));
-    $('#canvas')[0].addEventListener("mousedown", (function(e) {
+    canvasPosition = getElementPosition($('#simulation'));
+    $('#simulation')[0].addEventListener("mousedown", (function(e) {
       window.isMouseDown = true;
       handleMouseMove(e);
       return document.addEventListener("mousemove", handleMouseMove, true);

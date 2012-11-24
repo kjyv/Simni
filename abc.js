@@ -122,7 +122,7 @@ abc = (function() {
   };
 
   abc.prototype.savePosture = function(position, body, upper_csl, lower_csl) {
-    var addEdge, f, found, p, parent;
+    var addEdge, ctx, ctx2, f, found, i, imageData, newCanvas, p, parent, pix, x, y, _i, _ref;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
       var n0, n1;
@@ -147,8 +147,27 @@ abc = (function() {
       f = found[0];
       p = this.postures[f];
     }
-    if (this.last_posture) {
+    if (this.last_posture && this.postures.length > 1) {
       addEdge(this.last_posture, p);
+      ctx = $("#simulation")[0].getContext('2d');
+      x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale();
+      y = physics.body.GetWorldCenter().y * physics.debugDraw.GetDrawScale();
+      imageData = ctx.getImageData(x - 90, y - 90, 180, 180);
+      pix = imageData.data;
+      for (i = _i = 0, _ref = pix.length - 4; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
+        if (pix[i] === 255 && pix[i + 1] === 255 && pix[i + 2] === 255) {
+          pix[i + 4] = 0;
+        }
+      }
+      newCanvas = $("<canvas>").attr("width", imageData.width).attr("height", imageData.height)[0];
+      ctx = newCanvas.getContext("2d");
+      ctx.putImageData(imageData, 0, 0);
+      ctx2 = $("#tempimage")[0].getContext('2d');
+      ctx2.clearRect(0, 0, ctx2.canvas.width, ctx2.canvas.height);
+      ctx2.scale(0.25, 0.25);
+      ctx2.drawImage(newCanvas, 0, 0);
+      this.graph.getNode(p.position.toString()).data.imageData = ctx2.getImageData(0, 0, ctx2.canvas.width / 8, ctx2.canvas.height / 8);
+      ctx2.scale(4, 4);
     }
     this.last_posture = p;
     return this.newCSLMode();

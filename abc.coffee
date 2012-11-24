@@ -30,6 +30,7 @@ class abc
     @graph.screenPadding 20,20,20,20
      
     @graph.renderer = new Renderer("#viewport")
+    #TODO: find out why starting/stopping doesn't work, use not-minified arbor code and step through
     #    @graph.stop()
 
   toggleExplore: =>
@@ -128,9 +129,37 @@ class abc
       p = @postures[f]
     
     #add node+edges
-    if @last_posture
+    if @last_posture and @postures.length > 1
       addEdge @last_posture, p
+      
+      #save posture image
+      ctx = $("#simulation")[0].getContext('2d')
+      x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale()
+      y = physics.body.GetWorldCenter().y * physics.debugDraw.GetDrawScale()
+      imageData = ctx.getImageData x-90, y-90, 180, 180
+
+      #loop over each pixel and make white pixels (the background) transparent
+      pix = imageData.data
+      for i in [0..pix.length-4]
+        if pix[i] is 255 and pix[i+1] is 255 and pix[i+2] is 255
+          pix[i+4] = 0
+
+      #scale image data
+      newCanvas = $("<canvas>").attr("width", imageData.width).attr("height", imageData.height)[0]
+      ctx = newCanvas.getContext("2d")
+      ctx.putImageData imageData, 0, 0
+
+      #save for node
+      ctx2 = $("#tempimage")[0].getContext('2d')
+      ctx2.clearRect(0,0, ctx2.canvas.width, ctx2.canvas.height)
+      ctx2.scale(0.25, 0.25)
+      ctx2.drawImage(newCanvas, 0, 0)
+      @graph.getNode(p.position.toString()).data.imageData = ctx2.getImageData 0, 0, ctx2.canvas.width / 8, ctx2.canvas.height / 8
+      ctx2.scale(4,4)
+
     @last_posture = p
+
+
 
     @newCSLMode()
 
