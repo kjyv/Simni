@@ -49,13 +49,14 @@ abc = (function() {
     this.explore_active = false;
     this.graph = arbor.ParticleSystem();
     this.graph.parameters({
-      repulsion: 2000,
-      stiffness: 500,
+      repulsion: 5000,
+      stiffness: 100,
       friction: .5,
       gravity: true,
       timeout: 5,
       fps: 10
     });
+    this.graph.screenPadding(20, 20, 20, 20);
     this.graph.renderer = new Renderer("#viewport");
   }
 

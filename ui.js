@@ -39,12 +39,14 @@ ui = (function() {
     this.draw_graphics = true;
     this.physics = physics;
     this.init();
+    this.halftime = true;
   }
 
   ui.prototype.update = function() {
-    if (this.draw_graphics) {
-      return this.physics.world.DrawDebugData();
+    if (this.draw_graphics && this.halftime) {
+      this.physics.world.DrawDebugData();
     }
+    return this.halftime = !this.halftime;
   };
 
   ui.prototype.init = function() {

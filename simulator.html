@@ -13,11 +13,11 @@ Neurorobotics Research Laboratory, Berlin
         <title>CSL Playground</title>
         <script src="libs/jquery.min.js"></script>
         <script src="libs/functional.min.js"></script>
-        <script src="libs/Stats.min.js"></script>
+        <script src="libs/Stats.js"></script>
         <script src="libs/jquery.hotkeys.min.js"></script>
         <script src="libs/jsxgraphcore.js"></script>
         <script src="libs/d3.v2.min.js"></script>
-        <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
+        <script src="libs/Box2dWeb-2.1.a.3.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
         <script src="libs/arbor.js"></script>  
         <script src="graph-renderer.js"></script>
@@ -32,32 +32,28 @@ Neurorobotics Research Laboratory, Berlin
     </head>
     <body>
         <div id="left-side">
-            <canvas id="canvas" width="750" height="400" style="float:left;"></canvas>
+            <canvas id="canvas" width="750" height="330" style="float:left;"></canvas>
             <div id="view_controls">
                 Zoom:
                 <button onclick="physics.debugDraw.SetDrawScale(physics.debugDraw.GetDrawScale() + 20)">+</button>
                 <br/>
                 <button onclick="physics.debugDraw.SetDrawScale(physics.debugDraw.GetDrawScale() - 20)">-</button>
                 <br/>
-                <br/>
 
                 Flags:
                 <button onclick="physics.debugDraw.m_drawFlags ^= b2DebugDraw.e_jointBit">Angle</button><br/>
                 <button onclick="physics.debugDraw.m_drawFlags ^= b2DebugDraw.e_centerOfMassBit">COM</button>
                 <br/>
-                <br/>
 
                 Objects:
                 <button id="add_box" onClick="physics.createBox()">Box</button>
                 <button id="add_circle" onClick="physics.createCircle()">Circle</button><br/>
-                <br/>
 
                 Semni:
                 <button id="posture_0" onclick="ui.set_posture(0,0,0, false, false)">Zero</button>
                 <button id="get_posture" onclick="ui.getSemniTransformAsFile()">Save</button>
                 <button id="set_posture" onclick="$('#set_posture_file').click()">Load</button>
                 <input type="file" id="set_posture_file" style="display:none" onchange="ui.setSemniTransformAsFile(this.files)">
-                <br/>
                 <br/>
 
                 Log:
@@ -271,7 +267,7 @@ Neurorobotics Research Laboratory, Berlin
                             <option value="c">c</option>
                         </select>
 
-                    <div id="posture_graph"><canvas width="350" height="373" id="viewport"></canvas></div> 
+                    <div id="posture_graph"><canvas width="350" height="245" id="viewport"></canvas></div> 
                 </div>
             </div>
         </div>

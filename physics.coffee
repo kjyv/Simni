@@ -541,7 +541,7 @@ class physics
   updateMotor: (bodyJoint) =>
     # motor model
     U_in = bodyJoint.motor_control
-    bodyJoint.I_t = @clip(U_in - (kb*(-bodyJoint.GetJointSpeed())), 12)*(R_inv)   #limit to max battery voltage
+    bodyJoint.I_t = @clip(U_in - (kb*(-bodyJoint.GetJointSpeed())), 12)*(R_inv)   #12: limit to max battery voltage
     bodyJoint.motor_torque = km * bodyJoint.I_t
     bodyJoint.m_applyTorque += bodyJoint.motor_torque #* bodyJoint.csl_sign
     return
@@ -709,6 +709,7 @@ class physics
         i--
 
       @world.ClearForces()
+      
       @ui.update()
 
       #@tracePlayer()

@@ -85,17 +85,14 @@ class Renderer
         w = 8
 
       ctx.rect pt.x - w / 2, pt.y - w / 2, w, w
-      ctx.strokeStyle = "black"
-      ctx.lineWidth 1
+      ctx.strokeStyle =  if node.data.color then node.data.color else "black"
+      ctx.lineWidth = 1
       ctx.stroke()
-
       
       if label
-        ctx.font = "12px Verdana; sans-serif"
+        ctx.font = "7px Verdana; sans-serif"
         ctx.textAlign = "center"
-        ctx.fillStyle = "black"
-        if node.data.color is 'none'
-          ctx.fillStyle = '#333333'
+        ctx.fillStyle =  if node.data.color then node.data.color else "#333333"
         ctx.fillText(label||"", pt.x, pt.y+4)
         ctx.fillText(label||"", pt.x, pt.y+4)
 
@@ -109,9 +106,14 @@ class Renderer
      
       weight = edge.data.weight
       color = edge.data.color
+      
+      #find the end points
+      tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name])
+      head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name])
 
-      ctx.strokeStyle = "rgba(0,0,0, .333)"
+      ctx.strokeStyle = ctx.fillStyle = if color then color else "rgba(0,0,0, .333)"
       ctx.lineWidth = 1
+
       if pt1.x == pt2.x and pt1.y == pt2.y
         #draw a circle line
         corner = parent.nodeBoxes[edge.source.name]
@@ -119,42 +121,41 @@ class Renderer
         x = corner[0]
         y = corner[1]
         w = corner[2]
-        ctx.arc(x+w, y, w/2, Math.PI, 0.5*Math.PI, false)
+        ctx.arc(x+w, y, w/4, Math.PI, 0.5*Math.PI, false)
         ctx.stroke()
+
+        #TODO: draw arrow
+        #simply draw on top of the box, pointing down
+        #might be better to not show two arrows in the same spot though
       else
         # draw a line from pt1 to pt2
         ctx.beginPath()
-        ctx.moveTo pt1.x, pt1.y
-        ctx.lineTo pt2.x, pt2.y
+        ctx.moveTo tail.x, tail.y
+        ctx.lineTo head.x, head.y
         ctx.stroke()
      
-      # draw arrow
-      
-      #find the start point
-      tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name])
-      head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name])
+        # draw arrow
+        ctx.save()
 
-      ctx.save()
-      # move to the head position of the edge we just drew
-      wt = (if not isNaN(weight) then parseFloat(weight) else ctx.lineWidth)
-      arrowLength = 6 + wt
-      arrowWidth = 2 + wt
-      ctx.fillStyle = (if (color) then color else ctx.strokeStyle)
-      ctx.translate head.x, head.y
-      ctx.rotate Math.atan2(head.y - tail.y, head.x - tail.x)
+        # move to the head position of the edge we just drew
+        wt = (if not isNaN(weight) then parseFloat(weight) else ctx.lineWidth)
+        arrowLength = 6 + wt
+        arrowWidth = 2 + wt
+        ctx.translate head.x, head.y
+        ctx.rotate Math.atan2(head.y - tail.y, head.x - tail.x)
 
-      # delete some of the edge that's already there (so the point isn't hidden)
-      ctx.clearRect -arrowLength / 2, -wt / 2, arrowLength / 2, wt
+        # delete some of the edge that's already there (so the point isn't hidden)
+        ctx.clearRect -arrowLength / 2, -wt / 2, arrowLength / 2, wt
 
-      # draw the chevron
-      ctx.beginPath()
-      ctx.moveTo -arrowLength, arrowWidth
-      ctx.lineTo 0, 0
-      ctx.lineTo -arrowLength, -arrowWidth
-      ctx.lineTo -arrowLength * 0.8, -0
-      ctx.closePath()
-      ctx.fill()
-      ctx.restore()
+        # draw the chevron
+        ctx.beginPath()
+        ctx.moveTo -arrowLength, arrowWidth
+        ctx.lineTo 0, 0
+        ctx.lineTo -arrowLength, -arrowWidth
+        ctx.lineTo -arrowLength * 0.8, -0
+        ctx.closePath()
+        ctx.fill()
+        ctx.restore()
  
   initMouseHandling: =>
     # no-nonsense drag and drop (thanks springy.js)
@@ -169,7 +170,7 @@ class Renderer
         _mouseP = arbor.Point(e.pageX-pos.left, e.pageY-pos.top)
         dragged = parent.particleSystem.nearest(_mouseP)
 
-        if dragged and dragged.node is not null
+        if dragged and dragged.node isnt null
           # while we're dragging, don't let physics move the node
           dragged.node.fixed = true
 
@@ -182,7 +183,7 @@ class Renderer
         pos = $(parent.canvas).offset()
         s = arbor.Point(e.pageX-pos.left, e.pageY-pos.top)
 
-        if dragged and dragged.node is not null
+        if dragged and dragged.node isnt null
           p = parent.particleSystem.fromScreen(s)
           dragged.node.p = p
 
@@ -191,7 +192,7 @@ class Renderer
       @dropped: (e) ->
         if (dragged is null or dragged.node is undefined)
           return
-        if (dragged.node is not null)
+        if dragged.node isnt null
           dragged.node.fixed = false
         dragged.node.tempMass = 1000
         dragged = null

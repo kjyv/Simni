@@ -21,12 +21,13 @@ class abc
     
     @graph = arbor.ParticleSystem() # create the graphtem with sensible repulsion/stiffness/friction
     @graph.parameters  # use center-gravity to make the graph settle nicely (ymmv)
-      repulsion: 2000
-      stiffness: 500
+      repulsion: 5000
+      stiffness: 100
       friction: .5
       gravity: true
       timeout: 5
       fps: 10
+    @graph.screenPadding 20,20,20,20
      
     @graph.renderer = new Renderer("#viewport")
     #    @graph.stop()

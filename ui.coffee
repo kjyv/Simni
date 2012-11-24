@@ -5,10 +5,12 @@ class ui
     @draw_graphics = true
     @physics = physics
     @init()
+    @halftime = true
   
   update: =>
-      if @draw_graphics
+      if @draw_graphics and @halftime
         @physics.world.DrawDebugData()
+      @halftime = not @halftime
 
   init: =>
     #set up map to mode checkbox and get values

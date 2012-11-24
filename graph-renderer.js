@@ -77,16 +77,13 @@ Renderer = (function() {
         w = 8;
       }
       ctx.rect(pt.x - w / 2, pt.y - w / 2, w, w);
-      ctx.strokeStyle = "black";
-      ctx.lineWidth(1);
+      ctx.strokeStyle = node.data.color ? node.data.color : "black";
+      ctx.lineWidth = 1;
       ctx.stroke();
       if (label) {
-        ctx.font = "12px Verdana; sans-serif";
+        ctx.font = "7px Verdana; sans-serif";
         ctx.textAlign = "center";
-        ctx.fillStyle = "black";
-        if (node.data.color === 'none') {
-          ctx.fillStyle = '#333333';
-        }
+        ctx.fillStyle = node.data.color ? node.data.color : "#333333";
         ctx.fillText(label || "", pt.x, pt.y + 4);
         ctx.fillText(label || "", pt.x, pt.y + 4);
       }
@@ -96,7 +93,9 @@ Renderer = (function() {
       var arrowLength, arrowWidth, color, corner, head, tail, w, weight, wt, x, y;
       weight = edge.data.weight;
       color = edge.data.color;
-      ctx.strokeStyle = "rgba(0,0,0, .333)";
+      tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name]);
+      head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name]);
+      ctx.strokeStyle = ctx.fillStyle = color ? color : "rgba(0,0,0, .333)";
       ctx.lineWidth = 1;
       if (pt1.x === pt2.x && pt1.y === pt2.y) {
         corner = parent.nodeBoxes[edge.source.name];
@@ -104,32 +103,29 @@ Renderer = (function() {
         x = corner[0];
         y = corner[1];
         w = corner[2];
-        ctx.arc(x + w, y, w / 2, Math.PI, 0.5 * Math.PI, false);
-        ctx.stroke();
+        ctx.arc(x + w, y, w / 4, Math.PI, 0.5 * Math.PI, false);
+        return ctx.stroke();
       } else {
         ctx.beginPath();
-        ctx.moveTo(pt1.x, pt1.y);
-        ctx.lineTo(pt2.x, pt2.y);
+        ctx.moveTo(tail.x, tail.y);
+        ctx.lineTo(head.x, head.y);
         ctx.stroke();
+        ctx.save();
+        wt = (!isNaN(weight) ? parseFloat(weight) : ctx.lineWidth);
+        arrowLength = 6 + wt;
+        arrowWidth = 2 + wt;
+        ctx.translate(head.x, head.y);
+        ctx.rotate(Math.atan2(head.y - tail.y, head.x - tail.x));
+        ctx.clearRect(-arrowLength / 2, -wt / 2, arrowLength / 2, wt);
+        ctx.beginPath();
+        ctx.moveTo(-arrowLength, arrowWidth);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(-arrowLength, -arrowWidth);
+        ctx.lineTo(-arrowLength * 0.8, -0);
+        ctx.closePath();
+        ctx.fill();
+        return ctx.restore();
       }
-      tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name]);
-      head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name]);
-      ctx.save();
-      wt = (!isNaN(weight) ? parseFloat(weight) : ctx.lineWidth);
-      arrowLength = 6 + wt;
-      arrowWidth = 2 + wt;
-      ctx.fillStyle = (color ? color : ctx.strokeStyle);
-      ctx.translate(head.x, head.y);
-      ctx.rotate(Math.atan2(head.y - tail.y, head.x - tail.x));
-      ctx.clearRect(-arrowLength / 2, -wt / 2, arrowLength / 2, wt);
-      ctx.beginPath();
-      ctx.moveTo(-arrowLength, arrowWidth);
-      ctx.lineTo(0, 0);
-      ctx.lineTo(-arrowLength, -arrowWidth);
-      ctx.lineTo(-arrowLength * 0.8, -0);
-      ctx.closePath();
-      ctx.fill();
-      return ctx.restore();
     });
   };
 
@@ -146,7 +142,7 @@ Renderer = (function() {
         pos = $(parent.canvas).offset();
         _mouseP = arbor.Point(e.pageX - pos.left, e.pageY - pos.top);
         dragged = parent.particleSystem.nearest(_mouseP);
-        if (dragged && dragged.node === !null) {
+        if (dragged && dragged.node !== null) {
           dragged.node.fixed = true;
         }
         $(parent.canvas).bind('mousemove', Handler.dragged);
@@ -158,7 +154,7 @@ Renderer = (function() {
         var p, pos, s;
         pos = $(parent.canvas).offset();
         s = arbor.Point(e.pageX - pos.left, e.pageY - pos.top);
-        if (dragged && dragged.node === !null) {
+        if (dragged && dragged.node !== null) {
           p = parent.particleSystem.fromScreen(s);
           dragged.node.p = p;
         }
@@ -170,7 +166,7 @@ Renderer = (function() {
         if (dragged === null || dragged.node === void 0) {
           return;
         }
-        if (dragged.node === !null) {
+        if (dragged.node !== null) {
           dragged.node.fixed = false;
         }
         dragged.node.tempMass = 1000;
