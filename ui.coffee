@@ -77,8 +77,9 @@ class ui
       x: x
       y: y
 
-    canvasPosition = getElementPosition($('#canvas'))
-    $('#canvas')[0].addEventListener "mousedown", ((e) ->
+    canvas = $('#simulation canvas')[0]
+    canvasPosition = getElementPosition(canvas)
+    canvas.addEventListener "mousedown", ((e) ->
       window.isMouseDown = true
       handleMouseMove e
       document.addEventListener "mousemove", handleMouseMove, true
@@ -221,7 +222,7 @@ class ui
     #p.body.SetPositionAndAngle(new b2Vec2(x0,y0), 0)
     p.createSemni(x0,y0)
 
-  set_csl_mode_upper: (hipCSL) =>
+  set_csl_mode_upper: (hipCSL, change_select=true) =>
     #set ABC learning modes for exploration
     release_bias_hip = 0.7
     release_gf = 0.99
@@ -238,8 +239,9 @@ class ui
       gf = contract_gf_hip
       gb = 0
       
-    #re-select select option in case we came from another function
-    $("#csl_mode_hip option[value='" + hipCSL + "']").attr "selected", true
+    if change_select
+      #re-select select option in case we came from another function
+      $("#csl_mode_hip option[value='" + hipCSL + "']").attr "selected", true
     
     $("#gi_param_upper").val(gi_hip)
     @physics.upper_joint.gi = gi_hip
@@ -251,7 +253,7 @@ class ui
     @physics.upper_joint.gb = gb
     @physics.upper_joint.csl_mode = hipCSL
 
-  set_csl_mode_lower: (kneeCSL) =>
+  set_csl_mode_lower: (kneeCSL, change_select=true) =>
     release_bias_knee = 0.7
     contract_gf_knee = 1.0020 #1.0015 #1.006
     release_gf = 0.99
@@ -267,8 +269,9 @@ class ui
       gf = contract_gf_knee
       gb = 0
 
-    #re-select select option in case we came from another function
-    $("#csl_mode_knee option[value='" + kneeCSL + "']").attr 'selected', true
+    if change_select
+      #re-select select option in case we came from another function
+      $("#csl_mode_knee option[value='" + kneeCSL + "']").attr 'selected', true
     
     $("#gi_param_lower").val(gi_knee)
     @physics.lower_joint.gi = gi_knee
@@ -330,6 +333,26 @@ window.requestAnimFrame = (->
     #fall back for other/old browsers
     window.setTimeout callback, 1000 / 60
 )()
+
+###
+#set up 60 fps animation loop (triggers physics)
+lastTime = 0
+vendors = ['ms', 'moz', 'webkit', 'o']
+@cancelAnimationFrame or= @cancelRequestAnimationFrame
+unless @requestAnimationFrame
+  for vendor in vendors
+    @requestAnimationFrame or= @[vendor+'RequestAnimationFrame']
+    @cancelAnimationFrame = @cancelAnimationFrame or= @[vendor+'CancelRequestAnimationFrame']
+unless @requestAnimationFrame
+  @requestAnimationFrame = (callback, element) ->
+    currTime = new Date().getTime()
+    timeToCall = Math.max 0, 16 - (currTime - lastTime)
+    id = @setTimeout (-> callback currTime + timeToCall), timeToCall
+    lastTime = currTime + timeToCall
+    id
+unless @cancelAnimationFrame
+  @cancelAnimationFrame = @cancelAnimationFrame = (id) -> clearTimeout id
+###
 
 $ ->
     ##after document load: read some values from the ui into variables so the ui sets the defaults

@@ -50,7 +50,7 @@ ui = (function() {
   };
 
   ui.prototype.init = function() {
-    var canvasPosition, getBodyCB, getElementPosition, handleMouseMove,
+    var canvas, canvasPosition, getBodyCB, getElementPosition, handleMouseMove,
       _this = this;
     this.physics.map_state_to_mode = false;
     $("#map_state_to_mode").click(function() {
@@ -117,8 +117,9 @@ ui = (function() {
         y: y
       };
     };
-    canvasPosition = getElementPosition($('#simulation'));
-    $('#simulation')[0].addEventListener("mousedown", (function(e) {
+    canvas = $('#simulation canvas')[0];
+    canvasPosition = getElementPosition(canvas);
+    canvas.addEventListener("mousedown", (function(e) {
       window.isMouseDown = true;
       handleMouseMove(e);
       return document.addEventListener("mousemove", handleMouseMove, true);
@@ -242,8 +243,11 @@ ui = (function() {
     return p.createSemni(x0, y0);
   };
 
-  ui.prototype.set_csl_mode_upper = function(hipCSL) {
+  ui.prototype.set_csl_mode_upper = function(hipCSL, change_select) {
     var contract_gf_hip, gb, gf, gi_hip, release_bias_hip, release_gf;
+    if (change_select == null) {
+      change_select = true;
+    }
     release_bias_hip = 0.7;
     release_gf = 0.99;
     contract_gf_hip = 1.0030;
@@ -258,7 +262,9 @@ ui = (function() {
       gf = contract_gf_hip;
       gb = 0;
     }
-    $("#csl_mode_hip option[value='" + hipCSL + "']").attr("selected", true);
+    if (change_select) {
+      $("#csl_mode_hip option[value='" + hipCSL + "']").attr("selected", true);
+    }
     $("#gi_param_upper").val(gi_hip);
     this.physics.upper_joint.gi = gi_hip;
     $("#gf_param_upper").val(gf);
@@ -268,8 +274,11 @@ ui = (function() {
     return this.physics.upper_joint.csl_mode = hipCSL;
   };
 
-  ui.prototype.set_csl_mode_lower = function(kneeCSL) {
+  ui.prototype.set_csl_mode_lower = function(kneeCSL, change_select) {
     var contract_gf_knee, gb, gf, gi_knee, release_bias_knee, release_gf;
+    if (change_select == null) {
+      change_select = true;
+    }
     release_bias_knee = 0.7;
     contract_gf_knee = 1.0020;
     release_gf = 0.99;
@@ -284,7 +293,9 @@ ui = (function() {
       gf = contract_gf_knee;
       gb = 0;
     }
-    $("#csl_mode_knee option[value='" + kneeCSL + "']").attr('selected', true);
+    if (change_select) {
+      $("#csl_mode_knee option[value='" + kneeCSL + "']").attr('selected', true);
+    }
     $("#gi_param_lower").val(gi_knee);
     this.physics.lower_joint.gi = gi_knee;
     $("#gf_param_lower").val(gf);
@@ -361,6 +372,27 @@ window.requestAnimFrame = (function() {
     return window.setTimeout(callback, 1000 / 60);
   };
 })();
+
+/*
+#set up 60 fps animation loop (triggers physics)
+lastTime = 0
+vendors = ['ms', 'moz', 'webkit', 'o']
+@cancelAnimationFrame or= @cancelRequestAnimationFrame
+unless @requestAnimationFrame
+  for vendor in vendors
+    @requestAnimationFrame or= @[vendor+'RequestAnimationFrame']
+    @cancelAnimationFrame = @cancelAnimationFrame or= @[vendor+'CancelRequestAnimationFrame']
+unless @requestAnimationFrame
+  @requestAnimationFrame = (callback, element) ->
+    currTime = new Date().getTime()
+    timeToCall = Math.max 0, 16 - (currTime - lastTime)
+    id = @setTimeout (-> callback currTime + timeToCall), timeToCall
+    lastTime = currTime + timeToCall
+    id
+unless @cancelAnimationFrame
+  @cancelAnimationFrame = @cancelAnimationFrame = (id) -> clearTimeout id
+*/
+
 
 $(function() {
   var p;

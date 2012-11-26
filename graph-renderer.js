@@ -8,10 +8,16 @@ Renderer = (function() {
     this.initMouseHandling = __bind(this.initMouseHandling, this);
 
     this.init = __bind(this.init, this);
+
+    var MAX_UNIX_TIME;
     this.canvas = $(canvas).get(0);
     this.ctx = this.canvas.getContext("2d");
+    this.ctx2 = $("#tempimage")[0].getContext('2d');
     this.particleSystem = null;
     this.nodeBoxes = [];
+    this.draw_graphics = false;
+    MAX_UNIX_TIME = 1924988399;
+    this.click_time = MAX_UNIX_TIME;
   }
 
   Renderer.prototype.init = function(system) {
@@ -63,79 +69,82 @@ Renderer = (function() {
   };
 
   Renderer.prototype.redraw = function() {
-    var ctx, parent;
-    this.ctx.fillStyle = "white";
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    parent = this;
-    ctx = this.ctx;
-    this.particleSystem.eachNode(function(node, pt) {
-      var ctx2, image, label, w;
-      label = node.data.label;
-      image = node.data.imageData;
-      if (label) {
-        w = ctx.measureText("" + label).width + 8;
-      } else {
-        w = 8;
-      }
-      if (image) {
-        ctx2 = $("#tempimage")[0].getContext('2d');
-        ctx2.clearRect(0, 0, ctx2.canvas.width, ctx2.canvas.height);
-        ctx2.putImageData(image, 0, 0);
-        ctx.drawImage(ctx2.canvas, pt.x, pt.y);
-      } else {
-
-      }
-      ctx.rect(pt.x - w / 2, pt.y - w / 2, w, w);
-      ctx.strokeStyle = node.data.color ? node.data.color : "black";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      if (label) {
-        ctx.font = "7px Verdana; sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillStyle = node.data.color ? node.data.color : "#333333";
-        ctx.fillText(label || "", pt.x, pt.y + 4);
-        ctx.fillText(label || "", pt.x, pt.y + 4);
-      }
-      return parent.nodeBoxes[node.name] = [pt.x - w / 2, pt.y - w / 2, w, w];
-    });
-    return this.particleSystem.eachEdge(function(edge, pt1, pt2) {
-      var arrowLength, arrowWidth, color, corner, head, tail, w, weight, wt, x, y;
-      weight = edge.data.weight;
-      color = edge.data.color;
-      tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name]);
-      head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name]);
-      ctx.strokeStyle = ctx.fillStyle = color ? color : "rgba(0,0,0, .333)";
-      ctx.lineWidth = 1;
-      if (pt1.x === pt2.x && pt1.y === pt2.y) {
-        corner = parent.nodeBoxes[edge.source.name];
-        ctx.beginPath();
-        x = corner[0];
-        y = corner[1];
-        w = corner[2];
-        ctx.arc(x + w, y, w / 4, Math.PI, 0.5 * Math.PI, false);
-        return ctx.stroke();
-      } else {
-        ctx.beginPath();
-        ctx.moveTo(tail.x, tail.y);
-        ctx.lineTo(head.x, head.y);
+    var ctx, ctx2, parent;
+    if (this.draw_graphics) {
+      this.ctx.fillStyle = "white";
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      parent = this;
+      ctx = this.ctx;
+      ctx2 = this.ctx2;
+      this.particleSystem.eachNode(function(node, pt) {
+        var c_h, c_w, canvas, image, label, w;
+        label = node.data.label;
+        image = node.data.imageData;
+        if (label) {
+          w = ctx.measureText("" + label).width + 8;
+        } else {
+          w = 8;
+        }
+        if (image) {
+          canvas = ctx2.canvas;
+          c_w = canvas.width;
+          c_h = canvas.height;
+          ctx2.clearRect(0, 0, c_w, c_h);
+          ctx2.putImageData(image, 0, 0);
+          ctx.drawImage(ctx2.canvas, pt.x - (c_w / 4), pt.y - (c_h / 4));
+        }
+        ctx.rect(pt.x - w / 2, pt.y - w / 2, w, w);
+        ctx.strokeStyle = node.data.color ? node.data.color : "black";
+        ctx.lineWidth = 1;
         ctx.stroke();
-        ctx.save();
-        wt = (!isNaN(weight) ? parseFloat(weight) : ctx.lineWidth);
-        arrowLength = 6 + wt;
-        arrowWidth = 2 + wt;
-        ctx.translate(head.x, head.y);
-        ctx.rotate(Math.atan2(head.y - tail.y, head.x - tail.x));
-        ctx.clearRect(-arrowLength / 2, -wt / 2, arrowLength / 2, wt);
-        ctx.beginPath();
-        ctx.moveTo(-arrowLength, arrowWidth);
-        ctx.lineTo(0, 0);
-        ctx.lineTo(-arrowLength, -arrowWidth);
-        ctx.lineTo(-arrowLength * 0.8, -0);
-        ctx.closePath();
-        ctx.fill();
-        return ctx.restore();
-      }
-    });
+        if (label) {
+          ctx.font = "7px Verdana; sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillStyle = node.data.color ? node.data.color : "#333333";
+          ctx.fillText(label || "", pt.x, pt.y + 4);
+          ctx.fillText(label || "", pt.x, pt.y + 4);
+        }
+        return parent.nodeBoxes[node.name] = [pt.x - w / 2, pt.y - w / 2, w, w];
+      });
+      return this.particleSystem.eachEdge(function(edge, pt1, pt2) {
+        var arrowLength, arrowWidth, color, corner, head, tail, w, weight, wt, x, y;
+        weight = edge.data.weight;
+        color = edge.data.color;
+        tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name]);
+        head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name]);
+        ctx.strokeStyle = ctx.fillStyle = color ? color : "rgba(0,0,0, .333)";
+        ctx.lineWidth = 1;
+        if (pt1.x === pt2.x && pt1.y === pt2.y) {
+          corner = parent.nodeBoxes[edge.source.name];
+          ctx.beginPath();
+          x = corner[0];
+          y = corner[1];
+          w = corner[2];
+          ctx.arc(x + w, y, w / 4, Math.PI, 0.5 * Math.PI, false);
+          return ctx.stroke();
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(tail.x, tail.y);
+          ctx.lineTo(head.x, head.y);
+          ctx.stroke();
+          ctx.save();
+          wt = (!isNaN(weight) ? parseFloat(weight) : ctx.lineWidth);
+          arrowLength = 6 + wt;
+          arrowWidth = 2 + wt;
+          ctx.translate(head.x, head.y);
+          ctx.rotate(Math.atan2(head.y - tail.y, head.x - tail.x));
+          ctx.clearRect(-arrowLength / 2, -wt / 2, arrowLength / 2, wt);
+          ctx.beginPath();
+          ctx.moveTo(-arrowLength, arrowWidth);
+          ctx.lineTo(0, 0);
+          ctx.lineTo(-arrowLength, -arrowWidth);
+          ctx.lineTo(-arrowLength * 0.8, -0);
+          ctx.closePath();
+          ctx.fill();
+          return ctx.restore();
+        }
+      });
+    }
   };
 
   Renderer.prototype.initMouseHandling = function() {
@@ -148,6 +157,7 @@ Renderer = (function() {
 
       Handler.clicked = function(e) {
         var pos, _mouseP;
+        parent.draw_graphics = true;
         pos = $(parent.canvas).offset();
         _mouseP = arbor.Point(e.pageX - pos.left, e.pageY - pos.top);
         dragged = parent.particleSystem.nearest(_mouseP);
@@ -161,6 +171,7 @@ Renderer = (function() {
 
       Handler.dragged = function(e) {
         var p, pos, s;
+        parent.draw_graphics = true;
         pos = $(parent.canvas).offset();
         s = arbor.Point(e.pageX - pos.left, e.pageY - pos.top);
         if (dragged && dragged.node !== null) {
@@ -175,6 +186,7 @@ Renderer = (function() {
         if (dragged === null || dragged.node === void 0) {
           return;
         }
+        parent.draw_graphics = true;
         if (dragged.node !== null) {
           dragged.node.fixed = false;
         }

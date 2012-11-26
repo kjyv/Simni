@@ -30,8 +30,8 @@ Neurorobotics Research Laboratory, Berlin
         </script>
     </head>
     <body>
-        <div id="left-side">
-            <canvas id="simulation" width="750" height="330" style="float:left;"></canvas>
+        <div id="top-panel">
+            <div id="simulation"><canvas width="750" height="330"></canvas></div>
             <div id="view_controls">
                 Zoom:
                 <button onclick="physics.debugDraw.SetDrawScale(physics.debugDraw.GetDrawScale() + 20)">+</button>
@@ -59,224 +59,226 @@ Neurorobotics Research Laboratory, Berlin
                 <button id="start_log" onclick="ui.toggleRecorder()">Start</button>
                 <button id="get_log" onclick="ui.getLogfile()">Get</button>
             </div>
-            <div id="bottom-panel">
-                <div id="controls">
-                    <select id="pendulum_style">
-                        <option value="1">Single Pendulum</option>
-                        <option value="2">Double Pendulum</option>
-                        <option value="3" selected="selected">Semni</option>
-                    </select><br/>
-                    <script type="text/coffeescript">
-                        $ ->
-                            #create physic bodies depending on selection
-                            $("#pendulum_style").on 'change', ->
-                                if physics.lower_joint and physics.lower_joint.csl_active
-                                    $("#toggle_csl").click()
+        
+            <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;<sub>hip</sub>/&phi;<sub>knee</sub><button id="clear_phase">clear</button></div>
+            <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled">motor torque upper (green) and lower (blue)</div>
+            <div id="state_to_mode_mapping" style="display:none;"><input type="checkbox" id="phase_space_2_enabled">phase space U/&phi;'<br/></div>
+        </div>
+        <div id="bottom-panel">
+            <div id="controls">
+                <select id="pendulum_style">
+                    <option value="1">Single Pendulum</option>
+                    <option value="2">Double Pendulum</option>
+                    <option value="3" selected="selected">Semni</option>
+                </select><br/>
+                <script type="text/coffeescript">
+                    $ ->
+                        #create physic bodies depending on selection
+                        $("#pendulum_style").on 'change', ->
+                            if physics.lower_joint and physics.lower_joint.csl_active
+                                $("#toggle_csl").click()
 
-                                #first remove old joints and bodies
-                                removeJoint = (joint) ->
-                                    if joint
-                                        physics.world.DestroyJoint joint
-                                        joint = null
+                            #first remove old joints and bodies
+                            removeJoint = (joint) ->
+                                if joint
+                                    physics.world.DestroyJoint joint
+                                    joint = null
+                                
+                            removeBody = (body) ->
+                                if body
+                                    physics.world.DestroyBody body
+                                    body = null
+
+
+                            removeBody physics.body3
+                            removeJoint physics.upper_joint
+                            removeBody physics.body2
+                            removeJoint physics.lower_joint
+                            removeBody physics.body
+
+                            #create new objects for selected pendulum kind
+                            style = $(this).val()
+
+                            if style is "1"
+                                physics.pend_style = 1
+                                physics.createPendulum()
+          
+                                #get initial gi/gf from current mode setting
+                                ui.map_mode physics.lower_joint
+                                
+                                $("#semni_posture_controls").fadeOut "fast", ->
+                                    $("#map_state_to_mode_panel").fadeIn("fast")
+                                    $("#state_to_mode_presets").fadeIn("fast")
+                                    $("#state_to_mode_mapping").fadeIn("fast")
                                     
-                                removeBody = (body) ->
-                                    if body
-                                        physics.world.DestroyBody body
-                                        body = null
+                            else if style is "2"
+                                physics.pend_style = 2
 
+                                physics.createDoublePendulum()
+                                ui.map_mode physics.lower_joint
+                                ui.map_mode physics.upper_joint
+                                
+                            else if style is "3"
+                                physics.pend_style = 3
+                                physics.createSemni()
+                                $("#state_to_mode_presets").fadeOut "fast"
+                                $("#state_to_mode_mapping").fadeOut "fast"
+                                $("#map_state_to_mode_panel").fadeOut "fast", ->
+                                    $("#semni_posture_controls").fadeIn "fast"
 
-                                removeBody physics.body3
-                                removeJoint physics.upper_joint
-                                removeBody physics.body2
-                                removeJoint physics.lower_joint
-                                removeBody physics.body
+                        $("#pendulum_style").trigger('change')
+                        #set initial csl params from abc modes for semni
+                        if physics.pend_style is 3
+                            $('#csl_mode_hip').trigger("change")
+                            $('#csl_mode_knee').trigger("change")
+                        #set initial friction from slider
+                        $("#friction_param").trigger("change")
 
-                                #create new objects for selected pendulum kind
-                                style = $(this).val()
-
-                                if style is "1"
-                                    physics.pend_style = 1
-                                    physics.createPendulum()
-              
-                                    #get initial gi/gf from current mode setting
-                                    ui.map_mode physics.lower_joint
-                                    
-                                    $("#semni_posture_controls").fadeOut "fast", ->
-                                        $("#map_state_to_mode_panel").fadeIn("fast")
-                                        $("#state_to_mode_presets").fadeIn("fast")
-                                        $("#state_to_mode_mapping").fadeIn("fast")
-                                        
-                                else if style is "2"
-                                    physics.pend_style = 2
-
-                                    physics.createDoublePendulum()
-                                    ui.map_mode physics.lower_joint
-                                    ui.map_mode physics.upper_joint
-                                    
-                                else if style is "3"
-                                    physics.pend_style = 3
-                                    physics.createSemni()
-                                    $("#state_to_mode_presets").fadeOut "fast"
-                                    $("#state_to_mode_mapping").fadeOut "fast"
-                                    $("#map_state_to_mode_panel").fadeOut "fast", ->
-                                        $("#semni_posture_controls").fadeIn "fast"
-
-                            $("#pendulum_style").trigger('change')
-                            #set initial csl params from abc modes for semni
+                </script>
+                <button id="toggle_pause" class="toggle-button" onClick="physics.run = !physics.run">pause/run simulation [p]</button> 
+                <button id="next_step" onClick="physics.step = true">next step(s) [n]</button><br/>            
+                <button id="toggle_csl" class="toggle-button">toggle CSL [t]</button>
+                <button id="toggle_bounce" class="toggle-button">toggle bounce controller [b]</button>
+                <button id="toggle_explore" class="toggle-button">toggle abc explore [e]</button>
+                <script type="text/coffeescript">
+                    $ ->
+                        $("#toggle_csl").on 'click', ->
                             if physics.pend_style is 3
-                                $('#csl_mode_hip').trigger("change")
-                                $('#csl_mode_knee').trigger("change")
-                            #set initial friction from slider
-                            $("#friction_param").trigger("change")
-
-                    </script>
-                    <button id="toggle_pause" class="toggle-button" onClick="physics.run = !physics.run">pause/run simulation [p]</button> 
-                    <button id="next_step" onClick="physics.step = true">next step(s) [n]</button><br/>            
-                    <button id="toggle_csl" class="toggle-button">toggle CSL [t]</button>
-                    <button id="toggle_bounce" class="toggle-button">toggle bounce controller [b]</button>
-                    <button id="toggle_explore" class="toggle-button">toggle abc explore [e]</button>
-                    <script type="text/coffeescript">
-                        $ ->
-                            $("#toggle_csl").on 'click', ->
-                                if physics.pend_style is 3
+                                physics.toggleCSL physics.upper_joint
+                                physics.toggleCSL physics.lower_joint
+                            else
+                                physics.toggleCSL physics.lower_joint
+                                if physics.upper_joint
                                     physics.toggleCSL physics.upper_joint
-                                    physics.toggleCSL physics.lower_joint
-                                else
-                                    physics.toggleCSL physics.lower_joint
-                                    if physics.upper_joint
-                                        physics.toggleCSL physics.upper_joint
-                                        
-                            $("#toggle_bounce").on 'click', ->
-                                if physics.pend_style is 3
-                                    physics.toggleBounce physics.upper_joint
-                                    physics.toggleBounce physics.lower_joint
                                     
-                            $("#toggle_explore").on 'click', ->
-                                if physics.pend_style is 3
-                                    physics.abc.toggleExplore()
-                    </script>
-                    <br/>
-         
-                    <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.030" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
-                    <span id="friction_val">0.035</span><br/>
+                        $("#toggle_bounce").on 'click', ->
+                            if physics.pend_style is 3
+                                physics.toggleBounce physics.upper_joint
+                                physics.toggleBounce physics.lower_joint
+                                
+                        $("#toggle_explore").on 'click', ->
+                            if physics.pend_style is 3
+                                physics.abc.toggleExplore()
+                </script>
+                <br/>
 
-                    <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="30" style="width:60px;"/>
-                    <label for="gf_param_upper">g<sub>f</sub></label> <input id="gf_param_upper" type="text" value="0.1" style="width:60px;"/>
-                    <label for="gb_param_upper">g<sub>b</sub></label> <input id="gb_param_upper" type="text" value="0" style="width:60px;"/>
-                    <label for="gain_param_upper">gain</label> <input id="gain_param_upper" type="text" value="1" style="width:60px;"/>
-                    <button id="set_csl_params_upper">set</button> <br/>
-                    <script>
-                        $(document).ready(function(){
-                            $("#set_csl_params_upper").on("click", function(){
-                                physics.upper_joint.gi = parseFloat($("#gi_param_upper").val())
-                                physics.upper_joint.gf = parseFloat($("#gf_param_upper").val())
-                                physics.upper_joint.gb = parseFloat($("#gb_param_upper").val())
-                                physics.upper_joint.gain = parseFloat($("#gain_param_upper").val())
-                            })
-                        })
-                    </script>
-
-                    <label for="mode_param_upper">csl mode hip</label> <input id="mode_param_upper" type="range" min="-2" max="3" value="1.2" step="0.005" onchange="if(physics.upper_joint){ui.map_mode(physics.upper_joint)}" />
-                    <span id="mode_val_upper"></span> <span id="csl_mode_name_upper">contraction</span><br/>
-
-
-                    <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="30" style="width:60px;"/>
-                    <label for="gf_param_lower">g<sub>f</sub></label> <input id="gf_param_lower" type="text" value="0.1" style="width:60px;"/>
-                    <label for="gb_param_lower">g<sub>b</sub></label> <input id="gb_param_lower" type="text" value="0" style="width:60px;"/>
-                    <label for="gain_param_lower">gain</label> <input id="gain_param_lower" type="text" value="1" style="width:60px;"/>
-                    <button id="set_csl_params_lower">set</button> <br/>
-                    <script>
-                        $(document).ready(function(){
-                            $("#set_csl_params_lower").on("click", function(){
-                                physics.lower_joint.gi = parseFloat($("#gi_param_lower").val())
-                                physics.lower_joint.gf = parseFloat($("#gf_param_lower").val())
-                                physics.lower_joint.gb = parseFloat($("#gb_param_lower").val())
-                                physics.lower_joint.gain = parseFloat($("#gain_param_lower").val())
-                            })
-                        })
-                    </script>
-                    
-                    <label for="mode_param_lower">csl mode knee</label> <input id="mode_param_lower" type="range" min="-2" max="3" value="1.01" step="0.005" onchange="ui.map_mode(physics.lower_joint)" />
-                    <span id="mode_val_lower"></span> <span id="csl_mode_name_lower">contraction</span><br/>
+                <div style="display: none;">
+                <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.030" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
+                <span id="friction_val">0.035</span><br/>
                 </div>
 
-                <div id="map_state_to_mode_panel" style="display:none;">
-                    <label for="map_state_to_mode">map state to mode [m]</label><input type="checkbox" id="map_state_to_mode"><br/>
-                    mode = w<sub>0</sub> &middot; U + w<sub>1</sub> &middot; &phi;' + w<sub>2</sub><br/>
-                    <div class="vertical-range-box">
-                        <input type="checkbox" id="w0_abs"><br>
-                        <label for="w0">w<sub>0</sub></label><span id="w0_val">=197</span><br/>
-                        <input type="range" step="1" id="w0" min="-5000" max="5000" class="vertical-range" value="197">
-                    </div>
-                    <div class="vertical-range-box">
-                        <input type="checkbox" id="w1_abs"><br>
-                        <label for="w1">w<sub>1</sub></label><span id="w1_val">=39.5</span><br/>
-                        <input type="range" step="1" id="w1" min="-5000" max="5000" class="vertical-range" value="39.5">
-                    </div>
-                    <div class="vertical-range-box">
-                        &lt;- abs <br/>
-                        <label for="w2">w<sub>2</sub></label><span id="w2_val">=0.2</span><br/>
-                        <input type="range" step="0.01" id="w2" min="-2" max="2" class="vertical-range" value="0.2">
-                    </div>
-                    <script>
-                        $(document).ready(function(){
-                            $("#map_state_to_mode_panel input[type=range]").each(function(index){
-                                $("<button>").insertAfter($(this)).attr({"id": this.id+"_increase"}).html("+").click(function(){
-                                    var range = $(this).parent().find("input[type=range]")
-                                    range.attr("value", parseInt(range.attr("value")) + 1);
-                                    range.trigger("change")
-                                    draw_state_to_mode_mapping()
-                                })
-                                $("<br/>").insertAfter($(this))
-                                $("<button>").insertAfter($(this)).attr({"id": this.id+"_decrease"}).html("-").click(function(){
-                                    var range = $(this).parent().find("input[type=range]")
-                                    range.attr("value", parseInt(range.attr("value")) - 1);
-                                    range.trigger("change")
-                                    draw_state_to_mode_mapping()
-                                })
-                                $("<br/>").insertAfter($(this))
-                            })
-                        })
-                    </script>
-                </div>
+                <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="30" style="width:60px;"/>
+                <label for="gf_param_upper">g<sub>f</sub></label> <input id="gf_param_upper" type="text" value="0.1" style="width:60px;"/>
+                <label for="gb_param_upper">g<sub>b</sub></label> <input id="gb_param_upper" type="text" value="0" style="width:60px;"/>
+                <label for="gain_param_upper">gain</label> <input id="gain_param_upper" type="text" value="1" style="width:60px;"/>
+                <button id="set_csl_params_upper">set</button> <br/>
                 <script>
-                    $("#map_state_to_mode_panel input[type=range]").on('mouseup', function(){
-                        draw_state_to_mode_mapping()
+                    $(document).ready(function(){
+                        $("#set_csl_params_upper").on("click", function(){
+                            physics.upper_joint.gi = parseFloat($("#gi_param_upper").val())
+                            physics.upper_joint.gf = parseFloat($("#gf_param_upper").val())
+                            physics.upper_joint.gb = parseFloat($("#gb_param_upper").val())
+                            physics.upper_joint.gain = parseFloat($("#gain_param_upper").val())
+                        })
                     })
                 </script>
-                <div id="state_to_mode_presets" style="display:none;">
-                    <br/>
-                    <button id="preset_1" onclick="ui.set_preset(114,52,0.25,false,false)">Preset 1</button>left down-c<br/>
-                    <button id="preset_2" onclick="ui.set_preset(-811,-162,-1.08,false,false)">Preset 2</button>s right, c up,</br>f=0.018<br/>
-                    <button id="preset_3" onclick="ui.set_preset(450,0,1.001,true,true)">Preset 3</button>self-inhibit c,<br/>f=0.022<br/>
-                    <button id="preset_4" onclick="ui.set_preset(81,-3676,-0.5,false,false)">Preset 4</button>r right, s left
-                </div>
-                <div id="semni_posture_controls">
-                    <br/>
-                    <label for="csl_mode_hip">Hip</label>:
-                        <select id="csl_mode_hip" onchange="ui.set_csl_mode_upper($('#csl_mode_hip').val())">
-                            <option value="r+" checked="checked">r+</option>
-                            <option value="r-">r-</option>
-                            <option value="c">c</option>
-                        </select>
-                    <label for="csl_mode_knee">Knee</label>:
-                        <select id="csl_mode_knee" onchange="ui.set_csl_mode_lower($('#csl_mode_knee').val())">
-                            <option value="r+" checked="checked">r+</option>
-                            <option value="r-">r-</option>
-                            <option value="c">c</option>
-                        </select>
 
-                        <div id="posture_graph">
-                            <canvas width="350" height="245" id="viewport"></canvas>
-                            <canvas width="300" height="300" id="tempimage" style="display:none;"></canvas>
-                        </div> 
-                </div>
+                <label for="mode_param_upper">csl mode hip</label> <input id="mode_param_upper" type="range" min="-2" max="3" value="1.2" step="0.005" onchange="if(physics.upper_joint){ui.map_mode(physics.upper_joint)}" />
+                <span id="mode_val_upper"></span> <span id="csl_mode_name_upper">contraction</span><br/>
+
+
+                <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="30" style="width:60px;"/>
+                <label for="gf_param_lower">g<sub>f</sub></label> <input id="gf_param_lower" type="text" value="0.1" style="width:60px;"/>
+                <label for="gb_param_lower">g<sub>b</sub></label> <input id="gb_param_lower" type="text" value="0" style="width:60px;"/>
+                <label for="gain_param_lower">gain</label> <input id="gain_param_lower" type="text" value="1" style="width:60px;"/>
+                <button id="set_csl_params_lower">set</button> <br/>
+                <script>
+                    $(document).ready(function(){
+                        $("#set_csl_params_lower").on("click", function(){
+                            physics.lower_joint.gi = parseFloat($("#gi_param_lower").val())
+                            physics.lower_joint.gf = parseFloat($("#gf_param_lower").val())
+                            physics.lower_joint.gb = parseFloat($("#gb_param_lower").val())
+                            physics.lower_joint.gain = parseFloat($("#gain_param_lower").val())
+                        })
+                    })
+                </script>
+                
+                <label for="mode_param_lower">csl mode knee</label> <input id="mode_param_lower" type="range" min="-2" max="3" value="1.01" step="0.005" onchange="ui.map_mode(physics.lower_joint)" />
+                <span id="mode_val_lower"></span> <span id="csl_mode_name_lower">contraction</span><br/>
             </div>
+
+            <div id="map_state_to_mode_panel" style="display:none;">
+                <label for="map_state_to_mode">map state to mode [m]</label><input type="checkbox" id="map_state_to_mode"><br/>
+                mode = w<sub>0</sub> &middot; U + w<sub>1</sub> &middot; &phi;' + w<sub>2</sub><br/>
+                <div class="vertical-range-box">
+                    <input type="checkbox" id="w0_abs"><br>
+                    <label for="w0">w<sub>0</sub></label><span id="w0_val">=197</span><br/>
+                    <input type="range" step="1" id="w0" min="-5000" max="5000" class="vertical-range" value="197">
+                </div>
+                <div class="vertical-range-box">
+                    <input type="checkbox" id="w1_abs"><br>
+                    <label for="w1">w<sub>1</sub></label><span id="w1_val">=39.5</span><br/>
+                    <input type="range" step="1" id="w1" min="-5000" max="5000" class="vertical-range" value="39.5">
+                </div>
+                <div class="vertical-range-box">
+                    &lt;- abs <br/>
+                    <label for="w2">w<sub>2</sub></label><span id="w2_val">=0.2</span><br/>
+                    <input type="range" step="0.01" id="w2" min="-2" max="2" class="vertical-range" value="0.2">
+                </div>
+                <script>
+                    $(document).ready(function(){
+                        $("#map_state_to_mode_panel input[type=range]").each(function(index){
+                            $("<button>").insertAfter($(this)).attr({"id": this.id+"_increase"}).html("+").click(function(){
+                                var range = $(this).parent().find("input[type=range]")
+                                range.attr("value", parseInt(range.attr("value")) + 1);
+                                range.trigger("change")
+                                draw_state_to_mode_mapping()
+                            })
+                            $("<br/>").insertAfter($(this))
+                            $("<button>").insertAfter($(this)).attr({"id": this.id+"_decrease"}).html("-").click(function(){
+                                var range = $(this).parent().find("input[type=range]")
+                                range.attr("value", parseInt(range.attr("value")) - 1);
+                                range.trigger("change")
+                                draw_state_to_mode_mapping()
+                            })
+                            $("<br/>").insertAfter($(this))
+                        })
+                    })
+                </script>
+            </div>
+            <script>
+                $("#map_state_to_mode_panel input[type=range]").on('mouseup', function(){
+                    draw_state_to_mode_mapping()
+                })
+            </script>
+            <div id="state_to_mode_presets" style="display:none;">
+                <br/>
+                <button id="preset_1" onclick="ui.set_preset(114,52,0.25,false,false)">Preset 1</button>left down-c<br/>
+                <button id="preset_2" onclick="ui.set_preset(-811,-162,-1.08,false,false)">Preset 2</button>s right, c up,</br>f=0.018<br/>
+                <button id="preset_3" onclick="ui.set_preset(450,0,1.001,true,true)">Preset 3</button>self-inhibit c,<br/>f=0.022<br/>
+                <button id="preset_4" onclick="ui.set_preset(81,-3676,-0.5,false,false)">Preset 4</button>r right, s left
+            </div>
+            <div id="semni_posture_controls">
+                <br/>
+                <label for="csl_mode_hip">Hip</label>:
+                    <select id="csl_mode_hip" onchange="ui.set_csl_mode_upper($('#csl_mode_hip').val())">
+                        <option value="r+" checked="checked">r+</option>
+                        <option value="r-">r-</option>
+                        <option value="c">c</option>
+                    </select>
+                <label for="csl_mode_knee">Knee</label>:
+                    <select id="csl_mode_knee" onchange="ui.set_csl_mode_lower($('#csl_mode_knee').val())">
+                        <option value="r+" checked="checked">r+</option>
+                        <option value="r-">r-</option>
+                        <option value="c">c</option>
+                    </select>
+            </div>
+            <div id="posture_graph">
+                <canvas width="1100" height="500" id="viewport"></canvas>
+                <canvas width="300" height="300" id="tempimage" style="display:none;"></canvas>
+            </div> 
         </div>
 
-        <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;<sub>hip</sub>/&phi;<sub>knee</sub><button id="clear_phase">clear</button></div>
-        <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled">motor torque upper (green) and lower (blue)</div>
-        <div id="state_to_mode_mapping" style="display:none;"><input type="checkbox" id="phase_space_2_enabled">phase space U/&phi;'<br/></div>
         <script>
             //use d3 for state_to_mode_mapping
             var margin = {top: 0, right: 0, bottom: 20, left: 30},

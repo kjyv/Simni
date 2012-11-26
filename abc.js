@@ -15,10 +15,10 @@ posture = (function() {
     this.length = 1;
   }
 
-  eps = 0.15;
+  eps = 0.35;
 
   posture.prototype.isClose = function(a, i, b, j) {
-    return Math.abs(a.position[0] - b[j].position[0]) < eps && Math.abs(a.position[1] - b[j].position[1]) < eps && Math.abs(a.position[2] - b[j].position[2]) < eps;
+    return Math.abs(a.position[0] - b[j].position[0]) < eps && Math.abs(a.position[1] - b[j].position[1]) < eps && Math.abs(a.position[2] - b[j].position[2]) < eps && a.csl_mode[0] === b[j].csl_mode[0] && a.csl_mode[1] === b[j].csl_mode[1];
   };
 
   return posture;
@@ -26,7 +26,7 @@ posture = (function() {
 })();
 
 abc = (function() {
-  var MAX_UNIX_TIME, time, time2, trajectory;
+  var MAX_UNIX_TIME, time, trajectory;
 
   function abc() {
     this.update = __bind(this.update, this);
@@ -52,11 +52,8 @@ abc = (function() {
       repulsion: 5000,
       stiffness: 100,
       friction: .5,
-      gravity: true,
-      timeout: 5,
-      fps: 10
+      gravity: true
     });
-    this.graph.screenPadding(20, 20, 20, 20);
     this.graph.renderer = new Renderer("#viewport");
   }
 
@@ -90,7 +87,7 @@ abc = (function() {
 
   MAX_UNIX_TIME = 1924988399;
 
-  time = time2 = MAX_UNIX_TIME;
+  time = MAX_UNIX_TIME;
 
   trajectory = [];
 
@@ -103,26 +100,29 @@ abc = (function() {
       trajectory.shift();
     }
     trajectory.push([p_body, p_hip, p_knee]);
-    if (trajectory.length > 200 && (new Date().getTime() - time) > 2000) {
+    if (trajectory.length > 200 && (Date.now() - time) > 2000) {
       last = trajectory.slice(-40);
       eps = 0.025;
       d = this.searchSubarray(last, trajectory, function(a, i, b, j) {
         return Math.abs(a[i][0] - b[j][0]) < eps && Math.abs(a[i][1] - b[j][1]) < eps && Math.abs(a[i][2] - b[j][2]) < eps;
       });
-      if (d.length > 3) {
+      if (d.length > 4) {
         position = trajectory.pop();
         this.savePosture(position, body, upper_joint, lower_joint);
         trajectory = [];
       }
-      time = new Date().getTime();
+      time = Date.now();
     }
-    if ((new Date().getTime() - time2) > 3000) {
-      return time2 = new Date().getTime();
+    if ((Date.now() - this.graph.renderer.click_time) > 5000) {
+      this.graph.renderer.click_time = Date.now();
+      if (isNaN(this.graph.energy().max)) {
+        return this.graph.renderer.draw_graphics = false;
+      }
     }
   };
 
   abc.prototype.savePosture = function(position, body, upper_csl, lower_csl) {
-    var addEdge, ctx, ctx2, f, found, i, imageData, newCanvas, p, parent, pix, x, y, _i, _ref;
+    var addEdge, ctx, ctx2, f, found, i, imageData, newCanvas, p, parent, pix, range, x, y, _i, _ref;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
       var n0, n1;
@@ -135,7 +135,9 @@ abc = (function() {
         n0 = start_node.position.toString();
         n1 = target_node.position.toString();
         parent.graph.addEdge(n0, n1);
-        return parent.graph.getNode(n1).data.label = target_node.csl_mode;
+        parent.graph.getNode(n1).data.label = target_node.csl_mode;
+        parent.graph.renderer.draw_graphics = true;
+        return parent.graph.renderer.click_time = Date.now();
       }
     };
     p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode]);
@@ -149,10 +151,11 @@ abc = (function() {
     }
     if (this.last_posture && this.postures.length > 1) {
       addEdge(this.last_posture, p);
-      ctx = $("#simulation")[0].getContext('2d');
+      ctx = $("#simulation canvas")[0].getContext('2d');
       x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale();
       y = physics.body.GetWorldCenter().y * physics.debugDraw.GetDrawScale();
-      imageData = ctx.getImageData(x - 90, y - 90, 180, 180);
+      range = 130;
+      imageData = ctx.getImageData(x - range, y - range, range * 2, range * 2);
       pix = imageData.data;
       for (i = _i = 0, _ref = pix.length - 4; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
         if (pix[i] === 255 && pix[i + 1] === 255 && pix[i + 2] === 255) {
@@ -164,10 +167,10 @@ abc = (function() {
       ctx.putImageData(imageData, 0, 0);
       ctx2 = $("#tempimage")[0].getContext('2d');
       ctx2.clearRect(0, 0, ctx2.canvas.width, ctx2.canvas.height);
-      ctx2.scale(0.25, 0.25);
+      ctx2.scale(0.5, 0.5);
       ctx2.drawImage(newCanvas, 0, 0);
-      this.graph.getNode(p.position.toString()).data.imageData = ctx2.getImageData(0, 0, ctx2.canvas.width / 8, ctx2.canvas.height / 8);
-      ctx2.scale(4, 4);
+      this.graph.getNode(p.position.toString()).data.imageData = ctx2.getImageData(0, 0, range * 2, range * 2);
+      ctx2.scale(2, 2);
     }
     this.last_posture = p;
     return this.newCSLMode();
@@ -205,11 +208,11 @@ abc = (function() {
       limit = 20;
       if (Math.abs(mc) > limit) {
         if (mc > limit) {
-          ui.set_csl_mode_upper("r+");
+          ui.set_csl_mode_upper("r+", false);
           $("#gb_param_upper").val(limit);
           physics.upper_joint.gb = limit;
         } else if (mc < -limit) {
-          ui.set_csl_mode_upper("r-");
+          ui.set_csl_mode_upper("r-", false);
           $("#gb_param_upper").val(-limit);
           physics.upper_joint.gb = -limit;
         }
@@ -220,11 +223,11 @@ abc = (function() {
       mc = lower_joint.motor_control;
       if (Math.abs(mc) > limit) {
         if (mc > limit) {
-          ui.set_csl_mode_lower("r+");
+          ui.set_csl_mode_lower("r+", false);
           $("#gb_param_lower").val(limit);
           physics.lower_joint.gb = limit;
         } else if (mc < -limit) {
-          ui.set_csl_mode_lower("r-");
+          ui.set_csl_mode_lower("r-", false);
           $("#gb_param_lower").val(-limit);
           physics.lower_joint.gb = -limit;
         }

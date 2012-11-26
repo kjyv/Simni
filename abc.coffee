@@ -8,10 +8,10 @@ class posture
     @edges_out = []
     @length = 1  #quirk for searchSubarray
 
-  #determine if this posture is near another one
-  eps = 0.15
+  #method to determine if this posture is near another one
+  eps = 0.35
   isClose: (a,i, b,j) =>
-      Math.abs(a.position[0] - b[j].position[0]) < eps and Math.abs(a.position[1] - b[j].position[1]) < eps and Math.abs(a.position[2] - b[j].position[2]) < eps
+      Math.abs(a.position[0] - b[j].position[0]) < eps and Math.abs(a.position[1] - b[j].position[1]) < eps and Math.abs(a.position[2] - b[j].position[2]) < eps and a.csl_mode[0] == b[j].csl_mode[0] and a.csl_mode[1] == b[j].csl_mode[1]
 
 class abc
   constructor: ->
@@ -19,19 +19,16 @@ class abc
     @last_posture = null
     @explore_active = false
     
-    @graph = arbor.ParticleSystem() # create the graphtem with sensible repulsion/stiffness/friction
+    @graph = arbor.ParticleSystem() # create the graph with sensible repulsion/stiffness/friction
     @graph.parameters  # use center-gravity to make the graph settle nicely (ymmv)
       repulsion: 5000
       stiffness: 100
       friction: .5
       gravity: true
-      timeout: 5
-      fps: 10
-    @graph.screenPadding 20,20,20,20
+#      timeout: 5
+#      fps: 10
      
     @graph.renderer = new Renderer("#viewport")
-    #TODO: find out why starting/stopping doesn't work, use not-minified arbor code and step through
-    #    @graph.stop()
 
   toggleExplore: =>
     if not physics.upper_joint.csl_active
@@ -56,7 +53,7 @@ class abc
       return found
 
   MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
-  time = time2 = MAX_UNIX_TIME
+  time = MAX_UNIX_TIME
   trajectory = []   #last n state points
   detectAttractor: (body, upper_joint, lower_joint) =>
     #detect if current csl mode found a posture
@@ -84,7 +81,7 @@ class abc
 
     trajectory.push [p_body, p_hip, p_knee]
 
-    if trajectory.length > 200 and (new Date().getTime() - time) > 2000
+    if trajectory.length > 200 and (Date.now() - time) > 2000
       #take last 40 points
       last = trajectory.slice(-40)
       eps=0.025
@@ -92,7 +89,7 @@ class abc
         Math.abs(a[i][0] - b[j][0]) < eps and Math.abs(a[i][1] - b[j][1]) < eps and Math.abs(a[i][2] - b[j][2]) < eps
       #console.log(d)
 
-      if d.length > 3    #need to find sample more than once to be periodic
+      if d.length > 4    #need to find sample more than once to be periodic
         #save posture
         position = trajectory.pop()
         @savePosture position, body, upper_joint, lower_joint
@@ -100,11 +97,15 @@ class abc
         #get rid of saved trajectory
         trajectory = []
 
-      time = new Date().getTime()
+      time = Date.now()
 
-    if (new Date().getTime() - time2) > 3000
-      time2 = new Date().getTime()
+    if (Date.now() - @graph.renderer.click_time) > 5000
+      @graph.renderer.click_time = Date.now()
+      #TODO: find out why starting/stopping doesn't work, use not-minified arbor code and step through
       #@graph.stop()
+      #hack for now
+      if isNaN @graph.energy().max
+        @graph.renderer.draw_graphics = false
 
   savePosture: (position, body, upper_csl, lower_csl) =>
     parent = this
@@ -116,6 +117,8 @@ class abc
         n1 = target_node.position.toString()
         parent.graph.addEdge n0, n1
         parent.graph.getNode(n1).data.label = target_node.csl_mode
+        parent.graph.renderer.draw_graphics = true
+        parent.graph.renderer.click_time = Date.now()
 
     p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode])
     found = @searchSubarray p, @postures, p.isClose
@@ -133,10 +136,11 @@ class abc
       addEdge @last_posture, p
       
       #save posture image
-      ctx = $("#simulation")[0].getContext('2d')
+      ctx = $("#simulation canvas")[0].getContext('2d')
       x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale()
       y = physics.body.GetWorldCenter().y * physics.debugDraw.GetDrawScale()
-      imageData = ctx.getImageData x-90, y-90, 180, 180
+      range = 130
+      imageData = ctx.getImageData x-range, y-range, range*2, range*2
 
       #loop over each pixel and make white pixels (the background) transparent
       pix = imageData.data
@@ -152,10 +156,10 @@ class abc
       #save for node
       ctx2 = $("#tempimage")[0].getContext('2d')
       ctx2.clearRect(0,0, ctx2.canvas.width, ctx2.canvas.height)
-      ctx2.scale(0.25, 0.25)
+      ctx2.scale(0.5, 0.5)
       ctx2.drawImage(newCanvas, 0, 0)
-      @graph.getNode(p.position.toString()).data.imageData = ctx2.getImageData 0, 0, ctx2.canvas.width / 8, ctx2.canvas.height / 8
-      ctx2.scale(4,4)
+      @graph.getNode(p.position.toString()).data.imageData = ctx2.getImageData 0, 0, range * 2, range *2
+      ctx2.scale(2,2)
 
     @last_posture = p
 
@@ -199,11 +203,11 @@ class abc
       limit = 20
       if Math.abs(mc) > limit
         if mc > limit
-          ui.set_csl_mode_upper "r+"
+          ui.set_csl_mode_upper "r+", false
           $("#gb_param_upper").val(limit)
           physics.upper_joint.gb = limit
         else if mc < -limit
-          ui.set_csl_mode_upper "r-"
+          ui.set_csl_mode_upper "r-", false
           $("#gb_param_upper").val(-limit)
           physics.upper_joint.gb = -limit
         upper_joint.csl_mode = "c"
@@ -212,14 +216,15 @@ class abc
       mc = lower_joint.motor_control
       if Math.abs(mc) > limit
         if mc > limit
-          ui.set_csl_mode_lower "r+"
+          ui.set_csl_mode_lower "r+", false
           $("#gb_param_lower").val(limit)
           physics.lower_joint.gb = limit
         else if mc < -limit
-          ui.set_csl_mode_lower "r-"
+          ui.set_csl_mode_lower "r-", false
           $("#gb_param_lower").val(-limit)
           physics.lower_joint.gb = -limit
         lower_joint.csl_mode = "c"
+
       
 
   update: (body, upper_joint, lower_joint) =>

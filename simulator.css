@@ -4,8 +4,10 @@ body {
     font-size: 12px;
 }
 
-canvas {
+#simulation {
+    float: left;
 }
+
 #view_controls {
     width: 50px;
     float: left;
@@ -45,13 +47,11 @@ input[type="range"] {
     margin-top: 1em;
 }
 
-#left-side {
+#top-panel {
     float: left;
-    width: 800px;
 }
 
 #bottom-panel {
-    width: 790px;
     float: left;
 }
 
@@ -77,8 +77,13 @@ input[type="range"] {
     background-color:lightgrey;
 }
 
+#semni_posture_controls {
+    float: left;
+}
+
 #posture_graph {
     float: left;
+    width: 1100px;
 }
 
 #state_to_mode_mapping {
