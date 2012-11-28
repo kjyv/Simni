@@ -70,14 +70,14 @@ Renderer = (function() {
   };
 
   Renderer.prototype.redraw = function() {
-    var ctx, ctx2, parent, raph;
+    var ctx, ctx2, graph, parent;
     if (this.draw_graphics) {
       this.ctx.fillStyle = "white";
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
       parent = this;
       ctx = this.ctx;
       ctx2 = this.ctx2;
-      raph = this.graph;
+      graph = this.graph;
       this.particleSystem.eachNode(function(node, pt) {
         var c_h, c_w, canvas, image, label, w;
         label = node.data.label;
@@ -114,7 +114,7 @@ Renderer = (function() {
         var arrowLength, arrowWidth, color, corner, head, label, mid, tail, w, weight, wt, x, y;
         weight = edge.data.weight;
         color = edge.data.color;
-        label = "d=" + edge.data.distance;
+        label = edge.data.distance;
         tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name]);
         head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name]);
         ctx.strokeStyle = ctx.fillStyle = color ? color : "rgba(0,0,0, .333)";
@@ -132,10 +132,10 @@ Renderer = (function() {
           ctx.moveTo(tail.x, tail.y);
           ctx.lineTo(head.x, head.y);
           ctx.stroke();
-          if (label) {
+          if (label && Math.abs(label > 0.1)) {
             mid = {
-              x: Math.floor((pt1.x + pt2.x) / 2),
-              y: Math.floor((pt1.y + pt2.y) / 2)
+              x: (pt1.x + pt2.x) / 2,
+              y: (pt1.y + pt2.y) / 2
             };
             ctx.font = "7px Verdana; sans-serif";
             ctx.textAlign = "center";

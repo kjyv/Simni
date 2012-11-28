@@ -78,7 +78,7 @@ class Renderer
       parent = this
       ctx = @ctx
       ctx2 = @ctx2
-      raph = @graph
+      graph = @graph
 
       @particleSystem.eachNode (node, pt) ->
         # node: {mass:#, p:{x,y}, name:"", data:{}}
@@ -125,7 +125,7 @@ class Renderer
        
         weight = edge.data.weight
         color = edge.data.color
-        label = "d=" + edge.data.distance
+        label = edge.data.distance
         
         #find the visible end points
         tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name])
@@ -154,11 +154,13 @@ class Renderer
           ctx.lineTo head.x, head.y
           ctx.stroke()
 
+          #TODO: draw label in same angle as edge line, delete part of edge line before
+          #TODO: draw two lines if there are back and forth edges 
           #draw a label
-          if label
+          if label and Math.abs label > 0.1
             mid =
-              x: Math.floor((pt1.x + pt2.x) / 2)
-              y: Math.floor((pt1.y + pt2.y) / 2)
+              x: (pt1.x + pt2.x) / 2
+              y: (pt1.y + pt2.y) / 2
 
             ctx.font = "7px Verdana; sans-serif"
             ctx.textAlign = "center"
