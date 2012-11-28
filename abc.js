@@ -6,16 +6,21 @@ var abc, posture,
 posture = (function() {
   var eps;
 
-  function posture(position, csl_mode) {
+  function posture(position, csl_mode, x_pos) {
+    if (x_pos == null) {
+      x_pos = 0;
+    }
     this.isClose = __bind(this.isClose, this);
+
     this.position = position;
     this.csl_mode = csl_mode;
     this.edges_in = [];
     this.edges_out = [];
+    this.body_x = x_pos;
     this.length = 1;
   }
 
-  eps = 0.35;
+  eps = 0.6;
 
   posture.prototype.isClose = function(a, i, b, j) {
     return Math.abs(a.position[0] - b[j].position[0]) < eps && Math.abs(a.position[1] - b[j].position[1]) < eps && Math.abs(a.position[2] - b[j].position[2]) < eps && a.csl_mode[0] === b[j].csl_mode[0] && a.csl_mode[1] === b[j].csl_mode[1];
@@ -33,9 +38,9 @@ abc = (function() {
 
     this.limitCSL = __bind(this.limitCSL, this);
 
-    this.addPostureToGraph = __bind(this.addPostureToGraph, this);
-
     this.newCSLMode = __bind(this.newCSLMode, this);
+
+    this.compareModes = __bind(this.compareModes, this);
 
     this.savePosture = __bind(this.savePosture, this);
 
@@ -54,7 +59,7 @@ abc = (function() {
       friction: .5,
       gravity: true
     });
-    this.graph.renderer = new Renderer("#viewport");
+    this.graph.renderer = new Renderer("#viewport", this.graph);
   }
 
   abc.prototype.toggleExplore = function() {
@@ -93,6 +98,9 @@ abc = (function() {
 
   abc.prototype.detectAttractor = function(body, upper_joint, lower_joint) {
     var d, eps, last, p_body, p_hip, p_knee, position;
+    if (!physics.run) {
+      return;
+    }
     p_body = Math.abs(body.GetAngle());
     p_hip = Math.abs(upper_joint.GetJointAngle());
     p_knee = Math.abs(lower_joint.GetJointAngle());
@@ -134,13 +142,16 @@ abc = (function() {
         edge_list.push(target_node);
         n0 = start_node.position.toString();
         n1 = target_node.position.toString();
-        parent.graph.addEdge(n0, n1);
-        parent.graph.getNode(n1).data.label = target_node.csl_mode;
+        parent.graph.addEdge(n0, n1, {
+          "distance": (target_node.body_x - start_node.body_x).toFixed(4)
+        });
+        parent.graph.current_node = parent.graph.getNode(n1);
+        parent.graph.current_node.data.label = target_node.csl_mode;
         parent.graph.renderer.draw_graphics = true;
         return parent.graph.renderer.click_time = Date.now();
       }
     };
-    p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode]);
+    p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetPosition().x);
     found = this.searchSubarray(p, this.postures, p.isClose);
     if (!found) {
       console.log("found new pose/attractor: " + p.position);
@@ -154,7 +165,7 @@ abc = (function() {
       ctx = $("#simulation canvas")[0].getContext('2d');
       x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale();
       y = physics.body.GetWorldCenter().y * physics.debugDraw.GetDrawScale();
-      range = 130;
+      range = 120;
       imageData = ctx.getImageData(x - range, y - range, range * 2, range * 2);
       pix = imageData.data;
       for (i = _i = 0, _ref = pix.length - 4; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
@@ -176,29 +187,30 @@ abc = (function() {
     return this.newCSLMode();
   };
 
-  abc.prototype.newCSLMode = function() {
-    var which;
-    which = Math.floor(Math.random() * 2);
-    if (which) {
-      return ui.set_csl_mode_upper(["r+", "r-", "c"][Math.floor(Math.random() * 2.99)]);
-    } else {
-      return ui.set_csl_mode_lower(["r+", "r-", "c"][Math.floor(Math.random() * 2.99)]);
-    }
+  abc.prototype.compareModes = function(a, b) {
+    return a[0] === b[0] && a[1] === b[1];
   };
 
-  abc.prototype.addPostureToGraph = function(posture) {
-    var get_random_color;
-    return get_random_color = function() {
-      var color, i, letters;
-      letters = "0123456789ABCDEF".split("");
-      color = "#";
-      i = 0;
-      while (i < 6) {
-        color += letters[Math.round(Math.random() * 15)];
-        i++;
+  abc.prototype.newCSLMode = function() {
+    var mode, which;
+    which = Math.floor(Math.random() * 2);
+    if (which) {
+      while (true) {
+        mode = ["r+", "r-", "c"][Math.floor(Math.random() * 2.99)];
+        if (this.last_posture.csl_mode[0] !== mode) {
+          break;
+        }
       }
-      return color;
-    };
+      return ui.set_csl_mode_upper(mode);
+    } else {
+      while (true) {
+        mode = ["r+", "r-", "c"][Math.floor(Math.random() * 2.99)];
+        if (this.last_posture.csl_mode[1] !== mode) {
+          break;
+        }
+      }
+      return ui.set_csl_mode_lower(["r+", "r-", "c"][Math.floor(Math.random() * 2.99)]);
+    }
   };
 
   abc.prototype.limitCSL = function(upper_joint, lower_joint) {

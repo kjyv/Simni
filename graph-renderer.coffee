@@ -1,6 +1,6 @@
 
 class Renderer
-  constructor: (canvas) ->
+  constructor: (canvas, parent) ->
     @canvas = $(canvas).get(0)
     @ctx = @canvas.getContext("2d")
     @ctx2 = $("#tempimage")[0].getContext('2d')
@@ -9,6 +9,7 @@ class Renderer
     @draw_graphics = false
     MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
     @click_time = MAX_UNIX_TIME
+    @graph = parent
 
   init: (system) =>
     # the particle system will call the init function once, right before the
@@ -22,7 +23,7 @@ class Renderer
     # if the canvas is ever resized, screenSize should be called again with
     # the new dimensions
     @particleSystem.screenSize @canvas.width, @canvas.height
-    @particleSystem.screenPadding 80 # leave an extra 80px of whitespace per side
+    @particleSystem.screenPadding 90 # leave an extra 80px of whitespace per side
 
     # set up some event handlers to allow for node-dragging
     @initMouseHandling()
@@ -77,16 +78,16 @@ class Renderer
       parent = this
       ctx = @ctx
       ctx2 = @ctx2
+      raph = @graph
 
       @particleSystem.eachNode (node, pt) ->
         # node: {mass:#, p:{x,y}, name:"", data:{}}
         # pt:   {x:#, y:#}  node position in screen coords
-       
         label = node.data.label
         image = node.data.imageData
 
         if label
-          w = ctx.measureText(""+label).width + 8
+          w = 26
         else
           w = 8
 
@@ -98,17 +99,20 @@ class Renderer
           ctx2.putImageData image, 0, 0
           ctx.drawImage ctx2.canvas, pt.x - (c_w/4), pt.y - (c_h/4)
 
+        #draw last node highlit
+        if graph.current_node == node
+          ctx.strokeStyle = "red"
+        else
+          ctx.strokeStyle = "black"
+
         # draw a rectangle centered at pt
-        ctx.rect pt.x - w / 2, pt.y - w / 2, w, w
-        ctx.strokeStyle =  if node.data.color then node.data.color else "black"
+        ctx.strokeRect pt.x - w / 2, pt.y - w / 2, w, w
         ctx.lineWidth = 1
-        ctx.stroke()
         
         if label
           ctx.font = "7px Verdana; sans-serif"
           ctx.textAlign = "center"
           ctx.fillStyle =  if node.data.color then node.data.color else "#333333"
-          ctx.fillText(label||"", pt.x, pt.y+4)
           ctx.fillText(label||"", pt.x, pt.y+4)
 
         # save box coordinates
@@ -121,8 +125,9 @@ class Renderer
        
         weight = edge.data.weight
         color = edge.data.color
+        label = "d=" + edge.data.distance
         
-        #find the end points
+        #find the visible end points
         tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name])
         head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name])
 
@@ -130,7 +135,7 @@ class Renderer
         ctx.lineWidth = 1
 
         if pt1.x == pt2.x and pt1.y == pt2.y
-          #draw a circle line
+          #loop edge, draw a circle line
           corner = parent.nodeBoxes[edge.source.name]
           ctx.beginPath()
           x = corner[0]
@@ -148,6 +153,17 @@ class Renderer
           ctx.moveTo tail.x, tail.y
           ctx.lineTo head.x, head.y
           ctx.stroke()
+
+          #draw a label
+          if label
+            mid =
+              x: Math.floor((pt1.x + pt2.x) / 2)
+              y: Math.floor((pt1.y + pt2.y) / 2)
+
+            ctx.font = "7px Verdana; sans-serif"
+            ctx.textAlign = "center"
+            ctx.fillStyle =  if edge.data.color then edge.data.color else "#333333"
+            ctx.fillText(label||"", mid.x, mid.y+4)
        
           # draw arrow
           ctx.save()
@@ -171,7 +187,8 @@ class Renderer
           ctx.closePath()
           ctx.fill()
           ctx.restore()
- 
+
+
   initMouseHandling: =>
     # no-nonsense drag and drop (thanks springy.js)
     dragged = null

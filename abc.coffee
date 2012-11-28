@@ -1,15 +1,16 @@
 #methods for exploring postures, ABC style
 
 class posture
-  constructor: (position, csl_mode) ->
+  constructor: (position, csl_mode, x_pos=0) ->
     @position = position  # [body angle, hip joint angle, knee joint angle]
     @csl_mode = csl_mode  # [upper, lower]
     @edges_in = []
     @edges_out = []
+    @body_x = x_pos
     @length = 1  #quirk for searchSubarray
 
   #method to determine if this posture is near another one
-  eps = 0.35
+  eps = 0.6 #0.35
   isClose: (a,i, b,j) =>
       Math.abs(a.position[0] - b[j].position[0]) < eps and Math.abs(a.position[1] - b[j].position[1]) < eps and Math.abs(a.position[2] - b[j].position[2]) < eps and a.csl_mode[0] == b[j].csl_mode[0] and a.csl_mode[1] == b[j].csl_mode[1]
 
@@ -28,7 +29,7 @@ class abc
 #      timeout: 5
 #      fps: 10
      
-    @graph.renderer = new Renderer("#viewport")
+    @graph.renderer = new Renderer("#viewport", @graph)
 
   toggleExplore: =>
     if not physics.upper_joint.csl_active
@@ -58,19 +59,14 @@ class abc
   detectAttractor: (body, upper_joint, lower_joint) =>
     #detect if current csl mode found a posture
     #TODO:
-    #- build proper graph a found postures, collect modes, distance traveled per edge
     #- gb sometimes is to small to correctly prepare next contraction
     #  (sometimes very quickly same pose is detected again)
-    #- act on detection event following different strategies:
-    #  randomly select next mode or try new mode that we have not seen yet or change joint csl that was
-    #  not changed before
-
-    #get angle velocities
-    #dp_body = Math.abs body.GetAngularVelocity()     #dp means ∆φ
-    #dp_hip = Math.abs upper_joint.GetJointSpeed()
-    #dp_knee = Math.abs lower_joint.GetJointSpeed()
+    #  should try to use smaller gb and initialize next contraction csl integrator +/-
     
-    p_body = Math.abs body.GetAngle()     #dp means ∆φ
+    if not physics.run
+      return
+    
+    p_body = Math.abs body.GetAngle()     #p = φ
     p_hip = Math.abs upper_joint.GetJointAngle()
     p_knee = Math.abs lower_joint.GetJointAngle()
     
@@ -115,12 +111,15 @@ class abc
         edge_list.push target_node
         n0 = start_node.position.toString()
         n1 = target_node.position.toString()
-        parent.graph.addEdge n0, n1
-        parent.graph.getNode(n1).data.label = target_node.csl_mode
+        parent.graph.addEdge n0, n1, {"distance": (target_node.body_x - start_node.body_x).toFixed 4}
+        parent.graph.current_node = parent.graph.getNode(n1)
+        parent.graph.current_node.data.label = target_node.csl_mode
+
+        #re-enable suspended graph layouting for a bit to find new layout
         parent.graph.renderer.draw_graphics = true
         parent.graph.renderer.click_time = Date.now()
 
-    p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode])
+    p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetPosition().x)
     found = @searchSubarray p, @postures, p.isClose
     if not found
       #we dont have something close to this posture yet, add it
@@ -139,7 +138,7 @@ class abc
       ctx = $("#simulation canvas")[0].getContext('2d')
       x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale()
       y = physics.body.GetWorldCenter().y * physics.debugDraw.GetDrawScale()
-      range = 130
+      range = 120
       imageData = ctx.getImageData x-range, y-range, range*2, range*2
 
       #loop over each pixel and make white pixels (the background) transparent
@@ -153,7 +152,7 @@ class abc
       ctx = newCanvas.getContext("2d")
       ctx.putImageData imageData, 0, 0
 
-      #save for node
+      #save in node
       ctx2 = $("#tempimage")[0].getContext('2d')
       ctx2.clearRect(0,0, ctx2.canvas.width, ctx2.canvas.height)
       ctx2.scale(0.5, 0.5)
@@ -162,42 +161,35 @@ class abc
       ctx2.scale(2,2)
 
     @last_posture = p
-
-
-
     @newCSLMode()
 
+
+  compareModes: (a, b) =>
+    a[0] == b[0] && a[1] == b[1]
+    
   newCSLMode: =>
+    #TODO: try different strategies
+    #- randomly select next mode + different mode than the one before
+    #- try new mode that is not in neighbors of last node
+    #- change csl mode of the joint that was not changed from the node before
+    
     #random csl modes
     which = Math.floor(Math.random()*2)
     if which
-      ui.set_csl_mode_upper ["r+", "r-", "c"][Math.floor(Math.random()*2.99)]
+      loop
+        mode = ["r+", "r-", "c"][Math.floor(Math.random()*2.99)]
+        break unless @last_posture.csl_mode[0] == mode
+      ui.set_csl_mode_upper mode
     else
+      loop
+        mode = ["r+", "r-", "c"][Math.floor(Math.random()*2.99)]
+        break unless @last_posture.csl_mode[1] == mode
       ui.set_csl_mode_lower ["r+", "r-", "c"][Math.floor(Math.random()*2.99)]
-
-  addPostureToGraph: (posture) =>
-    get_random_color = ->
-      letters = "0123456789ABCDEF".split("")
-      color = "#"
-      i = 0
-
-      while i < 6
-        color += letters[Math.round(Math.random() * 15)]
-        i++
-      color
-
-    #TODO: color nodes in clusters (best would be the same colors for the manifolds manfred used)
-    #n = @graph.addNode(n1,
-    #  'x': Math.random()/4
-    #  'y': Math.random()/4
-    #  label: n1
-    #  color: get_random_color()
-    #)
-    #@graph.draw().startForceAtlas2()
 
 
   limitCSL: (upper_joint, lower_joint) =>
-    #csl goes against limit, set to release mode with current csl value as bias
+    # if csl goes against limit, set to release mode in same direction with
+    # current csl value as bias
     if upper_joint.csl_active and upper_joint.csl_mode is "c"
       mc = upper_joint.motor_control
       limit = 20
@@ -225,7 +217,6 @@ class abc
           physics.lower_joint.gb = -limit
         lower_joint.csl_mode = "c"
 
-      
 
   update: (body, upper_joint, lower_joint) =>
     @limitCSL upper_joint, lower_joint

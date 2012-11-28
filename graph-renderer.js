@@ -4,7 +4,7 @@ var Renderer,
 
 Renderer = (function() {
 
-  function Renderer(canvas) {
+  function Renderer(canvas, parent) {
     this.initMouseHandling = __bind(this.initMouseHandling, this);
 
     this.init = __bind(this.init, this);
@@ -18,12 +18,13 @@ Renderer = (function() {
     this.draw_graphics = false;
     MAX_UNIX_TIME = 1924988399;
     this.click_time = MAX_UNIX_TIME;
+    this.graph = parent;
   }
 
   Renderer.prototype.init = function(system) {
     this.particleSystem = system;
     this.particleSystem.screenSize(this.canvas.width, this.canvas.height);
-    this.particleSystem.screenPadding(80);
+    this.particleSystem.screenPadding(90);
     return this.initMouseHandling();
   };
 
@@ -69,19 +70,20 @@ Renderer = (function() {
   };
 
   Renderer.prototype.redraw = function() {
-    var ctx, ctx2, parent;
+    var ctx, ctx2, parent, raph;
     if (this.draw_graphics) {
       this.ctx.fillStyle = "white";
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
       parent = this;
       ctx = this.ctx;
       ctx2 = this.ctx2;
+      raph = this.graph;
       this.particleSystem.eachNode(function(node, pt) {
         var c_h, c_w, canvas, image, label, w;
         label = node.data.label;
         image = node.data.imageData;
         if (label) {
-          w = ctx.measureText("" + label).width + 8;
+          w = 26;
         } else {
           w = 8;
         }
@@ -93,23 +95,26 @@ Renderer = (function() {
           ctx2.putImageData(image, 0, 0);
           ctx.drawImage(ctx2.canvas, pt.x - (c_w / 4), pt.y - (c_h / 4));
         }
-        ctx.rect(pt.x - w / 2, pt.y - w / 2, w, w);
-        ctx.strokeStyle = node.data.color ? node.data.color : "black";
+        if (graph.current_node === node) {
+          ctx.strokeStyle = "red";
+        } else {
+          ctx.strokeStyle = "black";
+        }
+        ctx.strokeRect(pt.x - w / 2, pt.y - w / 2, w, w);
         ctx.lineWidth = 1;
-        ctx.stroke();
         if (label) {
           ctx.font = "7px Verdana; sans-serif";
           ctx.textAlign = "center";
           ctx.fillStyle = node.data.color ? node.data.color : "#333333";
           ctx.fillText(label || "", pt.x, pt.y + 4);
-          ctx.fillText(label || "", pt.x, pt.y + 4);
         }
         return parent.nodeBoxes[node.name] = [pt.x - w / 2, pt.y - w / 2, w, w];
       });
       return this.particleSystem.eachEdge(function(edge, pt1, pt2) {
-        var arrowLength, arrowWidth, color, corner, head, tail, w, weight, wt, x, y;
+        var arrowLength, arrowWidth, color, corner, head, label, mid, tail, w, weight, wt, x, y;
         weight = edge.data.weight;
         color = edge.data.color;
+        label = "d=" + edge.data.distance;
         tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name]);
         head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name]);
         ctx.strokeStyle = ctx.fillStyle = color ? color : "rgba(0,0,0, .333)";
@@ -127,6 +132,16 @@ Renderer = (function() {
           ctx.moveTo(tail.x, tail.y);
           ctx.lineTo(head.x, head.y);
           ctx.stroke();
+          if (label) {
+            mid = {
+              x: Math.floor((pt1.x + pt2.x) / 2),
+              y: Math.floor((pt1.y + pt2.y) / 2)
+            };
+            ctx.font = "7px Verdana; sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillStyle = edge.data.color ? edge.data.color : "#333333";
+            ctx.fillText(label || "", mid.x, mid.y + 4);
+          }
           ctx.save();
           wt = (!isNaN(weight) ? parseFloat(weight) : ctx.lineWidth);
           arrowLength = 6 + wt;
