@@ -1,27 +1,134 @@
 #methods for exploring postures, ABC style
 
-class posture
+class posture   #i.e. node
   constructor: (position, csl_mode, x_pos=0) ->
     @position = position  # [body angle, hip joint angle, knee joint angle]
     @csl_mode = csl_mode  # [upper, lower]
-    @edges_in = []
     @edges_out = []
     @body_x = x_pos
     @length = 1  #quirk for searchSubarray
+
+  isEqualTo: (node) =>
+    @position[0] == node.position[0] and @position[1] == node.position[1] and @position[2] == node.position[2] and @csl_mode[0] == node.csl_mode[0] and @csl_mode[1] == node.csl_mode[1]
+
+  getEdgeTo: (target) =>
+    for edge in @edges_out
+      return edge if edge.target_node is target
 
   #method to determine if this posture is near another one
   eps = 0.6 #0.35
   isClose: (a,i, b,j) =>
       Math.abs(a.position[0] - b[j].position[0]) < eps and Math.abs(a.position[1] - b[j].position[1]) < eps and Math.abs(a.position[2] - b[j].position[2]) < eps and a.csl_mode[0] == b[j].csl_mode[0] and a.csl_mode[1] == b[j].csl_mode[1]
 
+class transition  #i.e. edge
+  constructor: (start_node, target_node) ->
+    @start_node = start_node
+    @target_node = target_node
+
+    @distance = 0 # distance the body traveled
+
+  toString: =>
+    @start_node + "->" + @target_node
+
+  isInList: (list) =>
+    for t in list
+      return true if @start_node is t.start_node and @target_node is t.target_node
+    return false
+
+class postureGraph
+  constructor: () ->
+    @nodes = []  #list of the posture nodes
+
+  addNode: (node) =>
+    node.number = @nodes.length
+    @nodes.push node
+
+  getNode: (index) =>
+    @nodes[index]
+
+  length: =>
+    @nodes.length
+
+  findElementaryCircles: =>
+    #implement Tarjan's algorithm for finding circles in directed graphs
+    #expects no negative weights, no multiedges
+    # R. Tarjan, Enumeration of the elementary circuits of a directed graph, SIAM Journal on Computing,
+    # 2 (1973), pp. 211-216
+    # based on an implementation from https://github.com/josch/cycles_tarjan/blob/master/cycles.py
+
+    #prepare node lists
+    A = []
+    A.push [] for a in [0..@nodes.length-1]
+
+    for num in [0..@nodes.length-1]
+      node = @nodes[num]
+      break unless node
+      for edge in node.edges_out
+        A[num].push edge.target_node.number
+
+    point_stack = []
+    marked = {}
+    marked_stack = []
+    circles = []
+    
+    #walk through edges from node v depth-first, marking nodes and remembering the path
+    parent = this
+    backtrack = (v) ->
+      f = false
+      point_stack.push(v)
+      marked[v] = true
+      marked_stack.push(v)
+      for w in A[v]
+        if w<s
+          A[w] = 0
+        else if w==s
+          #we found a circle
+          path = []
+          d = 0
+          for n in [1..point_stack.length]
+            #we're at the last node of the path, insert edge to first node
+            if n is point_stack.length then m = n-1; n = 0; else m = n-1
+            edge = parent.nodes[point_stack[m]].getEdgeTo parent.nodes[point_stack[n]]
+            path.push edge
+            d += edge.distance
+          path = path.concat [d]
+          circles.push(path)
+          
+          console.log point_stack
+          console.log "distance: " + d
+
+          f = true
+        else if not marked[w]
+          f = backtrack(w) or f
+      if f
+        while marked_stack.slice(-1)[0] != v
+          u = marked_stack.pop()
+          marked[u] = false
+        marked_stack.pop()
+        marked[v] = false
+      point_stack.pop()
+      return f
+
+    for i in [0..A.length-1]
+      marked[i] = false
+
+    for s in [0..A.length-1]
+      backtrack(s)
+      while marked_stack.length
+        u = marked_stack.pop()
+        marked[u] = false
+
+    return circles.sort (a,b) ->
+      if a.slice(-1)[0]<=b.slice(-1)[0] then -1 else 1
+    
 class abc
   constructor: ->
-    @postures = []  #posture graph
-    @last_posture = null
+    @posture_graph = new postureGraph()   # posture graph, logical representation
+    @last_posture = null             # the posture that was visited/created last
     @explore_active = false
-    
-    @graph = arbor.ParticleSystem() # create the graph with sensible repulsion/stiffness/friction
-    @graph.parameters  # use center-gravity to make the graph settle nicely (ymmv)
+   
+    @graph = arbor.ParticleSystem()  # display graph, has its own nodes and edges and data for display
+    @graph.parameters                # use center-gravity to make the graph settle nicely (ymmv)
       repulsion: 5000
       stiffness: 100
       friction: .5
@@ -106,32 +213,42 @@ class abc
   savePosture: (position, body, upper_csl, lower_csl) =>
     parent = this
     addEdge = (start_node, target_node, edge_list=start_node.edges_out) ->
-      if target_node not in edge_list and parent.postures.length > 1
+      edge = new transition start_node, target_node
+      if not edge.isInList(edge_list) and parent.posture_graph.length() > 1 and not start_node.isEqualTo target_node
         console.log("adding edge from posture " + start_node.position + " to posture: " + target_node.position)
-        edge_list.push target_node
+
+        #add new edge to logic graph
+        distance = target_node.body_x - start_node.body_x
+        edge.distance = distance
+        edge_list.push edge
+  
+        #display new edge
         n0 = start_node.position.toString()
         n1 = target_node.position.toString()
-        parent.graph.addEdge n0, n1, {"distance": (target_node.body_x - start_node.body_x).toFixed 4}
-        parent.graph.current_node = parent.graph.getNode(n1)
-        parent.graph.current_node.data.label = target_node.csl_mode
+        parent.graph.addEdge n0, n1, {"distance": distance.toFixed 3}
+        parent.graph.current_node = current_node = parent.graph.getNode(n1)
+        current_node.data.label = target_node.csl_mode
+        current_node.data.number = target_node.number
 
         #re-enable suspended graph layouting for a bit to find new layout
         parent.graph.renderer.draw_graphics = true
         parent.graph.renderer.click_time = Date.now()
 
-    p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetPosition().x)
-    found = @searchSubarray p, @postures, p.isClose
+    p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x)
+    found = @searchSubarray p, @posture_graph.nodes, p.isClose
     if not found
       #we dont have something close to this posture yet, add it
       console.log("found new pose/attractor: " + p.position)
-      @postures.push(p)
+      @posture_graph.addNode p
     else
       #we have this posture already
       f = found[0]
-      p = @postures[f]
+      p = @posture_graph.getNode f
     
     #add node+edges
-    if @last_posture and @postures.length > 1
+    if @last_posture and @posture_graph.length() > 1
+      #refresh target position to current x so distance calc works
+      p.body_x = body.GetWorldCenter().x
       addEdge @last_posture, p
       
       #save posture image

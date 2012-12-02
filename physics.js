@@ -665,8 +665,8 @@ physics = (function() {
       draw_phase_space();
       draw_motor_torque();
     }
-    requestAnimFrame(this.update);
-    return window.stats.end();
+    window.stats.end();
+    return requestAnimFrame(this.update);
   };
 
   return physics;

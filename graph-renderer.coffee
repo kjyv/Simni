@@ -84,6 +84,7 @@ class Renderer
         # node: {mass:#, p:{x,y}, name:"", data:{}}
         # pt:   {x:#, y:#}  node position in screen coords
         label = node.data.label
+        number = node.data.number
         image = node.data.imageData
 
         if label
@@ -113,7 +114,8 @@ class Renderer
           ctx.font = "7px Verdana; sans-serif"
           ctx.textAlign = "center"
           ctx.fillStyle =  if node.data.color then node.data.color else "#333333"
-          ctx.fillText(label||"", pt.x, pt.y+4)
+          ctx.fillText(number, pt.x, pt.y - 3)
+          ctx.fillText(label || "", pt.x, pt.y + 4)
 
         # save box coordinates
         parent.nodeBoxes[node.name] = [pt.x-w/2, pt.y-w/2, w,w]
@@ -157,7 +159,7 @@ class Renderer
           #TODO: draw label in same angle as edge line, delete part of edge line before
           #TODO: draw two lines if there are back and forth edges 
           #draw a label
-          if label and Math.abs label > 0.1
+          if label and Math.abs(label) > 0.1
             mid =
               x: (pt1.x + pt2.x) / 2
               y: (pt1.y + pt2.y) / 2

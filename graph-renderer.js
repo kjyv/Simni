@@ -79,8 +79,9 @@ Renderer = (function() {
       ctx2 = this.ctx2;
       graph = this.graph;
       this.particleSystem.eachNode(function(node, pt) {
-        var c_h, c_w, canvas, image, label, w;
+        var c_h, c_w, canvas, image, label, number, w;
         label = node.data.label;
+        number = node.data.number;
         image = node.data.imageData;
         if (label) {
           w = 26;
@@ -106,6 +107,7 @@ Renderer = (function() {
           ctx.font = "7px Verdana; sans-serif";
           ctx.textAlign = "center";
           ctx.fillStyle = node.data.color ? node.data.color : "#333333";
+          ctx.fillText(number, pt.x, pt.y - 3);
           ctx.fillText(label || "", pt.x, pt.y + 4);
         }
         return parent.nodeBoxes[node.name] = [pt.x - w / 2, pt.y - w / 2, w, w];
@@ -132,7 +134,7 @@ Renderer = (function() {
           ctx.moveTo(tail.x, tail.y);
           ctx.lineTo(head.x, head.y);
           ctx.stroke();
-          if (label && Math.abs(label > 0.1)) {
+          if (label && Math.abs(label) > 0.1) {
             mid = {
               x: (pt1.x + pt2.x) / 2,
               y: (pt1.y + pt2.y) / 2

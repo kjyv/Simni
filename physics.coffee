@@ -717,7 +717,7 @@ class physics
       draw_phase_space()
       draw_motor_torque()
 
-    requestAnimFrame @update
     window.stats.end()
+    requestAnimFrame @update
 
 
