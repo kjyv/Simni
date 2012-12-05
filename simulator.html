@@ -18,7 +18,7 @@ Neurorobotics Research Laboratory, Berlin
         <script src="libs/d3.v2.min.js"></script>
         <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
-        <script src="libs/arbor.js"></script>  
+        <script src="libs/arbor.min.js"></script>  
         <script src="graph-renderer.js"></script>
         <script src="semni.data.js"></script>
         <script src="abc.js"></script>
@@ -139,7 +139,6 @@ Neurorobotics Research Laboratory, Berlin
                 <button id="next_step" onClick="physics.step = true">next step(s) [n]</button><br/>            
                 <button id="toggle_csl" class="toggle-button">toggle CSL [t]</button>
                 <button id="toggle_bounce" class="toggle-button">toggle bounce controller [b]</button>
-                <button id="toggle_explore" class="toggle-button">toggle abc explore [e]</button>
                 <script type="text/coffeescript">
                     $ ->
                         $("#toggle_csl").on 'click', ->
@@ -155,10 +154,6 @@ Neurorobotics Research Laboratory, Berlin
                             if physics.pend_style is 3
                                 physics.toggleBounce physics.upper_joint
                                 physics.toggleBounce physics.lower_joint
-                                
-                        $("#toggle_explore").on 'click', ->
-                            if physics.pend_style is 3
-                                physics.abc.toggleExplore()
                 </script>
                 <br/>
 
@@ -260,21 +255,35 @@ Neurorobotics Research Laboratory, Berlin
             </div>
             <div id="semni_posture_controls">
                 <br/>
+                <button id="toggle_explore" class="toggle-button">toggle abc explore [e]</button>
+                <script type="text/coffeescript">
+                    $("#toggle_explore").on 'click', ->
+                        if physics.pend_style is 3
+                            physics.abc.toggleExplore()
+                </script>
+                <br/>
                 <label for="csl_mode_hip">Hip</label>:
-                    <select id="csl_mode_hip" onchange="ui.set_csl_mode_upper($('#csl_mode_hip').val())">
-                        <option value="r+" checked="checked">r+</option>
-                        <option value="r-">r-</option>
-                        <option value="c">c</option>
-                    </select>
+                <select id="csl_mode_hip" onchange="ui.set_csl_mode_upper($('#csl_mode_hip').val())">
+                    <option value="r+" checked="checked">r+</option>
+                    <option value="r-">r-</option>
+                    <option value="c">c</option>
+                </select>
                 <label for="csl_mode_knee">Knee</label>:
-                    <select id="csl_mode_knee" onchange="ui.set_csl_mode_lower($('#csl_mode_knee').val())">
-                        <option value="r+" checked="checked">r+</option>
-                        <option value="r-">r-</option>
-                        <option value="c">c</option>
-                    </select>
+                <select id="csl_mode_knee" onchange="ui.set_csl_mode_lower($('#csl_mode_knee').val())">
+                    <option value="r+" checked="checked">r+</option>
+                    <option value="r-">r-</option>
+                    <option value="c">c</option>
+                </select><br/>
+                <label for="csl_strategy">Next Mode Strategy</label>:
+                <select id="csl_strategy" onchange="physics.abc.set_strategy($('#csl_strategy').val())">
+                    <option value="random" checked="checked">random</option>
+                </select><br/>
+                <button id="find_circles" onclick="physics.abc.posture_graph.findElementaryCircles(); console.log(p.abc.posture_graph.circles);">Find circles</button>
+                <button id="walk_best_circle" class="toggle-button" onclick="physics.abc.posture_graph.walkCircle()">Walk best circle</button>
+
             </div>
             <div id="posture_graph">
-                <canvas width="1100" height="750" id="viewport"></canvas>
+                <canvas width="1400" height="800" id="viewport"></canvas>
                 <canvas width="300" height="300" id="tempimage" style="display:none;"></canvas>
             </div> 
         </div>

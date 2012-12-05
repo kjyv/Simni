@@ -6,7 +6,6 @@ class Renderer
     @ctx2 = $("#tempimage")[0].getContext('2d')
     @particleSystem = null
     @nodeBoxes = []
-    @draw_graphics = false
     MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
     @click_time = MAX_UNIX_TIME
     @graph = parent
@@ -72,125 +71,124 @@ class Renderer
     # x,y point in the screen's coordinate system
     # 
     
-    if @draw_graphics
-      @ctx.fillStyle = "white"
-      @ctx.fillRect 0, 0, @canvas.width, @canvas.height
-      parent = this
-      ctx = @ctx
-      ctx2 = @ctx2
-      graph = @graph
+    @ctx.fillStyle = "white"
+    @ctx.fillRect 0, 0, @canvas.width, @canvas.height
+    parent = this
+    ctx = @ctx
+    ctx2 = @ctx2
+    graph = @graph
 
-      @particleSystem.eachNode (node, pt) ->
-        # node: {mass:#, p:{x,y}, name:"", data:{}}
-        # pt:   {x:#, y:#}  node position in screen coords
-        label = node.data.label
-        number = node.data.number
-        image = node.data.imageData
+    @particleSystem.eachNode (node, pt) ->
+      # node: {mass:#, p:{x,y}, name:"", data:{}}
+      # pt:   {x:#, y:#}  node position in screen coords
+      label = node.data.label
+      number = node.data.number
+      image = node.data.imageData
 
-        if label
-          w = 26
-        else
-          w = 8
+      if label
+        w = 26
+      else
+        w = 8
 
-        if image
-          canvas = ctx2.canvas
-          c_w = canvas.width
-          c_h = canvas.height
-          ctx2.clearRect 0,0, c_w, c_h
-          ctx2.putImageData image, 0, 0
-          ctx.drawImage ctx2.canvas, pt.x - (c_w/4), pt.y - (c_h/4)
+      if image
+        canvas = ctx2.canvas
+        c_w = canvas.width
+        c_h = canvas.height
+        ctx2.clearRect 0,0, c_w, c_h
+        ctx2.putImageData image, 0, 0
+        ctx.drawImage ctx2.canvas, pt.x - (c_w/4), pt.y - (c_h/4)
 
-        #draw last node highlit
-        if graph.current_node == node
-          ctx.strokeStyle = "red"
-        else
-          ctx.strokeStyle = "black"
+      #draw last node highlit
+      if graph.current_node == node
+        ctx.strokeStyle = "red"
+      else
+        ctx.strokeStyle = "black"
 
-        # draw a rectangle centered at pt
-        ctx.strokeRect pt.x - w / 2, pt.y - w / 2, w, w
-        ctx.lineWidth = 1
-        
-        if label
+      # draw a rectangle centered at pt
+      ctx.strokeRect pt.x - w / 2, pt.y - w / 2, w, w
+      ctx.lineWidth = 1
+      
+      if label
+        ctx.font = "7px Verdana; sans-serif"
+        ctx.textAlign = "center"
+        ctx.fillStyle =  if node.data.color then node.data.color else "#333333"
+        ctx.fillText(number, pt.x, pt.y - 3)
+        ctx.fillText(label || "", pt.x, pt.y + 4)
+
+      # save box coordinates
+      parent.nodeBoxes[node.name] = [pt.x-w/2, pt.y-w/2, w,w]
+
+    @particleSystem.eachEdge (edge, pt1, pt2) ->
+      # edge: {source:Node, target:Node, length:#, data:{}}
+      # pt1:  {x:#, y:#}  source position in screen coords
+      # pt2:  {x:#, y:#}  target position in screen coords
+     
+      weight = edge.data.weight
+      color = edge.data.color
+      label = edge.data.distance
+      
+      #find the visible end points
+      tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name])
+      head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name])
+
+      ctx.strokeStyle = ctx.fillStyle = if color then color else "rgba(0,0,0, .333)"
+      ctx.lineWidth = 1
+
+      if pt1.x == pt2.x and pt1.y == pt2.y
+        #loop edge, draw a circle line
+        corner = parent.nodeBoxes[edge.source.name]
+        ctx.beginPath()
+        x = corner[0]
+        y = corner[1]
+        w = corner[2]
+        ctx.arc(x+w, y, w/4, Math.PI, 0.5*Math.PI, false)
+        ctx.stroke()
+
+        #TODO: draw arrow for circles
+        #simply draw on top of the box, pointing down
+        #might be better to not show two arrows in the same spot though
+      else
+        # draw a line from pt1 to pt2
+        ctx.beginPath()
+        ctx.moveTo tail.x, tail.y
+        ctx.lineTo head.x, head.y
+        ctx.stroke()
+
+        #TODO: draw label in same angle as edge line, delete part of edge line before
+        #TODO: draw two lines if there are back and forth edges 
+        #draw a label
+        if label and Math.abs(label) > 0.1
+          mid =
+            x: (pt1.x + pt2.x) / 2
+            y: (pt1.y + pt2.y) / 2
+
           ctx.font = "7px Verdana; sans-serif"
           ctx.textAlign = "center"
-          ctx.fillStyle =  if node.data.color then node.data.color else "#333333"
-          ctx.fillText(number, pt.x, pt.y - 3)
-          ctx.fillText(label || "", pt.x, pt.y + 4)
+          ctx.fillStyle =  if edge.data.color then edge.data.color else "#333333"
+          ctx.fillText(label||"", mid.x, mid.y+4)
+     
+        # draw arrow
+        ctx.save()
 
-        # save box coordinates
-        parent.nodeBoxes[node.name] = [pt.x-w/2, pt.y-w/2, w,w]
+        # move to the head position of the edge we just drew
+        wt = (if not isNaN(weight) then parseFloat(weight) else ctx.lineWidth)
+        arrowLength = 6 + wt
+        arrowWidth = 2 + wt
+        ctx.translate head.x, head.y
+        ctx.rotate Math.atan2(head.y - tail.y, head.x - tail.x)
 
-      @particleSystem.eachEdge (edge, pt1, pt2) ->
-        # edge: {source:Node, target:Node, length:#, data:{}}
-        # pt1:  {x:#, y:#}  source position in screen coords
-        # pt2:  {x:#, y:#}  target position in screen coords
-       
-        weight = edge.data.weight
-        color = edge.data.color
-        label = edge.data.distance
-        
-        #find the visible end points
-        tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name])
-        head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name])
+        # delete some of the edge that's already there (so the point isn't hidden)
+        ctx.clearRect -arrowLength / 2, -wt / 2, arrowLength / 2, wt
 
-        ctx.strokeStyle = ctx.fillStyle = if color then color else "rgba(0,0,0, .333)"
-        ctx.lineWidth = 1
-
-        if pt1.x == pt2.x and pt1.y == pt2.y
-          #loop edge, draw a circle line
-          corner = parent.nodeBoxes[edge.source.name]
-          ctx.beginPath()
-          x = corner[0]
-          y = corner[1]
-          w = corner[2]
-          ctx.arc(x+w, y, w/4, Math.PI, 0.5*Math.PI, false)
-          ctx.stroke()
-
-          #TODO: draw arrow for circles
-          #simply draw on top of the box, pointing down
-          #might be better to not show two arrows in the same spot though
-        else
-          # draw a line from pt1 to pt2
-          ctx.beginPath()
-          ctx.moveTo tail.x, tail.y
-          ctx.lineTo head.x, head.y
-          ctx.stroke()
-
-          #TODO: draw label in same angle as edge line, delete part of edge line before
-          #TODO: draw two lines if there are back and forth edges 
-          #draw a label
-          if label and Math.abs(label) > 0.1
-            mid =
-              x: (pt1.x + pt2.x) / 2
-              y: (pt1.y + pt2.y) / 2
-
-            ctx.font = "7px Verdana; sans-serif"
-            ctx.textAlign = "center"
-            ctx.fillStyle =  if edge.data.color then edge.data.color else "#333333"
-            ctx.fillText(label||"", mid.x, mid.y+4)
-       
-          # draw arrow
-          ctx.save()
-
-          # move to the head position of the edge we just drew
-          wt = (if not isNaN(weight) then parseFloat(weight) else ctx.lineWidth)
-          arrowLength = 6 + wt
-          arrowWidth = 2 + wt
-          ctx.translate head.x, head.y
-          ctx.rotate Math.atan2(head.y - tail.y, head.x - tail.x)
-
-          # delete some of the edge that's already there (so the point isn't hidden)
-          ctx.clearRect -arrowLength / 2, -wt / 2, arrowLength / 2, wt
-
-          # draw the chevron
-          ctx.beginPath()
-          ctx.moveTo -arrowLength, arrowWidth
-          ctx.lineTo 0, 0
-          ctx.lineTo -arrowLength, -arrowWidth
-          ctx.lineTo -arrowLength * 0.8, -0
-          ctx.closePath()
-          ctx.fill()
-          ctx.restore()
+        # draw the chevron
+        ctx.beginPath()
+        ctx.moveTo -arrowLength, arrowWidth
+        ctx.lineTo 0, 0
+        ctx.lineTo -arrowLength, -arrowWidth
+        ctx.lineTo -arrowLength * 0.8, -0
+        ctx.closePath()
+        ctx.fill()
+        ctx.restore()
 
 
   initMouseHandling: =>
@@ -202,7 +200,7 @@ class Renderer
     parent = this
     class Handler
       @clicked: (e) ->
-        parent.draw_graphics = true
+        parent.graph.start(true)
         pos = $(parent.canvas).offset()
         _mouseP = arbor.Point(e.pageX-pos.left, e.pageY-pos.top)
         dragged = parent.particleSystem.nearest(_mouseP)
@@ -217,7 +215,7 @@ class Renderer
         return false
       
       @dragged: (e) ->
-        parent.draw_graphics = true
+        parent.graph.start(true)
         pos = $(parent.canvas).offset()
         s = arbor.Point(e.pageX-pos.left, e.pageY-pos.top)
 
@@ -230,7 +228,7 @@ class Renderer
       @dropped: (e) ->
         if (dragged is null or dragged.node is undefined)
           return
-        parent.draw_graphics = true
+        parent.graph.start(true)
         if dragged.node isnt null
           dragged.node.fixed = false
         dragged.node.tempMass = 1000

@@ -83,7 +83,9 @@ input[type="range"] {
 
 #posture_graph {
     float: left;
-    width: 1100px;
+    width: 1400px;
+    margin-top: 10px;
+    border-top: 1px solid black;
 }
 
 #state_to_mode_mapping {

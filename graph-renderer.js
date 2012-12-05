@@ -15,7 +15,6 @@ Renderer = (function() {
     this.ctx2 = $("#tempimage")[0].getContext('2d');
     this.particleSystem = null;
     this.nodeBoxes = [];
-    this.draw_graphics = false;
     MAX_UNIX_TIME = 1924988399;
     this.click_time = MAX_UNIX_TIME;
     this.graph = parent;
@@ -71,97 +70,95 @@ Renderer = (function() {
 
   Renderer.prototype.redraw = function() {
     var ctx, ctx2, graph, parent;
-    if (this.draw_graphics) {
-      this.ctx.fillStyle = "white";
-      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      parent = this;
-      ctx = this.ctx;
-      ctx2 = this.ctx2;
-      graph = this.graph;
-      this.particleSystem.eachNode(function(node, pt) {
-        var c_h, c_w, canvas, image, label, number, w;
-        label = node.data.label;
-        number = node.data.number;
-        image = node.data.imageData;
-        if (label) {
-          w = 26;
-        } else {
-          w = 8;
-        }
-        if (image) {
-          canvas = ctx2.canvas;
-          c_w = canvas.width;
-          c_h = canvas.height;
-          ctx2.clearRect(0, 0, c_w, c_h);
-          ctx2.putImageData(image, 0, 0);
-          ctx.drawImage(ctx2.canvas, pt.x - (c_w / 4), pt.y - (c_h / 4));
-        }
-        if (graph.current_node === node) {
-          ctx.strokeStyle = "red";
-        } else {
-          ctx.strokeStyle = "black";
-        }
-        ctx.strokeRect(pt.x - w / 2, pt.y - w / 2, w, w);
-        ctx.lineWidth = 1;
-        if (label) {
+    this.ctx.fillStyle = "white";
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    parent = this;
+    ctx = this.ctx;
+    ctx2 = this.ctx2;
+    graph = this.graph;
+    this.particleSystem.eachNode(function(node, pt) {
+      var c_h, c_w, canvas, image, label, number, w;
+      label = node.data.label;
+      number = node.data.number;
+      image = node.data.imageData;
+      if (label) {
+        w = 26;
+      } else {
+        w = 8;
+      }
+      if (image) {
+        canvas = ctx2.canvas;
+        c_w = canvas.width;
+        c_h = canvas.height;
+        ctx2.clearRect(0, 0, c_w, c_h);
+        ctx2.putImageData(image, 0, 0);
+        ctx.drawImage(ctx2.canvas, pt.x - (c_w / 4), pt.y - (c_h / 4));
+      }
+      if (graph.current_node === node) {
+        ctx.strokeStyle = "red";
+      } else {
+        ctx.strokeStyle = "black";
+      }
+      ctx.strokeRect(pt.x - w / 2, pt.y - w / 2, w, w);
+      ctx.lineWidth = 1;
+      if (label) {
+        ctx.font = "7px Verdana; sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillStyle = node.data.color ? node.data.color : "#333333";
+        ctx.fillText(number, pt.x, pt.y - 3);
+        ctx.fillText(label || "", pt.x, pt.y + 4);
+      }
+      return parent.nodeBoxes[node.name] = [pt.x - w / 2, pt.y - w / 2, w, w];
+    });
+    return this.particleSystem.eachEdge(function(edge, pt1, pt2) {
+      var arrowLength, arrowWidth, color, corner, head, label, mid, tail, w, weight, wt, x, y;
+      weight = edge.data.weight;
+      color = edge.data.color;
+      label = edge.data.distance;
+      tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name]);
+      head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name]);
+      ctx.strokeStyle = ctx.fillStyle = color ? color : "rgba(0,0,0, .333)";
+      ctx.lineWidth = 1;
+      if (pt1.x === pt2.x && pt1.y === pt2.y) {
+        corner = parent.nodeBoxes[edge.source.name];
+        ctx.beginPath();
+        x = corner[0];
+        y = corner[1];
+        w = corner[2];
+        ctx.arc(x + w, y, w / 4, Math.PI, 0.5 * Math.PI, false);
+        return ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(tail.x, tail.y);
+        ctx.lineTo(head.x, head.y);
+        ctx.stroke();
+        if (label && Math.abs(label) > 0.1) {
+          mid = {
+            x: (pt1.x + pt2.x) / 2,
+            y: (pt1.y + pt2.y) / 2
+          };
           ctx.font = "7px Verdana; sans-serif";
           ctx.textAlign = "center";
-          ctx.fillStyle = node.data.color ? node.data.color : "#333333";
-          ctx.fillText(number, pt.x, pt.y - 3);
-          ctx.fillText(label || "", pt.x, pt.y + 4);
+          ctx.fillStyle = edge.data.color ? edge.data.color : "#333333";
+          ctx.fillText(label || "", mid.x, mid.y + 4);
         }
-        return parent.nodeBoxes[node.name] = [pt.x - w / 2, pt.y - w / 2, w, w];
-      });
-      return this.particleSystem.eachEdge(function(edge, pt1, pt2) {
-        var arrowLength, arrowWidth, color, corner, head, label, mid, tail, w, weight, wt, x, y;
-        weight = edge.data.weight;
-        color = edge.data.color;
-        label = edge.data.distance;
-        tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name]);
-        head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name]);
-        ctx.strokeStyle = ctx.fillStyle = color ? color : "rgba(0,0,0, .333)";
-        ctx.lineWidth = 1;
-        if (pt1.x === pt2.x && pt1.y === pt2.y) {
-          corner = parent.nodeBoxes[edge.source.name];
-          ctx.beginPath();
-          x = corner[0];
-          y = corner[1];
-          w = corner[2];
-          ctx.arc(x + w, y, w / 4, Math.PI, 0.5 * Math.PI, false);
-          return ctx.stroke();
-        } else {
-          ctx.beginPath();
-          ctx.moveTo(tail.x, tail.y);
-          ctx.lineTo(head.x, head.y);
-          ctx.stroke();
-          if (label && Math.abs(label) > 0.1) {
-            mid = {
-              x: (pt1.x + pt2.x) / 2,
-              y: (pt1.y + pt2.y) / 2
-            };
-            ctx.font = "7px Verdana; sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillStyle = edge.data.color ? edge.data.color : "#333333";
-            ctx.fillText(label || "", mid.x, mid.y + 4);
-          }
-          ctx.save();
-          wt = (!isNaN(weight) ? parseFloat(weight) : ctx.lineWidth);
-          arrowLength = 6 + wt;
-          arrowWidth = 2 + wt;
-          ctx.translate(head.x, head.y);
-          ctx.rotate(Math.atan2(head.y - tail.y, head.x - tail.x));
-          ctx.clearRect(-arrowLength / 2, -wt / 2, arrowLength / 2, wt);
-          ctx.beginPath();
-          ctx.moveTo(-arrowLength, arrowWidth);
-          ctx.lineTo(0, 0);
-          ctx.lineTo(-arrowLength, -arrowWidth);
-          ctx.lineTo(-arrowLength * 0.8, -0);
-          ctx.closePath();
-          ctx.fill();
-          return ctx.restore();
-        }
-      });
-    }
+        ctx.save();
+        wt = (!isNaN(weight) ? parseFloat(weight) : ctx.lineWidth);
+        arrowLength = 6 + wt;
+        arrowWidth = 2 + wt;
+        ctx.translate(head.x, head.y);
+        ctx.rotate(Math.atan2(head.y - tail.y, head.x - tail.x));
+        ctx.clearRect(-arrowLength / 2, -wt / 2, arrowLength / 2, wt);
+        ctx.beginPath();
+        ctx.moveTo(-arrowLength, arrowWidth);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(-arrowLength, -arrowWidth);
+        ctx.lineTo(-arrowLength * 0.8, -0);
+        ctx.closePath();
+        ctx.fill();
+        return ctx.restore();
+      }
+    });
   };
 
   Renderer.prototype.initMouseHandling = function() {
@@ -174,7 +171,7 @@ Renderer = (function() {
 
       Handler.clicked = function(e) {
         var pos, _mouseP;
-        parent.draw_graphics = true;
+        parent.graph.start(true);
         pos = $(parent.canvas).offset();
         _mouseP = arbor.Point(e.pageX - pos.left, e.pageY - pos.top);
         dragged = parent.particleSystem.nearest(_mouseP);
@@ -188,7 +185,7 @@ Renderer = (function() {
 
       Handler.dragged = function(e) {
         var p, pos, s;
-        parent.draw_graphics = true;
+        parent.graph.start(true);
         pos = $(parent.canvas).offset();
         s = arbor.Point(e.pageX - pos.left, e.pageY - pos.top);
         if (dragged && dragged.node !== null) {
@@ -203,7 +200,7 @@ Renderer = (function() {
         if (dragged === null || dragged.node === void 0) {
           return;
         }
-        parent.draw_graphics = true;
+        parent.graph.start(true);
         if (dragged.node !== null) {
           dragged.node.fixed = false;
         }

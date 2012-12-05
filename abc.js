@@ -6,6 +6,9 @@ posture = (function() {
   var eps;
 
   function posture(position, csl_mode, x_pos) {
+    if (csl_mode == null) {
+      csl_mode = [];
+    }
     if (x_pos == null) {
       x_pos = 0;
     }
@@ -20,6 +23,7 @@ posture = (function() {
     this.edges_out = [];
     this.body_x = x_pos;
     this.length = 1;
+    this.number = -1;
   }
 
   posture.prototype.isEqualTo = function(node) {
@@ -80,6 +84,8 @@ transition = (function() {
 postureGraph = (function() {
 
   function postureGraph() {
+    this.walkCircle = __bind(this.walkCircle, this);
+
     this.findElementaryCircles = __bind(this.findElementaryCircles, this);
 
     this.length = __bind(this.length, this);
@@ -88,6 +94,7 @@ postureGraph = (function() {
 
     this.addNode = __bind(this.addNode, this);
     this.nodes = [];
+    this.walk_circle_active = false;
   }
 
   postureGraph.prototype.addNode = function(node) {
@@ -152,8 +159,6 @@ postureGraph = (function() {
           }
           path = path.concat([d]);
           circles.push(path);
-          console.log(point_stack);
-          console.log("distance: " + d);
           f = true;
         } else if (!marked[w]) {
           f = backtrack(w) || f;
@@ -180,13 +185,22 @@ postureGraph = (function() {
         marked[u] = false;
       }
     }
-    return circles.sort(function(a, b) {
+    return this.circles = circles.sort(function(a, b) {
       if (a.slice(-1)[0] <= b.slice(-1)[0]) {
         return -1;
       } else {
         return 1;
       }
     });
+  };
+
+  postureGraph.prototype.walkCircle = function() {
+    if (this.circles) {
+      p.abc.explore_active = false;
+      this.best_circle = this.circles.slice(-1)[0];
+      this.walk_circle_active = true;
+      return this.best_circle[0].active = true;
+    }
   };
 
   return postureGraph;
@@ -259,7 +273,7 @@ abc = (function() {
 
   trajectory = [];
 
-  abc.prototype.detectAttractor = function(body, upper_joint, lower_joint) {
+  abc.prototype.detectAttractor = function(body, upper_joint, lower_joint, action) {
     var d, eps, last, p_body, p_hip, p_knee, position;
     if (!physics.run) {
       return;
@@ -279,16 +293,14 @@ abc = (function() {
       });
       if (d.length > 4) {
         position = trajectory.pop();
-        this.savePosture(position, body, upper_joint, lower_joint);
+        action(position, this);
         trajectory = [];
       }
       time = Date.now();
     }
     if ((Date.now() - this.graph.renderer.click_time) > 5000) {
       this.graph.renderer.click_time = Date.now();
-      if (isNaN(this.graph.energy().max)) {
-        return this.graph.renderer.draw_graphics = false;
-      }
+      return this.graph.stop();
     }
   };
 
@@ -302,7 +314,7 @@ abc = (function() {
       }
       edge = new transition(start_node, target_node);
       if (!edge.isInList(edge_list) && parent.posture_graph.length() > 1 && !start_node.isEqualTo(target_node)) {
-        console.log("adding edge from posture " + start_node.position + " to posture: " + target_node.position);
+        console.log("adding edge from posture " + start_node.number + " to posture: " + target_node.number);
         distance = target_node.body_x - start_node.body_x;
         edge.distance = distance;
         edge_list.push(edge);
@@ -314,7 +326,7 @@ abc = (function() {
         parent.graph.current_node = current_node = parent.graph.getNode(n1);
         current_node.data.label = target_node.csl_mode;
         current_node.data.number = target_node.number;
-        parent.graph.renderer.draw_graphics = true;
+        parent.graph.start(true);
         return parent.graph.renderer.click_time = Date.now();
       }
     };
@@ -419,7 +431,36 @@ abc = (function() {
   abc.prototype.update = function(body, upper_joint, lower_joint) {
     this.limitCSL(upper_joint, lower_joint);
     if (this.explore_active) {
-      return this.detectAttractor(body, upper_joint, lower_joint);
+      this.detectAttractor(body, upper_joint, lower_joint, function(position, parent) {
+        return parent.savePosture(position, body, upper_joint, lower_joint);
+      });
+    }
+    if (this.posture_graph.walk_circle_active) {
+      return this.detectAttractor(body, upper_joint, lower_joint, function(position, parent) {
+        var csl_mode, current_posture, edge, _i, _len, _ref, _results;
+        _ref = parent.posture_graph.best_circle;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          edge = _ref[_i];
+          current_posture = new posture(position, [physics.upper_joint.csl_mode, physics.lower_joint.csl_mode]);
+          if (edge.start_node.isClose(current_posture, 0, [edge.start_node], 0)) {
+            edge.active = true;
+            parent.last_posture = edge.start_node;
+          }
+          if (edge.target_node.isClose(current_posture, 0, [edge.target_node], 0)) {
+            edge.active = false;
+          }
+          if (edge.active) {
+            csl_mode = edge.target_node.csl_mode;
+            ui.set_csl_mode_upper(csl_mode[0]);
+            ui.set_csl_mode_lower(csl_mode[1]);
+            break;
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      });
     }
   };
 

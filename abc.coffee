@@ -1,12 +1,13 @@
 #methods for exploring postures, ABC style
 
 class posture   #i.e. node
-  constructor: (position, csl_mode, x_pos=0) ->
+  constructor: (position, csl_mode=[], x_pos=0) ->
     @position = position  # [body angle, hip joint angle, knee joint angle]
     @csl_mode = csl_mode  # [upper, lower]
     @edges_out = []
     @body_x = x_pos
     @length = 1  #quirk for searchSubarray
+    @number = -1
 
   isEqualTo: (node) =>
     @position[0] == node.position[0] and @position[1] == node.position[1] and @position[2] == node.position[2] and @csl_mode[0] == node.csl_mode[0] and @csl_mode[1] == node.csl_mode[1]
@@ -38,6 +39,7 @@ class transition  #i.e. edge
 class postureGraph
   constructor: () ->
     @nodes = []  #list of the posture nodes
+    @walk_circle_active = false
 
   addNode: (node) =>
     node.number = @nodes.length
@@ -93,9 +95,6 @@ class postureGraph
             d += edge.distance
           path = path.concat [d]
           circles.push(path)
-          
-          console.log point_stack
-          console.log "distance: " + d
 
           f = true
         else if not marked[w]
@@ -118,9 +117,25 @@ class postureGraph
         u = marked_stack.pop()
         marked[u] = false
 
-    return circles.sort (a,b) ->
+    @circles = circles.sort (a,b) ->
       if a.slice(-1)[0]<=b.slice(-1)[0] then -1 else 1
+
+  walkCircle: =>
+    if @circles
+      p.abc.explore_active = false
+
+      @best_circle = @circles.slice(-1)[0]  #last circle is the one with largest distance
     
+      #TODO: go to first posture before we can start walking
+      #find path from current posture to this one
+      #use circle[0].start_node .csl_mode .position
+     
+      @walk_circle_active = true
+      
+      #start with first transition
+      @best_circle[0].active = true
+
+
 class abc
   constructor: ->
     @posture_graph = new postureGraph()   # posture graph, logical representation
@@ -163,13 +178,8 @@ class abc
   MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
   time = MAX_UNIX_TIME
   trajectory = []   #last n state points
-  detectAttractor: (body, upper_joint, lower_joint) =>
+  detectAttractor: (body, upper_joint, lower_joint, action) =>
     #detect if current csl mode found a posture
-    #TODO:
-    #- gb sometimes is to small to correctly prepare next contraction
-    #  (sometimes very quickly same pose is detected again)
-    #  should try to use smaller gb and initialize next contraction csl integrator +/-
-    
     if not physics.run
       return
     
@@ -193,9 +203,10 @@ class abc
       #console.log(d)
 
       if d.length > 4    #need to find sample more than once to be periodic
-        #save posture
+        
+        #found a posture, call user method
         position = trajectory.pop()
-        @savePosture position, body, upper_joint, lower_joint
+        action(position, @)
 
         #get rid of saved trajectory
         trajectory = []
@@ -204,18 +215,14 @@ class abc
 
     if (Date.now() - @graph.renderer.click_time) > 5000
       @graph.renderer.click_time = Date.now()
-      #TODO: find out why starting/stopping doesn't work, use not-minified arbor code and step through
-      #@graph.stop()
-      #hack for now
-      if isNaN @graph.energy().max
-        @graph.renderer.draw_graphics = false
+      @graph.stop()
 
   savePosture: (position, body, upper_csl, lower_csl) =>
     parent = this
     addEdge = (start_node, target_node, edge_list=start_node.edges_out) ->
       edge = new transition start_node, target_node
       if not edge.isInList(edge_list) and parent.posture_graph.length() > 1 and not start_node.isEqualTo target_node
-        console.log("adding edge from posture " + start_node.position + " to posture: " + target_node.position)
+        console.log("adding edge from posture " + start_node.number + " to posture: " + target_node.number)
 
         #add new edge to logic graph
         distance = target_node.body_x - start_node.body_x
@@ -231,7 +238,7 @@ class abc
         current_node.data.number = target_node.number
 
         #re-enable suspended graph layouting for a bit to find new layout
-        parent.graph.renderer.draw_graphics = true
+        parent.graph.start(true)
         parent.graph.renderer.click_time = Date.now()
 
     p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x)
@@ -338,4 +345,28 @@ class abc
   update: (body, upper_joint, lower_joint) =>
     @limitCSL upper_joint, lower_joint
     if @explore_active
-      @detectAttractor body, upper_joint, lower_joint
+      @detectAttractor body, upper_joint, lower_joint, (position, parent) ->
+        #save posture
+        parent.savePosture position, body, upper_joint, lower_joint
+
+    if @posture_graph.walk_circle_active
+      @detectAttractor body, upper_joint, lower_joint, (position, parent) ->
+        for edge in parent.posture_graph.best_circle
+          current_posture = new posture(position, [physics.upper_joint.csl_mode, physics.lower_joint.csl_mode])
+          if edge.start_node.isClose(current_posture, 0, [edge.start_node], 0)
+            edge.active = true
+            parent.last_posture = edge.start_node
+
+          if edge.target_node.isClose(current_posture, 0, [edge.target_node], 0)
+            #this is the last edge we already travelled
+            edge.active = false
+
+          if edge.active
+            #go to next posture
+            csl_mode = edge.target_node.csl_mode
+            ui.set_csl_mode_upper csl_mode[0]
+            ui.set_csl_mode_lower csl_mode[1]
+
+            #we found a matching edge so there should be no other with the current posture
+            break
+
