@@ -4,7 +4,7 @@ var Renderer,
 
 Renderer = (function() {
 
-  function Renderer(canvas, parent) {
+  function Renderer(canvas, parent, abc) {
     this.initMouseHandling = __bind(this.initMouseHandling, this);
 
     this.init = __bind(this.init, this);
@@ -18,6 +18,7 @@ Renderer = (function() {
     MAX_UNIX_TIME = 1924988399;
     this.click_time = MAX_UNIX_TIME;
     this.graph = parent;
+    this.abc = abc;
   }
 
   Renderer.prototype.init = function(system) {
@@ -77,7 +78,7 @@ Renderer = (function() {
     ctx2 = this.ctx2;
     graph = this.graph;
     this.particleSystem.eachNode(function(node, pt) {
-      var c_h, c_w, canvas, image, label, number, w;
+      var c_h, c_w, canvas, image, label, number, transition, w, _i, _len, _ref;
       label = node.data.label;
       number = node.data.number;
       image = node.data.imageData;
@@ -98,6 +99,16 @@ Renderer = (function() {
         ctx.strokeStyle = "red";
       } else {
         ctx.strokeStyle = "black";
+        if (parent.abc.posture_graph.best_circle) {
+          _ref = parent.abc.posture_graph.best_circle.slice(0, -1);
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            transition = _ref[_i];
+            if (node.name === transition.start_node.position.toString()) {
+              ctx.strokeStyle = "blue";
+              break;
+            }
+          }
+        }
       }
       ctx.strokeRect(pt.x - w / 2, pt.y - w / 2, w, w);
       ctx.lineWidth = 1;

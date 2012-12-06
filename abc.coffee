@@ -17,9 +17,12 @@ class posture   #i.e. node
       return edge if edge.target_node is target
 
   #method to determine if this posture is near another one
-  eps = 0.6 #0.35
-  isClose: (a,i, b,j) =>
+  e = 0.6 #0.35   #default possible posture distance (quite large...)
+  isCloseExplore: (a,i, b,j, eps=e) =>
       Math.abs(a.position[0] - b[j].position[0]) < eps and Math.abs(a.position[1] - b[j].position[1]) < eps and Math.abs(a.position[2] - b[j].position[2]) < eps and a.csl_mode[0] == b[j].csl_mode[0] and a.csl_mode[1] == b[j].csl_mode[1]
+  
+  isClose: (a,b, eps=0.2) =>
+      Math.abs(a.position[0] - b.position[0]) < eps and Math.abs(a.position[1] - b.position[1]) < eps and Math.abs(a.position[2] - b.position[2]) < eps and a.csl_mode[0] == b.csl_mode[0] and a.csl_mode[1] == b.csl_mode[1]
 
 class transition  #i.e. edge
   constructor: (start_node, target_node) ->
@@ -37,6 +40,7 @@ class transition  #i.e. edge
     return false
 
 class postureGraph
+  #TODO: save graph, load graph (+ arbor graph)
   constructor: () ->
     @nodes = []  #list of the posture nodes
     @walk_circle_active = false
@@ -122,18 +126,23 @@ class postureGraph
 
   walkCircle: =>
     if @circles
-      p.abc.explore_active = false
+      if @walk_circle_active
+        @walk_circle_active = false
+        @best_circle.length = 0
+        @best_circle = undefined
+      else
+        p.abc.explore_active = false
 
-      @best_circle = @circles.slice(-1)[0]  #last circle is the one with largest distance
-    
-      #TODO: go to first posture before we can start walking
-      #find path from current posture to this one
-      #use circle[0].start_node .csl_mode .position
-     
-      @walk_circle_active = true
+        @best_circle = @circles.slice(-1)[0]  #last circle is the one with largest distance
       
-      #start with first transition
-      @best_circle[0].active = true
+        #TODO: go to first posture before we can start walking
+        #find path from current posture to this one
+        #use circle[0].start_node .csl_mode .position
+       
+        @walk_circle_active = true
+        
+        #start with first transition
+        @best_circle[0].active = true
 
 
 class abc
@@ -144,14 +153,14 @@ class abc
    
     @graph = arbor.ParticleSystem()  # display graph, has its own nodes and edges and data for display
     @graph.parameters                # use center-gravity to make the graph settle nicely (ymmv)
-      repulsion: 5000
+      repulsion: 6000
       stiffness: 100
       friction: .5
       gravity: true
 #      timeout: 5
 #      fps: 10
      
-    @graph.renderer = new Renderer("#viewport", @graph)
+    @graph.renderer = new Renderer("#viewport", @graph, @)
 
   toggleExplore: =>
     if not physics.upper_joint.csl_active
@@ -242,7 +251,7 @@ class abc
         parent.graph.renderer.click_time = Date.now()
 
     p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x)
-    found = @searchSubarray p, @posture_graph.nodes, p.isClose
+    found = @searchSubarray p, @posture_graph.nodes, p.isCloseExplore
     if not found
       #we dont have something close to this posture yet, add it
       console.log("found new pose/attractor: " + p.position)
@@ -251,6 +260,8 @@ class abc
       #we have this posture already
       f = found[0]
       p = @posture_graph.getNode f
+      @graph.current_node = @graph.getNode p.position.toString()
+      @graph.renderer.redraw()
     
     #add node+edges
     if @last_posture and @posture_graph.length() > 1
@@ -351,13 +362,16 @@ class abc
 
     if @posture_graph.walk_circle_active
       @detectAttractor body, upper_joint, lower_joint, (position, parent) ->
+        current_posture = new posture(position, [physics.upper_joint.csl_mode, physics.lower_joint.csl_mode])
         for edge in parent.posture_graph.best_circle
-          current_posture = new posture(position, [physics.upper_joint.csl_mode, physics.lower_joint.csl_mode])
-          if edge.start_node.isClose(current_posture, 0, [edge.start_node], 0)
+          if edge.start_node.isClose(current_posture, edge.start_node)
             edge.active = true
-            parent.last_posture = edge.start_node
 
-          if edge.target_node.isClose(current_posture, 0, [edge.target_node], 0)
+            #update graph display
+            parent.graph.current_node = parent.graph.getNode(edge.start_node.position.toString())
+            parent.graph.renderer.redraw()
+
+          if edge.target_node.isClose(current_posture, edge.target_node)
             #this is the last edge we already travelled
             edge.active = false
 
@@ -369,4 +383,7 @@ class abc
 
             #we found a matching edge so there should be no other with the current posture
             break
+
+        #TODO: if we're here, there was no matching edge in the circle which means we are not there yet
+        #find a path from the current posture (we found one) to one posture on the circle (the shortest/safest please)
 

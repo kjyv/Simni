@@ -1,6 +1,6 @@
 
 class Renderer
-  constructor: (canvas, parent) ->
+  constructor: (canvas, parent, abc) ->
     @canvas = $(canvas).get(0)
     @ctx = @canvas.getContext("2d")
     @ctx2 = $("#tempimage")[0].getContext('2d')
@@ -9,6 +9,7 @@ class Renderer
     MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
     @click_time = MAX_UNIX_TIME
     @graph = parent
+    @abc = abc
 
   init: (system) =>
     # the particle system will call the init function once, right before the
@@ -103,6 +104,13 @@ class Renderer
         ctx.strokeStyle = "red"
       else
         ctx.strokeStyle = "black"
+
+        if parent.abc.posture_graph.best_circle
+          for transition in parent.abc.posture_graph.best_circle.slice(0,-1)
+            if node.name == transition.start_node.position.toString()
+              ctx.strokeStyle = "blue"
+              break
+
 
       # draw a rectangle centered at pt
       ctx.strokeRect pt.x - w / 2, pt.y - w / 2, w, w

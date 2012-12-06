@@ -3,7 +3,7 @@ var abc, posture, postureGraph, transition,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 posture = (function() {
-  var eps;
+  var e;
 
   function posture(position, csl_mode, x_pos) {
     if (csl_mode == null) {
@@ -13,6 +13,8 @@ posture = (function() {
       x_pos = 0;
     }
     this.isClose = __bind(this.isClose, this);
+
+    this.isCloseExplore = __bind(this.isCloseExplore, this);
 
     this.getEdgeTo = __bind(this.getEdgeTo, this);
 
@@ -41,10 +43,20 @@ posture = (function() {
     }
   };
 
-  eps = 0.6;
+  e = 0.6;
 
-  posture.prototype.isClose = function(a, i, b, j) {
+  posture.prototype.isCloseExplore = function(a, i, b, j, eps) {
+    if (eps == null) {
+      eps = e;
+    }
     return Math.abs(a.position[0] - b[j].position[0]) < eps && Math.abs(a.position[1] - b[j].position[1]) < eps && Math.abs(a.position[2] - b[j].position[2]) < eps && a.csl_mode[0] === b[j].csl_mode[0] && a.csl_mode[1] === b[j].csl_mode[1];
+  };
+
+  posture.prototype.isClose = function(a, b, eps) {
+    if (eps == null) {
+      eps = 0.2;
+    }
+    return Math.abs(a.position[0] - b.position[0]) < eps && Math.abs(a.position[1] - b.position[1]) < eps && Math.abs(a.position[2] - b.position[2]) < eps && a.csl_mode[0] === b.csl_mode[0] && a.csl_mode[1] === b.csl_mode[1];
   };
 
   return posture;
@@ -196,10 +208,16 @@ postureGraph = (function() {
 
   postureGraph.prototype.walkCircle = function() {
     if (this.circles) {
-      p.abc.explore_active = false;
-      this.best_circle = this.circles.slice(-1)[0];
-      this.walk_circle_active = true;
-      return this.best_circle[0].active = true;
+      if (this.walk_circle_active) {
+        this.walk_circle_active = false;
+        this.best_circle.length = 0;
+        return this.best_circle = void 0;
+      } else {
+        p.abc.explore_active = false;
+        this.best_circle = this.circles.slice(-1)[0];
+        this.walk_circle_active = true;
+        return this.best_circle[0].active = true;
+      }
     }
   };
 
@@ -231,12 +249,12 @@ abc = (function() {
     this.explore_active = false;
     this.graph = arbor.ParticleSystem();
     this.graph.parameters({
-      repulsion: 5000,
+      repulsion: 6000,
       stiffness: 100,
       friction: .5,
       gravity: true
     });
-    this.graph.renderer = new Renderer("#viewport", this.graph);
+    this.graph.renderer = new Renderer("#viewport", this.graph, this);
   }
 
   abc.prototype.toggleExplore = function() {
@@ -331,13 +349,15 @@ abc = (function() {
       }
     };
     p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x);
-    found = this.searchSubarray(p, this.posture_graph.nodes, p.isClose);
+    found = this.searchSubarray(p, this.posture_graph.nodes, p.isCloseExplore);
     if (!found) {
       console.log("found new pose/attractor: " + p.position);
       this.posture_graph.addNode(p);
     } else {
       f = found[0];
       p = this.posture_graph.getNode(f);
+      this.graph.current_node = this.graph.getNode(p.position.toString());
+      this.graph.renderer.redraw();
     }
     if (this.last_posture && this.posture_graph.length() > 1) {
       p.body_x = body.GetWorldCenter().x;
@@ -438,16 +458,17 @@ abc = (function() {
     if (this.posture_graph.walk_circle_active) {
       return this.detectAttractor(body, upper_joint, lower_joint, function(position, parent) {
         var csl_mode, current_posture, edge, _i, _len, _ref, _results;
+        current_posture = new posture(position, [physics.upper_joint.csl_mode, physics.lower_joint.csl_mode]);
         _ref = parent.posture_graph.best_circle;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           edge = _ref[_i];
-          current_posture = new posture(position, [physics.upper_joint.csl_mode, physics.lower_joint.csl_mode]);
-          if (edge.start_node.isClose(current_posture, 0, [edge.start_node], 0)) {
+          if (edge.start_node.isClose(current_posture, edge.start_node)) {
             edge.active = true;
-            parent.last_posture = edge.start_node;
+            parent.graph.current_node = parent.graph.getNode(edge.start_node.position.toString());
+            parent.graph.renderer.redraw();
           }
-          if (edge.target_node.isClose(current_posture, 0, [edge.target_node], 0)) {
+          if (edge.target_node.isClose(current_posture, edge.target_node)) {
             edge.active = false;
           }
           if (edge.active) {
