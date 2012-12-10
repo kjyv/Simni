@@ -43,7 +43,7 @@ posture = (function() {
     }
   };
 
-  e = 0.6;
+  e = 0.35;
 
   posture.prototype.isCloseExplore = function(a, i, b, j, eps) {
     if (eps == null) {
@@ -53,8 +53,11 @@ posture = (function() {
   };
 
   posture.prototype.isClose = function(a, b, eps) {
+    if (b == null) {
+      b = this;
+    }
     if (eps == null) {
-      eps = 0.2;
+      eps = 0.25;
     }
     return Math.abs(a.position[0] - b.position[0]) < eps && Math.abs(a.position[1] - b.position[1]) < eps && Math.abs(a.position[2] - b.position[2]) < eps && a.csl_mode[0] === b.csl_mode[0] && a.csl_mode[1] === b.csl_mode[1];
   };
@@ -216,7 +219,8 @@ postureGraph = (function() {
         p.abc.explore_active = false;
         this.best_circle = this.circles.slice(-1)[0];
         this.walk_circle_active = true;
-        return this.best_circle[0].active = true;
+        this.best_circle[0].active = true;
+        return this.graph.renderer.redraw();
       }
     }
   };
@@ -299,17 +303,17 @@ abc = (function() {
     p_body = Math.abs(body.GetAngle());
     p_hip = Math.abs(upper_joint.GetJointAngle());
     p_knee = Math.abs(lower_joint.GetJointAngle());
-    if (trajectory.length === 3000) {
+    if (trajectory.length === 4000) {
       trajectory.shift();
     }
     trajectory.push([p_body, p_hip, p_knee]);
     if (trajectory.length > 200 && (Date.now() - time) > 2000) {
       last = trajectory.slice(-40);
-      eps = 0.025;
+      eps = 0.03;
       d = this.searchSubarray(last, trajectory, function(a, i, b, j) {
         return Math.abs(a[i][0] - b[j][0]) < eps && Math.abs(a[i][1] - b[j][1]) < eps && Math.abs(a[i][2] - b[j][2]) < eps;
       });
-      if (d.length > 4) {
+      if (d.length > 3) {
         position = trajectory.pop();
         action(position, this);
         trajectory = [];
@@ -323,7 +327,7 @@ abc = (function() {
   };
 
   abc.prototype.savePosture = function(position, body, upper_csl, lower_csl) {
-    var addEdge, ctx, ctx2, f, found, i, imageData, newCanvas, p, parent, pix, range, x, y, _i, _ref;
+    var addEdge, ctx, ctx2, current_p, f, found, i, imageData, newCanvas, p, parent, pix, range, x, y, _i, _ref;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
       var current_node, distance, edge, n0, n1;
@@ -355,7 +359,11 @@ abc = (function() {
       this.posture_graph.addNode(p);
     } else {
       f = found[0];
+      current_p = p;
       p = this.posture_graph.getNode(f);
+      p.position[0] = (current_p.position[0] + p.position[0]) / 2;
+      p.position[1] = (current_p.position[1] + p.position[1]) / 2;
+      p.position[2] = (current_p.position[2] + p.position[2]) / 2;
       this.graph.current_node = this.graph.getNode(p.position.toString());
       this.graph.renderer.redraw();
     }
@@ -463,12 +471,12 @@ abc = (function() {
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           edge = _ref[_i];
-          if (edge.start_node.isClose(current_posture, edge.start_node)) {
+          if (edge.start_node.isClose(current_posture)) {
             edge.active = true;
             parent.graph.current_node = parent.graph.getNode(edge.start_node.position.toString());
             parent.graph.renderer.redraw();
           }
-          if (edge.target_node.isClose(current_posture, edge.target_node)) {
+          if (edge.target_node.isClose(current_posture)) {
             edge.active = false;
           }
           if (edge.active) {

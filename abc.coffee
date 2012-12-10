@@ -17,11 +17,11 @@ class posture   #i.e. node
       return edge if edge.target_node is target
 
   #method to determine if this posture is near another one
-  e = 0.6 #0.35   #default possible posture distance (quite large...)
+  e = 0.35  #0.6  #default possible posture distance (quite large...)
   isCloseExplore: (a,i, b,j, eps=e) =>
       Math.abs(a.position[0] - b[j].position[0]) < eps and Math.abs(a.position[1] - b[j].position[1]) < eps and Math.abs(a.position[2] - b[j].position[2]) < eps and a.csl_mode[0] == b[j].csl_mode[0] and a.csl_mode[1] == b[j].csl_mode[1]
   
-  isClose: (a,b, eps=0.2) =>
+  isClose: (a,b=this, eps=0.25) =>
       Math.abs(a.position[0] - b.position[0]) < eps and Math.abs(a.position[1] - b.position[1]) < eps and Math.abs(a.position[2] - b.position[2]) < eps and a.csl_mode[0] == b.csl_mode[0] and a.csl_mode[1] == b.csl_mode[1]
 
 class transition  #i.e. edge
@@ -61,6 +61,9 @@ class postureGraph
     # R. Tarjan, Enumeration of the elementary circuits of a directed graph, SIAM Journal on Computing,
     # 2 (1973), pp. 211-216
     # based on an implementation from https://github.com/josch/cycles_tarjan/blob/master/cycles.py
+    # might be slow for larger graphs, then consider using
+    # Enumerating Circuits and Loops in Graphs with Self-Arcs and Multiple-Arcs, K.A.Hawick and H.A.James,
+    # Proc. 2008 International Conference on Foundations of Computer Science (FCS'08), Las Vegas, USA, 14-17 July 2008
 
     #prepare node lists
     A = []
@@ -112,15 +115,18 @@ class postureGraph
       point_stack.pop()
       return f
 
+    #initialise markers
     for i in [0..A.length-1]
       marked[i] = false
 
+    #start walking from every node
     for s in [0..A.length-1]
       backtrack(s)
       while marked_stack.length
         u = marked_stack.pop()
         marked[u] = false
 
+    #sort by travel distance
     @circles = circles.sort (a,b) ->
       if a.slice(-1)[0]<=b.slice(-1)[0] then -1 else 1
 
@@ -138,11 +144,13 @@ class postureGraph
         #TODO: go to first posture before we can start walking
         #find path from current posture to this one
         #use circle[0].start_node .csl_mode .position
-       
+        #either use dijsktra or integrate into 
+        
         @walk_circle_active = true
         
         #start with first transition
         @best_circle[0].active = true
+        @graph.renderer.redraw()
 
 
 class abc
@@ -198,7 +206,7 @@ class abc
     
     #find attractors, take a sample of trajectory and try to find it multiple times in the
     #past trajectory (with epsilon), hence (quasi)periodic behaviour
-    if trajectory.length==3000   #corresponds to max periode duration that can be detected
+    if trajectory.length==4000   #corresponds to max periode duration that can be detected
       trajectory.shift()
 
     trajectory.push [p_body, p_hip, p_knee]
@@ -206,12 +214,12 @@ class abc
     if trajectory.length > 200 and (Date.now() - time) > 2000
       #take last 40 points
       last = trajectory.slice(-40)
-      eps=0.025
+      eps=0.03
       d = @searchSubarray last, trajectory, (a,i, b,j) ->
         Math.abs(a[i][0] - b[j][0]) < eps and Math.abs(a[i][1] - b[j][1]) < eps and Math.abs(a[i][2] - b[j][2]) < eps
       #console.log(d)
 
-      if d.length > 4    #need to find sample more than once to be periodic
+      if d.length > 3    #need to find sample more than once to be periodic
         
         #found a posture, call user method
         position = trajectory.pop()
@@ -257,9 +265,19 @@ class abc
       console.log("found new pose/attractor: " + p.position)
       @posture_graph.addNode p
     else
-      #we have this posture already
+      #we have this posture already, update it
       f = found[0]
+      current_p = p
       p = @posture_graph.getNode f
+
+      #update to mean of positions
+      p.position[0] = (current_p.position[0] + p.position[0]) / 2
+      p.position[1] = (current_p.position[1] + p.position[1]) / 2
+      p.position[2] = (current_p.position[2] + p.position[2]) / 2
+
+      #TODO: update image
+
+      #update graph render stuff
       @graph.current_node = @graph.getNode p.position.toString()
       @graph.renderer.redraw()
     
@@ -364,14 +382,14 @@ class abc
       @detectAttractor body, upper_joint, lower_joint, (position, parent) ->
         current_posture = new posture(position, [physics.upper_joint.csl_mode, physics.lower_joint.csl_mode])
         for edge in parent.posture_graph.best_circle
-          if edge.start_node.isClose(current_posture, edge.start_node)
+          if edge.start_node.isClose(current_posture)
             edge.active = true
 
             #update graph display
             parent.graph.current_node = parent.graph.getNode(edge.start_node.position.toString())
             parent.graph.renderer.redraw()
 
-          if edge.target_node.isClose(current_posture, edge.target_node)
+          if edge.target_node.isClose(current_posture)
             #this is the last edge we already travelled
             edge.active = false
 

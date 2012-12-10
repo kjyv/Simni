@@ -439,8 +439,9 @@ physics = (function() {
 
   physics.prototype.getNoisyAngle = function(bodyJoint) {
     var rand;
-    rand = 0;
-    return -bodyJoint.GetJointAngle() * (1 + rand);
+    rand = Math.random() / 1000;
+    rand = rand - (0.5 / 1000);
+    return bodyJoint.GetJointAngle() + rand;
   };
 
   physics.prototype.myon_precision = function(number) {
@@ -481,8 +482,8 @@ physics = (function() {
   };
 
   physics.prototype.updateController = function(bodyJoint) {
-    bodyJoint.angle_diff_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle;
-    bodyJoint.last_angle = bodyJoint.GetJointAngle();
+    bodyJoint.angle_diff_csl = this.getNoisyAngle(bodyJoint) - bodyJoint.last_angle;
+    bodyJoint.last_angle = this.getNoisyAngle(bodyJoint);
     if (bodyJoint.csl_active) {
       return bodyJoint.motor_control = this.CSL(bodyJoint.gi, bodyJoint.gf, bodyJoint.gb, bodyJoint.angle_diff_csl, bodyJoint.gain, bodyJoint);
     } else if (bodyJoint.bounce_active) {

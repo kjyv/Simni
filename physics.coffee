@@ -480,10 +480,9 @@ class physics
   
   getNoisyAngle: (bodyJoint) =>
     #sensor noise
-    #rand = Math.random() / 1000
-    #rand = rand - (rand/2)
-    rand = 0
-    -bodyJoint.GetJointAngle() * (1+rand)
+    rand = Math.random() / 1000
+    rand = rand - (0.5/1000)
+    bodyJoint.GetJointAngle() + rand
 
   myon_precision: (number) =>
     Math.floor(number * 10000) / 10000
@@ -517,8 +516,8 @@ class physics
     return bodyJoint.last_integrated
 
   updateController: (bodyJoint) =>
-    bodyJoint.angle_diff_csl = bodyJoint.GetJointAngle() - bodyJoint.last_angle
-    bodyJoint.last_angle = bodyJoint.GetJointAngle()
+    bodyJoint.angle_diff_csl = @getNoisyAngle(bodyJoint) - bodyJoint.last_angle
+    bodyJoint.last_angle = @getNoisyAngle bodyJoint
 
     if bodyJoint.csl_active
       bodyJoint.motor_control = @CSL(
