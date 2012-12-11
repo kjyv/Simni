@@ -20,12 +20,12 @@ posture = (function() {
 
     this.isEqualTo = __bind(this.isEqualTo, this);
 
-    this.position = position;
+    this.name = -1;
     this.csl_mode = csl_mode;
-    this.edges_out = [];
+    this.position = position;
     this.body_x = x_pos;
+    this.edges_out = [];
     this.length = 1;
-    this.number = -1;
   }
 
   posture.prototype.isEqualTo = function(node) {
@@ -113,7 +113,7 @@ postureGraph = (function() {
   }
 
   postureGraph.prototype.addNode = function(node) {
-    node.number = this.nodes.length;
+    node.name = this.nodes.length;
     return this.nodes.push(node);
   };
 
@@ -139,7 +139,7 @@ postureGraph = (function() {
       _ref2 = node.edges_out;
       for (_k = 0, _len = _ref2.length; _k < _len; _k++) {
         edge = _ref2[_k];
-        A[num].push(edge.target_node.number);
+        A[num].push(edge.target_node.name);
       }
     }
     point_stack = [];
@@ -220,7 +220,7 @@ postureGraph = (function() {
         this.best_circle = this.circles.slice(-1)[0];
         this.walk_circle_active = true;
         this.best_circle[0].active = true;
-        return this.graph.renderer.redraw();
+        return p.abc.graph.renderer.redraw();
       }
     }
   };
@@ -327,7 +327,7 @@ abc = (function() {
   };
 
   abc.prototype.savePosture = function(position, body, upper_csl, lower_csl) {
-    var addEdge, ctx, ctx2, current_p, f, found, i, imageData, newCanvas, p, parent, pix, range, x, y, _i, _ref;
+    var addEdge, ctx, ctx2, current_p, f, found, i, imageData, n, newCanvas, p, parent, pix, range, x, y, _i, _ref;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
       var current_node, distance, edge, n0, n1;
@@ -336,18 +336,19 @@ abc = (function() {
       }
       edge = new transition(start_node, target_node);
       if (!edge.isInList(edge_list) && parent.posture_graph.length() > 1 && !start_node.isEqualTo(target_node)) {
-        console.log("adding edge from posture " + start_node.number + " to posture: " + target_node.number);
+        console.log("adding edge from posture " + start_node.name + " to posture: " + target_node.name);
         distance = target_node.body_x - start_node.body_x;
         edge.distance = distance;
         edge_list.push(edge);
-        n0 = start_node.position.toString();
-        n1 = target_node.position.toString();
+        n0 = start_node.name;
+        n1 = target_node.name;
         parent.graph.addEdge(n0, n1, {
-          "distance": distance.toFixed(3)
+          distance: distance.toFixed(3),
+          time: 0
         });
         parent.graph.current_node = current_node = parent.graph.getNode(n1);
         current_node.data.label = target_node.csl_mode;
-        current_node.data.number = target_node.number;
+        current_node.data.number = target_node.name;
         parent.graph.start(true);
         return parent.graph.renderer.click_time = Date.now();
       }
@@ -364,7 +365,7 @@ abc = (function() {
       p.position[0] = (current_p.position[0] + p.position[0]) / 2;
       p.position[1] = (current_p.position[1] + p.position[1]) / 2;
       p.position[2] = (current_p.position[2] + p.position[2]) / 2;
-      this.graph.current_node = this.graph.getNode(p.position.toString());
+      this.graph.current_node = this.graph.getNode(p.name);
       this.graph.renderer.redraw();
     }
     if (this.last_posture && this.posture_graph.length() > 1) {
@@ -388,7 +389,8 @@ abc = (function() {
       ctx2.clearRect(0, 0, ctx2.canvas.width, ctx2.canvas.height);
       ctx2.scale(0.5, 0.5);
       ctx2.drawImage(newCanvas, 0, 0);
-      this.graph.getNode(p.position.toString()).data.imageData = ctx2.getImageData(0, 0, range * 2, range * 2);
+      n = this.graph.getNode(p.name);
+      n.data.imageData = ctx2.getImageData(0, 0, range * 2, range * 2);
       ctx2.scale(2, 2);
     }
     this.last_posture = p;
@@ -425,7 +427,7 @@ abc = (function() {
     var limit, mc;
     if (upper_joint.csl_active && upper_joint.csl_mode === "c") {
       mc = upper_joint.motor_control;
-      limit = 20;
+      limit = 15;
       if (Math.abs(mc) > limit) {
         if (mc > limit) {
           ui.set_csl_mode_upper("r+", false);
@@ -473,7 +475,7 @@ abc = (function() {
           edge = _ref[_i];
           if (edge.start_node.isClose(current_posture)) {
             edge.active = true;
-            parent.graph.current_node = parent.graph.getNode(edge.start_node.position.toString());
+            parent.graph.current_node = parent.graph.getNode(edge.start_node.name);
             parent.graph.renderer.redraw();
           }
           if (edge.target_node.isClose(current_posture)) {

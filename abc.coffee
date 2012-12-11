@@ -2,12 +2,12 @@
 
 class posture   #i.e. node
   constructor: (position, csl_mode=[], x_pos=0) ->
-    @position = position  # [body angle, hip joint angle, knee joint angle]
+    @name = -1
     @csl_mode = csl_mode  # [upper, lower]
-    @edges_out = []
+    @position = position  # [body angle, hip joint angle, knee joint angle]
     @body_x = x_pos
+    @edges_out = []
     @length = 1  #quirk for searchSubarray
-    @number = -1
 
   isEqualTo: (node) =>
     @position[0] == node.position[0] and @position[1] == node.position[1] and @position[2] == node.position[2] and @csl_mode[0] == node.csl_mode[0] and @csl_mode[1] == node.csl_mode[1]
@@ -46,7 +46,7 @@ class postureGraph
     @walk_circle_active = false
 
   addNode: (node) =>
-    node.number = @nodes.length
+    node.name = @nodes.length
     @nodes.push node
 
   getNode: (index) =>
@@ -73,7 +73,7 @@ class postureGraph
       node = @nodes[num]
       break unless node
       for edge in node.edges_out
-        A[num].push edge.target_node.number
+        A[num].push edge.target_node.name
 
     point_stack = []
     marked = {}
@@ -143,14 +143,13 @@ class postureGraph
       
         #TODO: go to first posture before we can start walking
         #find path from current posture to this one
-        #use circle[0].start_node .csl_mode .position
-        #either use dijsktra or integrate into 
+        #use best_circle[0].start_node .csl_mode .position
         
         @walk_circle_active = true
         
         #start with first transition
         @best_circle[0].active = true
-        @graph.renderer.redraw()
+        p.abc.graph.renderer.redraw()
 
 
 class abc
@@ -239,7 +238,7 @@ class abc
     addEdge = (start_node, target_node, edge_list=start_node.edges_out) ->
       edge = new transition start_node, target_node
       if not edge.isInList(edge_list) and parent.posture_graph.length() > 1 and not start_node.isEqualTo target_node
-        console.log("adding edge from posture " + start_node.number + " to posture: " + target_node.number)
+        console.log("adding edge from posture " + start_node.name + " to posture: " + target_node.name)
 
         #add new edge to logic graph
         distance = target_node.body_x - start_node.body_x
@@ -247,12 +246,14 @@ class abc
         edge_list.push edge
   
         #display new edge
-        n0 = start_node.position.toString()
-        n1 = target_node.position.toString()
-        parent.graph.addEdge n0, n1, {"distance": distance.toFixed 3}
+        n0 = start_node.name
+        n1 = target_node.name
+        parent.graph.addEdge n0, n1,
+          distance: distance.toFixed(3)
+          time: 0
         parent.graph.current_node = current_node = parent.graph.getNode(n1)
         current_node.data.label = target_node.csl_mode
-        current_node.data.number = target_node.number
+        current_node.data.number = target_node.name
 
         #re-enable suspended graph layouting for a bit to find new layout
         parent.graph.start(true)
@@ -278,7 +279,7 @@ class abc
       #TODO: update image
 
       #update graph render stuff
-      @graph.current_node = @graph.getNode p.position.toString()
+      @graph.current_node = @graph.getNode p.name
       @graph.renderer.redraw()
     
     #add node+edges
@@ -287,7 +288,7 @@ class abc
       p.body_x = body.GetWorldCenter().x
       addEdge @last_posture, p
       
-      #save posture image
+      ## save posture image
       ctx = $("#simulation canvas")[0].getContext('2d')
       x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale()
       y = physics.body.GetWorldCenter().y * physics.debugDraw.GetDrawScale()
@@ -310,7 +311,8 @@ class abc
       ctx2.clearRect(0,0, ctx2.canvas.width, ctx2.canvas.height)
       ctx2.scale(0.5, 0.5)
       ctx2.drawImage(newCanvas, 0, 0)
-      @graph.getNode(p.position.toString()).data.imageData = ctx2.getImageData 0, 0, range * 2, range *2
+      n = @graph.getNode(p.name)
+      n.data.imageData = ctx2.getImageData 0, 0, range * 2, range *2
       ctx2.scale(2,2)
 
     @last_posture = p
@@ -345,7 +347,7 @@ class abc
     # current csl value as bias
     if upper_joint.csl_active and upper_joint.csl_mode is "c"
       mc = upper_joint.motor_control
-      limit = 20
+      limit = 15
       if Math.abs(mc) > limit
         if mc > limit
           ui.set_csl_mode_upper "r+", false
@@ -386,7 +388,7 @@ class abc
             edge.active = true
 
             #update graph display
-            parent.graph.current_node = parent.graph.getNode(edge.start_node.position.toString())
+            parent.graph.current_node = parent.graph.getNode(edge.start_node.name)
             parent.graph.renderer.redraw()
 
           if edge.target_node.isClose(current_posture)

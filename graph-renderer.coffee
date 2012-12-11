@@ -107,7 +107,7 @@ class Renderer
 
         if parent.abc.posture_graph.best_circle
           for transition in parent.abc.posture_graph.best_circle.slice(0,-1)
-            if node.name == transition.start_node.position.toString()
+            if node.name == transition.start_node.name
               ctx.strokeStyle = "blue"
               break
 

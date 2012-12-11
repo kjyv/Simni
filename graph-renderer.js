@@ -103,7 +103,7 @@ Renderer = (function() {
           _ref = parent.abc.posture_graph.best_circle.slice(0, -1);
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             transition = _ref[_i];
-            if (node.name === transition.start_node.position.toString()) {
+            if (node.name === transition.start_node.name) {
               ctx.strokeStyle = "blue";
               break;
             }
