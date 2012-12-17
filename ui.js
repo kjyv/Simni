@@ -248,19 +248,22 @@ ui = (function() {
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_hip = 0.7;
+    release_bias_hip = 0.5;
     release_gf = 0.99;
     contract_gf_hip = 1.0030;
     gi_hip = 30;
     if (hipCSL === "r+") {
       gf = release_gf;
       gb = release_bias_hip;
+      this.physics.upper_joint.csl_prefill = 0.1;
     } else if (hipCSL === "r-") {
       gf = release_gf;
       gb = -release_bias_hip;
+      this.physics.upper_joint.csl_prefill = -0.1;
     } else if (hipCSL === "c") {
       gf = contract_gf_hip;
       gb = 0;
+      this.physics.upper_joint.last_integrated = this.physics.upper_joint.csl_prefill;
     }
     if (change_select) {
       $("#csl_mode_hip option[value='" + hipCSL + "']").attr("selected", true);
@@ -279,19 +282,22 @@ ui = (function() {
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_knee = 0.7;
+    release_bias_knee = 0.5;
     contract_gf_knee = 1.0020;
     release_gf = 0.99;
     gi_knee = 35;
     if (kneeCSL === "r+") {
       gf = release_gf;
       gb = release_bias_knee;
+      this.physics.lower_joint.csl_prefill = 0.1;
     } else if (kneeCSL === "r-") {
       gf = release_gf;
       gb = -release_bias_knee;
+      this.physics.lower_joint.csl_prefill = -0.1;
     } else if (kneeCSL === "c") {
       gf = contract_gf_knee;
       gb = 0;
+      this.physics.upper_joint.last_integrated = this.physics.upper_joint.csl_prefill;
     }
     if (change_select) {
       $("#csl_mode_knee option[value='" + kneeCSL + "']").attr('selected', true);

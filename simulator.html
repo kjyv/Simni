@@ -276,7 +276,8 @@ Neurorobotics Research Laboratory, Berlin
                 </select><br/>
                 <label for="csl_strategy">Next Mode Strategy</label>:
                 <select id="csl_strategy" onchange="physics.abc.set_strategy($('#csl_strategy').val())">
-                    <option value="random" checked="checked">random</option>
+                    <option value="random">random</option>
+                    <option value="unseen" selected="selected">unseen</option>
                 </select><br/>
                 <button id="find_circles" onclick="physics.abc.posture_graph.findElementaryCircles(); console.log(p.abc.posture_graph.circles);">Find circles</button>
                 <button id="walk_best_circle" class="toggle-button" onclick="physics.abc.posture_graph.walkCircle()">Walk best circle</button>

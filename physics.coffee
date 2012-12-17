@@ -477,7 +477,7 @@ class physics
     bodyJoint.bounce_active = not bodyJoint.bounce_active
     bodyJoint.motor_control = 0
     bodyJoint.last_integrated = 0
-  
+
   getNoisyAngle: (bodyJoint) =>
     #sensor noise
     rand = Math.random() / 1000
@@ -486,13 +486,13 @@ class physics
 
   myon_precision: (number) =>
     Math.floor(number * 10000) / 10000
-    
+
   logData: =>
     if @recordPhase
       if @startLog
         @logged_data = []
         @startLog = false
-      
+
       @logged_data.push(-@body.GetAngle() + " " + -@upper_joint.GetJointAngle() + " " + -@lower_joint.GetJointAngle()+ " " + @body2.motor_control + " " + @body3.motor_control)
 
   ##### controllers #####

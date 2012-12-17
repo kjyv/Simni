@@ -5,12 +5,15 @@ var abc, posture, postureGraph, transition,
 posture = (function() {
   var e;
 
-  function posture(position, csl_mode, x_pos) {
+  function posture(position, csl_mode, x_pos, timestamp) {
     if (csl_mode == null) {
       csl_mode = [];
     }
     if (x_pos == null) {
       x_pos = 0;
+    }
+    if (timestamp == null) {
+      timestamp = Date.now();
     }
     this.isClose = __bind(this.isClose, this);
 
@@ -24,6 +27,7 @@ posture = (function() {
     this.csl_mode = csl_mode;
     this.position = position;
     this.body_x = x_pos;
+    this.timestamp = timestamp;
     this.edges_out = [];
     this.length = 1;
   }
@@ -75,6 +79,7 @@ transition = (function() {
     this.start_node = start_node;
     this.target_node = target_node;
     this.distance = 0;
+    this.timedelta = 0;
   }
 
   transition.prototype.toString = function() {
@@ -148,7 +153,7 @@ postureGraph = (function() {
     circles = [];
     parent = this;
     backtrack = function(v) {
-      var d, f, m, n, path, u, w, _l, _len1, _m, _ref3, _ref4;
+      var d, f, m, n, path, t, u, w, _l, _len1, _m, _ref3, _ref4;
       f = false;
       point_stack.push(v);
       marked[v] = true;
@@ -161,6 +166,7 @@ postureGraph = (function() {
         } else if (w === s) {
           path = [];
           d = 0;
+          t = 0;
           for (n = _m = 1, _ref4 = point_stack.length; 1 <= _ref4 ? _m <= _ref4 : _m >= _ref4; n = 1 <= _ref4 ? ++_m : --_m) {
             if (n === point_stack.length) {
               m = n - 1;
@@ -171,8 +177,9 @@ postureGraph = (function() {
             edge = parent.nodes[point_stack[m]].getEdgeTo(parent.nodes[point_stack[n]]);
             path.push(edge);
             d += edge.distance;
+            t += edge.timedelta;
           }
-          path = path.concat([d]);
+          path = path.concat([d, t]);
           circles.push(path);
           f = true;
         } else if (!marked[w]) {
@@ -239,6 +246,8 @@ abc = (function() {
 
     this.newCSLMode = __bind(this.newCSLMode, this);
 
+    this.set_strategy = __bind(this.set_strategy, this);
+
     this.compareModes = __bind(this.compareModes, this);
 
     this.savePosture = __bind(this.savePosture, this);
@@ -259,6 +268,7 @@ abc = (function() {
       gravity: true
     });
     this.graph.renderer = new Renderer("#viewport", this.graph, this);
+    this.mode_strategy = "unseen";
   }
 
   abc.prototype.toggleExplore = function() {
@@ -308,12 +318,12 @@ abc = (function() {
     }
     trajectory.push([p_body, p_hip, p_knee]);
     if (trajectory.length > 200 && (Date.now() - time) > 2000) {
-      last = trajectory.slice(-40);
-      eps = 0.03;
+      last = trajectory.slice(-50);
+      eps = 0.025;
       d = this.searchSubarray(last, trajectory, function(a, i, b, j) {
         return Math.abs(a[i][0] - b[j][0]) < eps && Math.abs(a[i][1] - b[j][1]) < eps && Math.abs(a[i][2] - b[j][2]) < eps;
       });
-      if (d.length > 3) {
+      if (d.length > 4) {
         position = trajectory.pop();
         action(position, this);
         trajectory = [];
@@ -330,7 +340,7 @@ abc = (function() {
     var addEdge, ctx, ctx2, current_p, f, found, i, imageData, n, newCanvas, p, parent, pix, range, x, y, _i, _ref;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
-      var current_node, distance, edge, n0, n1;
+      var current_node, distance, edge, n0, n1, timedelta;
       if (edge_list == null) {
         edge_list = start_node.edges_out;
       }
@@ -339,12 +349,14 @@ abc = (function() {
         console.log("adding edge from posture " + start_node.name + " to posture: " + target_node.name);
         distance = target_node.body_x - start_node.body_x;
         edge.distance = distance;
+        timedelta = target_node.timestamp - start_node.timestamp;
+        edge.timedelta = timedelta;
         edge_list.push(edge);
         n0 = start_node.name;
         n1 = target_node.name;
         parent.graph.addEdge(n0, n1, {
           distance: distance.toFixed(3),
-          time: 0
+          timedelta: timedelta
         });
         parent.graph.current_node = current_node = parent.graph.getNode(n1);
         current_node.data.label = target_node.csl_mode;
@@ -370,6 +382,7 @@ abc = (function() {
     }
     if (this.last_posture && this.posture_graph.length() > 1) {
       p.body_x = body.GetWorldCenter().x;
+      p.timestamp = Date.now();
       addEdge(this.last_posture, p);
       ctx = $("#simulation canvas")[0].getContext('2d');
       x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale();
@@ -401,25 +414,75 @@ abc = (function() {
     return a[0] === b[0] && a[1] === b[1];
   };
 
+  abc.prototype.set_strategy = function(strategy) {
+    return this.mode_strategy = strategy;
+  };
+
   abc.prototype.newCSLMode = function() {
-    var mode, which;
-    which = Math.floor(Math.random() * 2);
-    if (which) {
-      while (true) {
-        mode = ["r+", "r-", "c"][Math.floor(Math.random() * 2.99)];
-        if (this.last_posture.csl_mode[0] !== mode) {
-          break;
+    var current_mode, edge, m, mode, next_modes, seen_modes, set_random_mode, sm, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
+    set_random_mode = function(curent_mode) {
+      var mode, which;
+      which = Math.floor(Math.random() * 2);
+      if (which) {
+        while (true) {
+          mode = ["r+", "r-", "c"][Math.floor(Math.random() * 2.99)];
+          if (current_mode[0] !== mode) {
+            break;
+          }
+        }
+        return ui.set_csl_mode_upper(mode);
+      } else {
+        while (true) {
+          mode = ["r+", "r-", "c"][Math.floor(Math.random() * 2.99)];
+          if (curent_mode[1] !== mode) {
+            break;
+          }
+        }
+        return ui.set_csl_mode_lower(mode);
+      }
+    };
+    current_mode = this.last_posture.csl_mode;
+    if (this.mode_strategy === "unseen") {
+      seen_modes = [];
+      next_modes = [];
+      _ref = this.last_posture.edges_out;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        edge = _ref[_i];
+        seen_modes.push(edge.target_node.csl_mode);
+      }
+      _ref1 = ["r+", "r-", "c"];
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        mode = _ref1[_j];
+        if (mode !== current_mode[0]) {
+          next_modes.push([mode, current_mode[1]]);
+        }
+        if (mode !== current_mode[1]) {
+          next_modes.push([current_mode[0], mode]);
         }
       }
-      return ui.set_csl_mode_upper(mode);
-    } else {
-      while (true) {
-        mode = ["r+", "r-", "c"][Math.floor(Math.random() * 2.99)];
-        if (this.last_posture.csl_mode[1] !== mode) {
+      mode = void 0;
+      for (_k = 0, _len2 = next_modes.length; _k < _len2; _k++) {
+        m = next_modes[_k];
+        if (!seen_modes.length) {
+          mode = $.extend({}, m);
           break;
         }
+        for (_l = 0, _len3 = seen_modes.length; _l < _len3; _l++) {
+          sm = seen_modes[_l];
+          if (!this.compareModes(m, sm)) {
+            mode = $.extend({}, m);
+            break;
+          }
+        }
       }
-      return ui.set_csl_mode_lower(["r+", "r-", "c"][Math.floor(Math.random() * 2.99)]);
+      if (mode) {
+        ui.set_csl_mode_upper(mode[0]);
+        return ui.set_csl_mode_lower(mode[1]);
+      } else {
+        return set_random_mode(current_mode);
+      }
+    } else if (this.mode_strategy === "random") {
+      return set_random_mode(current_mode);
     }
   };
 
