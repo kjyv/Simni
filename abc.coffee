@@ -1,5 +1,11 @@
 #methods for exploring postures, ABC style
 
+Array::clone = ->
+  cloned = []
+  for i in this
+    cloned.push i
+  cloned
+
 class posture   #i.e. node
   constructor: (position, csl_mode=[], x_pos=0, timestamp=Date.now()) ->
     @name = -1
@@ -104,7 +110,7 @@ class postureGraph
             path.push edge
             d += edge.distance
             t += edge.timedelta
-          path = path.concat [d, t]
+          path = path.concat [d, t, (d/t)*1000]
           circles.push(path)
 
           f = true
@@ -160,6 +166,7 @@ class abc
   constructor: ->
     @posture_graph = new postureGraph()   # posture graph, logical representation
     @last_posture = null             # the posture that was visited/created last
+    @previous_posture = null         # the posture that was visited before
     @explore_active = false
 
     @graph = arbor.ParticleSystem()  # display graph, has its own nodes and edges and data for display
@@ -204,9 +211,9 @@ class abc
     if not physics.run
       return
 
-    p_body = Math.abs body.GetAngle()     #p = φ
-    p_hip = Math.abs upper_joint.GetJointAngle()
-    p_knee = Math.abs lower_joint.GetJointAngle()
+    p_body = Math.atan(Math.tan body.GetAngle())     #p = φ, wrap around
+    p_hip = upper_joint.GetJointAngle()
+    p_knee = lower_joint.GetJointAngle()
 
     #find attractors, take a sample of trajectory and try to find it multiple times in the
     #past trajectory (with epsilon), hence (quasi)periodic behaviour
@@ -255,6 +262,12 @@ class abc
         #display new edge
         n0 = start_node.name
         n1 = target_node.name
+
+        #position new node close to previous one (if there is one)
+        if parent.posture_graph.length() > 2
+          source_node = parent.graph.getNode n0
+          parent.graph.getNode(n1) or parent.graph.addNode n1, {'x': source_node.p.x + 0.01, 'y': source_node.p.y + 0.01}
+
         parent.graph.addEdge n0, n1,
           distance: distance.toFixed(3)
           timedelta: timedelta
@@ -323,10 +336,13 @@ class abc
       n.data.imageData = ctx2.getImageData 0, 0, range * 2, range *2
       ctx2.scale(2,2)
 
+    @previous_posture = @last_posture
     @last_posture = p
     @newCSLMode()
 
   compareModes: (a, b) =>
+    if not a or not b
+      return false
     a[0] == b[0] && a[1] == b[1]
 
   set_strategy: (strategy) =>
@@ -334,7 +350,7 @@ class abc
 
   newCSLMode: =>
     #random: randomly select next mode + different mode than the one before
-    #unsee: try new mode that is not in neighbors of last node
+    #unseen: try new mode that is not in neighbors of the current one, prefer previous mode. if all are seen, try random
 
     #TODO: try more strategies
     #- change csl mode of the joint that was not changed from the node before
@@ -354,6 +370,10 @@ class abc
         ui.set_csl_mode_lower mode
 
     current_mode = @last_posture.csl_mode
+    if @previous_posture
+      previous_mode = @previous_posture.csl_mode
+    else
+      previous_mode = undefined
 
     if @mode_strategy is "unseen"
       seen_modes = []
@@ -364,23 +384,33 @@ class abc
         seen_modes.push edge.target_node.csl_mode
 
       #find all the modes that are possible from this node (just change one, not same mode again)
+      #prefer previous mode, so put first
+      if previous_mode
+        next_modes.push previous_mode
+
       for mode in ["r+", "r-", "c"]
-        if mode isnt current_mode[0]
-          next_modes.push [mode, current_mode[1]]
-        if mode isnt current_mode[1]
-          next_modes.push [current_mode[0], mode]
+        hipmode = [mode, current_mode[1]]
+        kneemode = [current_mode[0], mode]
+        if mode isnt current_mode[0] and not (@compareModes hipmode, previous_mode)
+          next_modes.push hipmode
+        if mode isnt current_mode[1] and not (@compareModes kneemode, previous_mode)
+          next_modes.push kneemode
+
+
 
       #select first mode that we have not tried before
       mode = undefined
       for m in next_modes
         if not seen_modes.length
-          mode = $.extend({}, m)  #array copy with jquery
+          mode = m.clone()
           break
 
-        for sm in seen_modes
-          if not @compareModes m, sm
-            mode = $.extend({}, m)
-            break
+        already_seen = seen_modes.filter (sm) =>
+         true if @compareModes m, sm
+
+        if already_seen.length is 0
+          mode = m.clone()
+          break
 
       if mode
         ui.set_csl_mode_upper mode[0]

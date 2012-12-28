@@ -248,18 +248,18 @@ ui = (function() {
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_hip = 0.5;
-    release_gf = 0.99;
+    release_bias_hip = 0.6;
+    release_gf = 0.3;
     contract_gf_hip = 1.0030;
     gi_hip = 30;
     if (hipCSL === "r+") {
       gf = release_gf;
       gb = release_bias_hip;
-      this.physics.upper_joint.csl_prefill = 0.1;
+      this.physics.upper_joint.csl_prefill = 0.5;
     } else if (hipCSL === "r-") {
       gf = release_gf;
       gb = -release_bias_hip;
-      this.physics.upper_joint.csl_prefill = -0.1;
+      this.physics.upper_joint.csl_prefill = -0.5;
     } else if (hipCSL === "c") {
       gf = contract_gf_hip;
       gb = 0;
@@ -282,18 +282,18 @@ ui = (function() {
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_knee = 0.5;
+    release_bias_knee = 0.6;
     contract_gf_knee = 1.0020;
-    release_gf = 0.99;
+    release_gf = 0.3;
     gi_knee = 35;
     if (kneeCSL === "r+") {
       gf = release_gf;
       gb = release_bias_knee;
-      this.physics.lower_joint.csl_prefill = 0.1;
+      this.physics.lower_joint.csl_prefill = -0.5;
     } else if (kneeCSL === "r-") {
       gf = release_gf;
       gb = -release_bias_knee;
-      this.physics.lower_joint.csl_prefill = -0.1;
+      this.physics.lower_joint.csl_prefill = 0.5;
     } else if (kneeCSL === "c") {
       gf = contract_gf_knee;
       gb = 0;

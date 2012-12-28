@@ -71,7 +71,7 @@ class Renderer
     # which allow you to step through the actual node objects but also pass an
     # x,y point in the screen's coordinate system
     # 
-    
+
     @ctx.fillStyle = "white"
     @ctx.fillRect 0, 0, @canvas.width, @canvas.height
     parent = this
@@ -88,8 +88,10 @@ class Renderer
 
       if label
         w = 26
+        w2 = 13
       else
         w = 8
+        w2 = 4
 
       if image
         canvas = ctx2.canvas
@@ -100,22 +102,22 @@ class Renderer
         ctx.drawImage ctx2.canvas, pt.x - (c_w/4), pt.y - (c_h/4)
 
       #draw last node highlit
-      if graph.current_node == node
+      if graph.current_node is node
         ctx.strokeStyle = "red"
       else
         ctx.strokeStyle = "black"
 
         if parent.abc.posture_graph.best_circle
-          for transition in parent.abc.posture_graph.best_circle.slice(0,-1)
-            if node.name == transition.start_node.name
+          for transition in parent.abc.posture_graph.best_circle.slice(0,-3)   #leave out the extra data in each circle array
+            if node.name is transition.start_node.name
               ctx.strokeStyle = "blue"
               break
 
 
       # draw a rectangle centered at pt
-      ctx.strokeRect pt.x - w / 2, pt.y - w / 2, w, w
+      ctx.strokeRect pt.x - w2, pt.y - w2, w, w
       ctx.lineWidth = 1
-      
+
       if label
         ctx.font = "7px Verdana; sans-serif"
         ctx.textAlign = "center"
@@ -124,17 +126,17 @@ class Renderer
         ctx.fillText(label || "", pt.x, pt.y + 4)
 
       # save box coordinates
-      parent.nodeBoxes[node.name] = [pt.x-w/2, pt.y-w/2, w,w]
+      parent.nodeBoxes[node.name] = [pt.x-w2, pt.y-w2, w, w]
 
     @particleSystem.eachEdge (edge, pt1, pt2) ->
       # edge: {source:Node, target:Node, length:#, data:{}}
       # pt1:  {x:#, y:#}  source position in screen coords
       # pt2:  {x:#, y:#}  target position in screen coords
-     
+
       weight = edge.data.weight
       color = edge.data.color
       label = edge.data.distance
-      
+
       #find the visible end points
       tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name])
       head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name])
@@ -153,8 +155,6 @@ class Renderer
         ctx.stroke()
 
         #TODO: draw arrow for circles
-        #simply draw on top of the box, pointing down
-        #might be better to not show two arrows in the same spot though
       else
         # draw a line from pt1 to pt2
         ctx.beginPath()
@@ -162,24 +162,27 @@ class Renderer
         ctx.lineTo head.x, head.y
         ctx.stroke()
 
-        #TODO: draw label in same angle as edge line, delete part of edge line before
-        #TODO: draw two lines if there are back and forth edges 
         #draw a label
-        if label and Math.abs(label) > 0.1
+        #we're expecting the label to be a numeric value here, not so nice...
+        if label and Math.abs(label) > 0.05
+          ctx.save()
           mid =
             x: (pt1.x + pt2.x) / 2
             y: (pt1.y + pt2.y) / 2
-
+          ctx.translate(mid.x, mid.y)
+          angle = Math.atan2(pt2.y - pt1.y, pt2.x - pt1.x)
+          ctx.rotate(angle)
           ctx.font = "7px Verdana; sans-serif"
           ctx.textAlign = "center"
           ctx.fillStyle =  if edge.data.color then edge.data.color else "#333333"
-          ctx.fillText(label||"", mid.x, mid.y+4)
-     
+          ctx.fillText(label||"", 0, -3)
+          ctx.restore()
+
         # draw arrow
         ctx.save()
 
         # move to the head position of the edge we just drew
-        wt = (if not isNaN(weight) then parseFloat(weight) else ctx.lineWidth)
+        wt = ctx.lineWidth
         arrowLength = 6 + wt
         arrowWidth = 2 + wt
         ctx.translate head.x, head.y
@@ -221,7 +224,7 @@ class Renderer
         $(window).bind('mouseup', Handler.dropped)
 
         return false
-      
+
       @dragged: (e) ->
         parent.graph.start(true)
         pos = $(parent.canvas).offset()
@@ -245,6 +248,6 @@ class Renderer
         $(window).unbind('mouseup', Handler.dropped)
         _mouseP = null
         return false
-    
+
     # start listening
     $(@canvas).mousedown(Handler.clicked)

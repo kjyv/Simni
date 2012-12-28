@@ -2,6 +2,16 @@
 var abc, posture, postureGraph, transition,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
+Array.prototype.clone = function() {
+  var cloned, i, _i, _len;
+  cloned = [];
+  for (_i = 0, _len = this.length; _i < _len; _i++) {
+    i = this[_i];
+    cloned.push(i);
+  }
+  return cloned;
+};
+
 posture = (function() {
   var e;
 
@@ -179,7 +189,7 @@ postureGraph = (function() {
             d += edge.distance;
             t += edge.timedelta;
           }
-          path = path.concat([d, t]);
+          path = path.concat([d, t, (d / t) * 1000]);
           circles.push(path);
           f = true;
         } else if (!marked[w]) {
@@ -259,6 +269,7 @@ abc = (function() {
     this.toggleExplore = __bind(this.toggleExplore, this);
     this.posture_graph = new postureGraph();
     this.last_posture = null;
+    this.previous_posture = null;
     this.explore_active = false;
     this.graph = arbor.ParticleSystem();
     this.graph.parameters({
@@ -310,9 +321,9 @@ abc = (function() {
     if (!physics.run) {
       return;
     }
-    p_body = Math.abs(body.GetAngle());
-    p_hip = Math.abs(upper_joint.GetJointAngle());
-    p_knee = Math.abs(lower_joint.GetJointAngle());
+    p_body = Math.atan(Math.tan(body.GetAngle()));
+    p_hip = upper_joint.GetJointAngle();
+    p_knee = lower_joint.GetJointAngle();
     if (trajectory.length === 4000) {
       trajectory.shift();
     }
@@ -340,7 +351,7 @@ abc = (function() {
     var addEdge, ctx, ctx2, current_p, f, found, i, imageData, n, newCanvas, p, parent, pix, range, x, y, _i, _ref;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
-      var current_node, distance, edge, n0, n1, timedelta;
+      var current_node, distance, edge, n0, n1, source_node, timedelta;
       if (edge_list == null) {
         edge_list = start_node.edges_out;
       }
@@ -354,6 +365,13 @@ abc = (function() {
         edge_list.push(edge);
         n0 = start_node.name;
         n1 = target_node.name;
+        if (parent.posture_graph.length() > 2) {
+          source_node = parent.graph.getNode(n0);
+          parent.graph.getNode(n1) || parent.graph.addNode(n1, {
+            'x': source_node.p.x + 0.01,
+            'y': source_node.p.y + 0.01
+          });
+        }
         parent.graph.addEdge(n0, n1, {
           distance: distance.toFixed(3),
           timedelta: timedelta
@@ -406,11 +424,15 @@ abc = (function() {
       n.data.imageData = ctx2.getImageData(0, 0, range * 2, range * 2);
       ctx2.scale(2, 2);
     }
+    this.previous_posture = this.last_posture;
     this.last_posture = p;
     return this.newCSLMode();
   };
 
   abc.prototype.compareModes = function(a, b) {
+    if (!a || !b) {
+      return false;
+    }
     return a[0] === b[0] && a[1] === b[1];
   };
 
@@ -419,7 +441,8 @@ abc = (function() {
   };
 
   abc.prototype.newCSLMode = function() {
-    var current_mode, edge, m, mode, next_modes, seen_modes, set_random_mode, sm, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
+    var already_seen, current_mode, edge, hipmode, kneemode, m, mode, next_modes, previous_mode, seen_modes, set_random_mode, _i, _j, _k, _len, _len1, _len2, _ref, _ref1,
+      _this = this;
     set_random_mode = function(curent_mode) {
       var mode, which;
       which = Math.floor(Math.random() * 2);
@@ -442,6 +465,11 @@ abc = (function() {
       }
     };
     current_mode = this.last_posture.csl_mode;
+    if (this.previous_posture) {
+      previous_mode = this.previous_posture.csl_mode;
+    } else {
+      previous_mode = void 0;
+    }
     if (this.mode_strategy === "unseen") {
       seen_modes = [];
       next_modes = [];
@@ -450,29 +478,36 @@ abc = (function() {
         edge = _ref[_i];
         seen_modes.push(edge.target_node.csl_mode);
       }
+      if (previous_mode) {
+        next_modes.push(previous_mode);
+      }
       _ref1 = ["r+", "r-", "c"];
       for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
         mode = _ref1[_j];
-        if (mode !== current_mode[0]) {
-          next_modes.push([mode, current_mode[1]]);
+        hipmode = [mode, current_mode[1]];
+        kneemode = [current_mode[0], mode];
+        if (mode !== current_mode[0] && !(this.compareModes(hipmode, previous_mode))) {
+          next_modes.push(hipmode);
         }
-        if (mode !== current_mode[1]) {
-          next_modes.push([current_mode[0], mode]);
+        if (mode !== current_mode[1] && !(this.compareModes(kneemode, previous_mode))) {
+          next_modes.push(kneemode);
         }
       }
       mode = void 0;
       for (_k = 0, _len2 = next_modes.length; _k < _len2; _k++) {
         m = next_modes[_k];
         if (!seen_modes.length) {
-          mode = $.extend({}, m);
+          mode = m.clone();
           break;
         }
-        for (_l = 0, _len3 = seen_modes.length; _l < _len3; _l++) {
-          sm = seen_modes[_l];
-          if (!this.compareModes(m, sm)) {
-            mode = $.extend({}, m);
-            break;
+        already_seen = seen_modes.filter(function(sm) {
+          if (_this.compareModes(m, sm)) {
+            return true;
           }
+        });
+        if (already_seen.length === 0) {
+          mode = m.clone();
+          break;
         }
       }
       if (mode) {

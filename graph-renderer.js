@@ -78,14 +78,16 @@ Renderer = (function() {
     ctx2 = this.ctx2;
     graph = this.graph;
     this.particleSystem.eachNode(function(node, pt) {
-      var c_h, c_w, canvas, image, label, number, transition, w, _i, _len, _ref;
+      var c_h, c_w, canvas, image, label, number, transition, w, w2, _i, _len, _ref;
       label = node.data.label;
       number = node.data.number;
       image = node.data.imageData;
       if (label) {
         w = 26;
+        w2 = 13;
       } else {
         w = 8;
+        w2 = 4;
       }
       if (image) {
         canvas = ctx2.canvas;
@@ -100,7 +102,7 @@ Renderer = (function() {
       } else {
         ctx.strokeStyle = "black";
         if (parent.abc.posture_graph.best_circle) {
-          _ref = parent.abc.posture_graph.best_circle.slice(0, -1);
+          _ref = parent.abc.posture_graph.best_circle.slice(0, -3);
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             transition = _ref[_i];
             if (node.name === transition.start_node.name) {
@@ -110,7 +112,7 @@ Renderer = (function() {
           }
         }
       }
-      ctx.strokeRect(pt.x - w / 2, pt.y - w / 2, w, w);
+      ctx.strokeRect(pt.x - w2, pt.y - w2, w, w);
       ctx.lineWidth = 1;
       if (label) {
         ctx.font = "7px Verdana; sans-serif";
@@ -119,10 +121,10 @@ Renderer = (function() {
         ctx.fillText(number, pt.x, pt.y - 3);
         ctx.fillText(label || "", pt.x, pt.y + 4);
       }
-      return parent.nodeBoxes[node.name] = [pt.x - w / 2, pt.y - w / 2, w, w];
+      return parent.nodeBoxes[node.name] = [pt.x - w2, pt.y - w2, w, w];
     });
     return this.particleSystem.eachEdge(function(edge, pt1, pt2) {
-      var arrowLength, arrowWidth, color, corner, head, label, mid, tail, w, weight, wt, x, y;
+      var angle, arrowLength, arrowWidth, color, corner, head, label, mid, tail, w, weight, wt, x, y;
       weight = edge.data.weight;
       color = edge.data.color;
       label = edge.data.distance;
@@ -143,18 +145,23 @@ Renderer = (function() {
         ctx.moveTo(tail.x, tail.y);
         ctx.lineTo(head.x, head.y);
         ctx.stroke();
-        if (label && Math.abs(label) > 0.1) {
+        if (label && Math.abs(label) > 0.05) {
+          ctx.save();
           mid = {
             x: (pt1.x + pt2.x) / 2,
             y: (pt1.y + pt2.y) / 2
           };
+          ctx.translate(mid.x, mid.y);
+          angle = Math.atan2(pt2.y - pt1.y, pt2.x - pt1.x);
+          ctx.rotate(angle);
           ctx.font = "7px Verdana; sans-serif";
           ctx.textAlign = "center";
           ctx.fillStyle = edge.data.color ? edge.data.color : "#333333";
-          ctx.fillText(label || "", mid.x, mid.y + 4);
+          ctx.fillText(label || "", 0, -3);
+          ctx.restore();
         }
         ctx.save();
-        wt = (!isNaN(weight) ? parseFloat(weight) : ctx.lineWidth);
+        wt = ctx.lineWidth;
         arrowLength = 6 + wt;
         arrowWidth = 2 + wt;
         ctx.translate(head.x, head.y);
