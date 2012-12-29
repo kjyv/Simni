@@ -267,12 +267,16 @@ Neurorobotics Research Laboratory, Berlin
                     <option value="r+" checked="checked">r+</option>
                     <option value="r-">r-</option>
                     <option value="c">c</option>
+                    <option value="s+">s+</option>
+                    <option value="s-">s-</option>
                 </select>
                 <label for="csl_mode_knee">Knee</label>:
                 <select id="csl_mode_knee" onchange="ui.set_csl_mode_lower($('#csl_mode_knee').val())">
                     <option value="r+" checked="checked">r+</option>
                     <option value="r-">r-</option>
                     <option value="c">c</option>
+                    <option value="s+">s+</option>
+                    <option value="s-">s-</option>
                 </select><br/>
                 <label for="csl_strategy">Next Mode Strategy</label>:
                 <select id="csl_strategy" onchange="physics.abc.set_strategy($('#csl_strategy').val())">

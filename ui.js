@@ -244,7 +244,7 @@ ui = (function() {
   };
 
   ui.prototype.set_csl_mode_upper = function(hipCSL, change_select) {
-    var contract_gf_hip, gb, gf, gi_hip, release_bias_hip, release_gf;
+    var contract_gf_hip, gb, gf, gi_hip, release_bias_hip, release_gf, stall_gb;
     if (change_select == null) {
       change_select = true;
     }
@@ -252,6 +252,7 @@ ui = (function() {
     release_gf = 0.3;
     contract_gf_hip = 1.0030;
     gi_hip = 30;
+    stall_gb = 15;
     if (hipCSL === "r+") {
       gf = release_gf;
       gb = release_bias_hip;
@@ -264,6 +265,12 @@ ui = (function() {
       gf = contract_gf_hip;
       gb = 0;
       this.physics.upper_joint.last_integrated = this.physics.upper_joint.csl_prefill;
+    } else if (hipCSL === "s+") {
+      gf = release_gf;
+      gb = stall_gb;
+    } else if (hipCSL === "s-") {
+      gf = release_gf;
+      gb = -stall_gb;
     }
     if (change_select) {
       $("#csl_mode_hip option[value='" + hipCSL + "']").attr("selected", true);
@@ -278,7 +285,7 @@ ui = (function() {
   };
 
   ui.prototype.set_csl_mode_lower = function(kneeCSL, change_select) {
-    var contract_gf_knee, gb, gf, gi_knee, release_bias_knee, release_gf;
+    var contract_gf_knee, gb, gf, gi_knee, release_bias_knee, release_gf, stall_gb;
     if (change_select == null) {
       change_select = true;
     }
@@ -286,6 +293,7 @@ ui = (function() {
     contract_gf_knee = 1.0020;
     release_gf = 0.3;
     gi_knee = 35;
+    stall_gb = 15;
     if (kneeCSL === "r+") {
       gf = release_gf;
       gb = release_bias_knee;
@@ -298,6 +306,12 @@ ui = (function() {
       gf = contract_gf_knee;
       gb = 0;
       this.physics.upper_joint.last_integrated = this.physics.upper_joint.csl_prefill;
+    } else if (kneeCSL === "s+") {
+      gf = release_gf;
+      gb = stall_gb;
+    } else if (kneeCSL === "s-") {
+      gf = release_gf;
+      gb = -stall_gb;
     }
     if (change_select) {
       $("#csl_mode_knee option[value='" + kneeCSL + "']").attr('selected', true);

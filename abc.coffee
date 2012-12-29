@@ -1,10 +1,15 @@
 #methods for exploring postures, ABC style
 
-Array::clone = ->
-  cloned = []
-  for i in this
-    cloned.push i
-  cloned
+if (typeof Array::clone != 'function')
+  Array::clone = ->
+    cloned = []
+    for i in this
+      cloned.push i
+    cloned
+
+if (typeof String::startsWith != 'function')
+  String::startsWith = (input) ->
+    this.substring(0, input.length) == input
 
 class posture   #i.e. node
   constructor: (position, csl_mode=[], x_pos=0, timestamp=Date.now()) ->
@@ -14,6 +19,7 @@ class posture   #i.e. node
     @body_x = x_pos
     @timestamp = timestamp
     @edges_out = []
+    @exit_directions = [0,0,0,0]   #h+,h-,k+,k- : list of how often each direction of each joint this posture has been travelled from
     @length = 1  #quirk for searchSubarray
 
   isEqualTo: (node) =>
@@ -349,7 +355,7 @@ class abc
     @mode_strategy = strategy
 
   newCSLMode: =>
-    #random: randomly select next mode + different mode than the one before
+    #random: randomly select next mode + different mode than the current one
     #unseen: try new mode that is not in neighbors of the current one, prefer previous mode. if all are seen, try random
 
     #TODO: try more strategies
@@ -369,54 +375,53 @@ class abc
           break if curent_mode[1] isnt mode
         ui.set_csl_mode_lower mode
 
+    next_mode_for_direction = (old_mode, direction) ->
+      if direction is "+"
+        switch old_mode
+          when "r+" then return "c"
+          when "r-" then return "r+"
+          when "c" then return "r+"
+          when "s-" then return "r+"
+          when "s+" then return "s+"  #this one should not be taken anyway
+      else if direction is "-"
+        switch old_mode
+          when "r+" then return "r-"
+          when "r-" then return "c"
+          when "c" then return "r-"
+          when "s+" then return "r-"
+          when "s-" then return "s-"
+
     current_mode = @last_posture.csl_mode
     if @previous_posture
       previous_mode = @previous_posture.csl_mode
     else
       previous_mode = undefined
 
+
     if @mode_strategy is "unseen"
-      seen_modes = []
-      next_modes = []
+      #use list of +/- possibilities for each joint: -1 stall, 0 not visited, >0 visited count
+      #[h+,h-,k+,k-]
 
-      #find modes of the last posture's following nodes
-      for edge in @last_posture.edges_out
-        seen_modes.push edge.target_node.csl_mode
-
-      #find all the modes that are possible from this node (just change one, not same mode again)
-      #prefer previous mode, so put first
-      if previous_mode
-        next_modes.push previous_mode
-
-      for mode in ["r+", "r-", "c"]
-        hipmode = [mode, current_mode[1]]
-        kneemode = [current_mode[0], mode]
-        if mode isnt current_mode[0] and not (@compareModes hipmode, previous_mode)
-          next_modes.push hipmode
-        if mode isnt current_mode[1] and not (@compareModes kneemode, previous_mode)
-          next_modes.push kneemode
-
-
-
-      #select first mode that we have not tried before
-      mode = undefined
-      for m in next_modes
-        if not seen_modes.length
-          mode = m.clone()
-          break
-
-        already_seen = seen_modes.filter (sm) =>
-         true if @compareModes m, sm
-
-        if already_seen.length is 0
-          mode = m.clone()
-          break
-
-      if mode
-        ui.set_csl_mode_upper mode[0]
-        ui.set_csl_mode_lower mode[1]
+      if 0 in @last_posture.exit_directions
+        #we have not seen one of the directions, go there
+        dir_index = @last_posture.exit_directions.indexOf 0
       else
-        set_random_mode current_mode
+        #we went all directions already, take random one
+        while not dir_index or @last_posture.exit_directions[dir_index] is -1
+          dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four by # of joints - 0.01
+
+      joint_index = Math.ceil((dir_index+1) / 2) - 1
+      @last_posture.exit_directions[dir_index] += 1   #count number of times we went this way
+      if dir_index % 2
+        direction = "+"  #odds are +, evens are -
+      else
+        direction = "-"
+      next_mode = next_mode_for_direction current_mode[joint_index], direction
+      if joint_index is 0
+        ui.set_csl_mode_upper next_mode
+      else
+        ui.set_csl_mode_lower next_mode
+
 
     else if @mode_strategy is "random"
       set_random_mode current_mode
@@ -429,27 +434,25 @@ class abc
       limit = 15
       if Math.abs(mc) > limit #and upper_joint.GetJointSpeed() closeTo 0
         if mc > limit
-          ui.set_csl_mode_upper "r+", false
+          ui.set_csl_mode_upper "s+"
           $("#gb_param_upper").val(limit)
           physics.upper_joint.gb = limit
         else if mc < -limit
-          ui.set_csl_mode_upper "r-", false
+          ui.set_csl_mode_upper "s-"
           $("#gb_param_upper").val(-limit)
           physics.upper_joint.gb = -limit
-        upper_joint.csl_mode = "c"
 
     if lower_joint.csl_active and lower_joint.csl_mode is "c"
       mc = lower_joint.motor_control
       if Math.abs(mc) > limit
         if mc > limit
-          ui.set_csl_mode_lower "r+", false
+          ui.set_csl_mode_lower "s+"
           $("#gb_param_lower").val(limit)
           physics.lower_joint.gb = limit
         else if mc < -limit
-          ui.set_csl_mode_lower "r-", false
+          ui.set_csl_mode_lower "s-", false
           $("#gb_param_lower").val(-limit)
           physics.lower_joint.gb = -limit
-        lower_joint.csl_mode = "c"
 
 
   update: (body, upper_joint, lower_joint) =>

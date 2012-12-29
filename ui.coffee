@@ -228,6 +228,7 @@ class ui
     release_gf = 0.3
     contract_gf_hip = 1.0030 #1.0025 #1.006
     gi_hip = 30 #27 #50
+    stall_gb = 15
 
     if hipCSL is "r+"
       gf = release_gf
@@ -242,6 +243,12 @@ class ui
       gb = 0
       #prefill integrator to pre-determine direction
       @physics.upper_joint.last_integrated = @physics.upper_joint.csl_prefill
+    else if hipCSL is "s+"
+      gf = release_gf
+      gb = stall_gb
+    else if hipCSL is "s-"
+      gf = release_gf
+      gb = -stall_gb
 
     if change_select
       #re-select select option in case we came from another function and not from select widget
@@ -262,6 +269,7 @@ class ui
     contract_gf_knee = 1.0020 #1.0015 #1.006
     release_gf = 0.3
     gi_knee = 35 #26 #50
+    stall_gb = 15
 
     if kneeCSL is "r+"
       gf = release_gf
@@ -275,6 +283,12 @@ class ui
       gf = contract_gf_knee
       gb = 0
       @physics.upper_joint.last_integrated = @physics.upper_joint.csl_prefill
+    else if kneeCSL is "s+"
+      gf = release_gf
+      gb = stall_gb
+    else if kneeCSL is "s-"
+      gf = release_gf
+      gb = -stall_gb
 
     if change_select
       #re-select select option in case we came from another function
