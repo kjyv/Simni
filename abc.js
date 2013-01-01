@@ -451,7 +451,7 @@ abc = (function() {
   };
 
   abc.prototype.newCSLMode = function() {
-    var current_mode, dir_index, direction, joint_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode;
+    var back_dir, back_dir_offset, current_mode, dir_index, direction, joint_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, _ref;
     set_random_mode = function(curent_mode) {
       var mode, which;
       which = Math.floor(Math.random() * 2);
@@ -509,26 +509,42 @@ abc = (function() {
       previous_mode = void 0;
     }
     if (this.mode_strategy === "unseen") {
-      if (__indexOf.call(this.last_posture.exit_directions, 0) >= 0) {
-        dir_index = this.last_posture.exit_directions.indexOf(0);
-      } else {
-        while (!dir_index || this.last_posture.exit_directions[dir_index] === -1) {
-          dir_index = Math.floor(Math.random() * 3.99);
+      if (this.last_dir && ((_ref = this.last_joint_index) === 0 || _ref === 1)) {
+        back_dir = this.last_dir === "+" ? "-" : "+";
+        back_dir_offset = this.last_dir === "+" ? 1 : 0;
+        dir_index = this.last_joint_index + back_dir_offset;
+        if (this.last_posture.exit_directions[dir_index] === 0) {
+          next_mode = next_mode_for_direction(current_mode[this.last_joint_index], back_dir);
+          direction = back_dir;
+          joint_index = this.last_joint_index;
+        } else {
+          dir_index = void 0;
         }
       }
-      joint_index = Math.ceil((dir_index + 1) / 2) - 1;
+      if (!next_mode) {
+        if (__indexOf.call(this.last_posture.exit_directions, 0) >= 0) {
+          dir_index = this.last_posture.exit_directions.indexOf(0);
+        } else {
+          while (!dir_index || this.last_posture.exit_directions[dir_index] === -1) {
+            dir_index = Math.floor(Math.random() * 3.99);
+          }
+        }
+        joint_index = Math.ceil((dir_index + 1) / 2) - 1;
+        if (dir_index % 2) {
+          direction = "+";
+        } else {
+          direction = "-";
+        }
+        next_mode = next_mode_for_direction(current_mode[joint_index], direction);
+      }
       this.last_posture.exit_directions[dir_index] += 1;
-      if (dir_index % 2) {
-        direction = "+";
-      } else {
-        direction = "-";
-      }
-      next_mode = next_mode_for_direction(current_mode[joint_index], direction);
       if (joint_index === 0) {
-        return ui.set_csl_mode_upper(next_mode);
+        ui.set_csl_mode_upper(next_mode);
       } else {
-        return ui.set_csl_mode_lower(next_mode);
+        ui.set_csl_mode_lower(next_mode);
       }
+      this.last_dir = direction;
+      return this.last_joint_index = joint_index;
     } else if (this.mode_strategy === "random") {
       return set_random_mode(current_mode);
     }

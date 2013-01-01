@@ -402,26 +402,42 @@ class abc
       #use list of +/- possibilities for each joint: -1 stall, 0 not visited, >0 visited count
       #[h+,h-,k+,k-]
 
-      if 0 in @last_posture.exit_directions
-        #we have not seen one of the directions, go there
-        dir_index = @last_posture.exit_directions.indexOf 0
-      else
-        #we went all directions already, take random one
-        while not dir_index or @last_posture.exit_directions[dir_index] is -1
-          dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four by # of joints - 0.01
+      #try to go back to previous mode
+      if @last_dir and @last_joint_index in [0, 1]
+        back_dir = if @last_dir is "+" then "-" else "+"         #reverse direction
+        back_dir_offset = if @last_dir is "+" then 1 else 0
+        dir_index = @last_joint_index+back_dir_offset            #get index for reverse direction
+        if @last_posture.exit_directions[dir_index] is 0         #if we have not gone this direction from here, we go back
+          next_mode = next_mode_for_direction current_mode[@last_joint_index], back_dir
+          direction = back_dir
+          joint_index = @last_joint_index
+        else
+          dir_index = undefined
 
-      joint_index = Math.ceil((dir_index+1) / 2) - 1
+      unless next_mode
+        if 0 in @last_posture.exit_directions
+          #we have not seen one of the directions, go there
+          dir_index = @last_posture.exit_directions.indexOf 0
+        else
+          #we went all directions already, take random one
+          while not dir_index or @last_posture.exit_directions[dir_index] is -1
+            dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four by # of joints - 0.01
+
+        joint_index = Math.ceil((dir_index+1) / 2) - 1
+        if dir_index % 2
+          direction = "+"  #odds are +, evens are -
+        else
+          direction = "-"
+        next_mode = next_mode_for_direction current_mode[joint_index], direction
+
       @last_posture.exit_directions[dir_index] += 1   #count number of times we went this way
-      if dir_index % 2
-        direction = "+"  #odds are +, evens are -
-      else
-        direction = "-"
-      next_mode = next_mode_for_direction current_mode[joint_index], direction
       if joint_index is 0
         ui.set_csl_mode_upper next_mode
       else
         ui.set_csl_mode_lower next_mode
 
+      @last_dir = direction
+      @last_joint_index = joint_index
 
     else if @mode_strategy is "random"
       set_random_mode current_mode
