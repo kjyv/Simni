@@ -420,7 +420,7 @@ class abc
           dir_index = @last_posture.exit_directions.indexOf 0
         else
           #we went all directions already, take random one
-          while not dir_index or @last_posture.exit_directions[dir_index] is -1
+          while not dir_index? or @last_posture.exit_directions[dir_index] is -1
             dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four by # of joints - 0.01
 
         joint_index = Math.ceil((dir_index+1) / 2) - 1
@@ -496,6 +496,9 @@ class abc
           if edge.active
             #go to next posture
             csl_mode = edge.target_node.csl_mode
+            csl_mode[0] = if csl_mode[0].startsWith("s") then "c" else csl_mode[0]
+            csl_mode[1] = if csl_mode[1].startsWith("s") then "c" else csl_mode[1]
+
             ui.set_csl_mode_upper csl_mode[0]
             ui.set_csl_mode_lower csl_mode[1]
 

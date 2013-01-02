@@ -525,7 +525,7 @@ abc = (function() {
         if (__indexOf.call(this.last_posture.exit_directions, 0) >= 0) {
           dir_index = this.last_posture.exit_directions.indexOf(0);
         } else {
-          while (!dir_index || this.last_posture.exit_directions[dir_index] === -1) {
+          while (!(dir_index != null) || this.last_posture.exit_directions[dir_index] === -1) {
             dir_index = Math.floor(Math.random() * 3.99);
           }
         }
@@ -608,6 +608,8 @@ abc = (function() {
           }
           if (edge.active) {
             csl_mode = edge.target_node.csl_mode;
+            csl_mode[0] = csl_mode[0].startsWith("s") ? "c" : csl_mode[0];
+            csl_mode[1] = csl_mode[1].startsWith("s") ? "c" : csl_mode[1];
             ui.set_csl_mode_upper(csl_mode[0]);
             ui.set_csl_mode_lower(csl_mode[1]);
             break;
