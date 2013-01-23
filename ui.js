@@ -35,6 +35,8 @@ ui = (function() {
 
     this.init = __bind(this.init, this);
 
+    this.drawSemniOutline = __bind(this.drawSemniOutline, this);
+
     this.update = __bind(this.update, this);
     this.draw_graphics = true;
     this.physics = physics;
@@ -45,9 +47,12 @@ ui = (function() {
   ui.prototype.update = function() {
     if (this.draw_graphics && this.halftime) {
       this.physics.world.DrawDebugData();
+      this.drawSemniOutline();
     }
     return this.halftime = !this.halftime;
   };
+
+  ui.prototype.drawSemniOutline = function() {};
 
   ui.prototype.init = function() {
     var canvas, canvasPosition, getBodyCB, getElementPosition, handleMouseMove,
@@ -392,27 +397,6 @@ window.requestAnimFrame = (function() {
     return window.setTimeout(callback, 1000 / 60);
   };
 })();
-
-/*
-#set up 60 fps animation loop (triggers physics)
-lastTime = 0
-vendors = ['ms', 'moz', 'webkit', 'o']
-@cancelAnimationFrame or= @cancelRequestAnimationFrame
-unless @requestAnimationFrame
-  for vendor in vendors
-    @requestAnimationFrame or= @[vendor+'RequestAnimationFrame']
-    @cancelAnimationFrame = @cancelAnimationFrame or= @[vendor+'CancelRequestAnimationFrame']
-unless @requestAnimationFrame
-  @requestAnimationFrame = (callback, element) ->
-    currTime = new Date().getTime()
-    timeToCall = Math.max 0, 16 - (currTime - lastTime)
-    id = @setTimeout (-> callback currTime + timeToCall), timeToCall
-    lastTime = currTime + timeToCall
-    id
-unless @cancelAnimationFrame
-  @cancelAnimationFrame = @cancelAnimationFrame = (id) -> clearTimeout id
-*/
-
 
 $(function() {
   var p;

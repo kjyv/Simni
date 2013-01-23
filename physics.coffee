@@ -27,15 +27,15 @@ class physics
   constructor: ->
     @world = new b2World(
       new b2Vec2(0, 9.81),    #gravity
-      false                  #allow sleep
+      false                   #allow sleep
     )
-      
+
     fixDef = new b2FixtureDef
     fixDef.density = 10
     fixDef.friction = 0.5
     fixDef.restitution = 0.1
     @fixDef = fixDef
-    
+
     #create ground
     @ground_height = 0.03
     @ground_width = 3
@@ -44,14 +44,14 @@ class physics
     bodyDef.position.x = 1
     bodyDef.position.y = 1.1
     bodyDef.linearDamping = 50
-    
+
     fixDef.shape = new b2PolygonShape
     fixDef.shape.SetAsBox @ground_width, @ground_height
 
     @ground = @world.CreateBody(bodyDef)
     @ground_bodyDef = bodyDef
     @ground.CreateFixture fixDef
-  
+
     @lower_joint = null
     @upper_joint = null
 
@@ -59,11 +59,11 @@ class physics
     @debugDraw = new b2DebugDraw()
     @debugDraw.SetSprite $("#simulation canvas")[0].getContext("2d")
     @debugDraw.SetDrawScale 260
-    @debugDraw.SetFillAlpha 0.3
+    @debugDraw.SetFillAlpha 0
     @debugDraw.SetLineThickness 1.0
     @debugDraw.AppendFlags b2DebugDraw.e_shapeBit
     @world.SetDebugDraw @debugDraw
-    
+
     #global flags
     @run = true           #if we are running continuously
     @step = false         #if we display the next step
@@ -74,7 +74,7 @@ class physics
     @beta = 0             #friction coefficient
 
     @abc = new abc()
-  
+
   ##### methods to create bodies #####
 
   createBox: =>
@@ -83,7 +83,7 @@ class physics
     fixDef.friction = 0.3
     fixDef.restitution = 0.2
     @fixDef = fixDef
-    
+
     #create a box
     fixDef.shape = new b2PolygonShape
     fixDef.shape.SetAsBox 0.1, 0.1
@@ -93,14 +93,14 @@ class physics
     bodyDef.position.Set 1.3, 0.8
     box = @world.CreateBody bodyDef
     box.CreateFixture fixDef
-  
+
   createCircle: =>
     fixDef = new b2FixtureDef
     fixDef.density = 1
     fixDef.friction = 0.3
     fixDef.restitution = 0.2
     @fixDef = fixDef
-    
+
     fixDef.shape = new b2CircleShape
     fixDef.shape.m_radius = 0.12
 
@@ -130,7 +130,7 @@ class physics
     bodyDef.angularDamping = damping
     @body = @world.CreateBody(bodyDef)
     line = @body.CreateFixture(@fixDef)
-    
+
     #initialise friction 
     @body.z2 = 0
 
@@ -138,7 +138,7 @@ class physics
     @fixDef.shape = new b2CircleShape(mass_size)
     @fixDef.shape.m_p = pend_vertices[1]
     mass = @body.CreateFixture(@fixDef)
-    
+
     #rotating joint
     jointDef = new b2RevoluteJointDef()
     jointDef.Initialize @ground, @body, pend_vertices[0]
@@ -159,7 +159,7 @@ class physics
     @lower_joint.motor_torque = 0
     @lower_joint.motor_control = 0
     @lower_joint.I_tm1 = 0
-    
+
   createDoublePendulum: =>
     #create pendulum line
     pend_length = 0.5
@@ -180,10 +180,10 @@ class physics
     bodyDef.angularDamping = damping
     @body = @world.CreateBody(bodyDef)
     line = @body.CreateFixture(@fixDef)
-    
+
     #initialise friction
     @body.z2 = 0
-    
+
     #lower rotating joint
     jointDef = new b2RevoluteJointDef()
     jointDef.Initialize @body, @ground, pend_vertices[0]
@@ -201,7 +201,7 @@ class physics
     @lower_joint.motor_torque = 0
     @lower_joint.motor_control = 0
     @lower_joint.I_t = 0
-    
+
     #create mass circle
     @fixDef.shape = new b2CircleShape(mass_size)
     @fixDef.shape.m_p = pend_vertices[1]
@@ -227,7 +227,7 @@ class physics
     jointDef.Initialize @body2, @body, pend_vertices[0]
     jointDef.collideConnected = false
     @upper_joint = @world.CreateJoint(jointDef)
-    
+
     @upper_joint.joint_name = 'upper'
     @upper_joint.angle_speed = 0
     @upper_joint.csl_active = false
@@ -260,7 +260,7 @@ class physics
     #arm at body: 135 g (63+72)
     #second arm: 177 g (105+72) 
     #min/max angle of lower arm: -3.2421 and 1.90816 
-    
+
     bodyDensity = 0.96  #0.99
     bodyFriction = 0.25
     bodyRestitution = 0.1
@@ -272,7 +272,7 @@ class physics
     lowerArmDensity = 11.35 #7 #=105g #11.35 #=185g #10.9 #=177g  
     lowerArmFriction = 0.25
     lowerArmRestitution = 0.2
-    
+
     #create body
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_dynamicBody
@@ -285,10 +285,26 @@ class physics
     @fixDef.restitution = bodyRestitution
     @fixDef.filter.groupIndex = -1  #negative groups never collide with each other
     @fixDef.shape = new b2PolygonShape
-    #@fixDef.shape.SetAsArray contour, contour.length
+    #@fixDef.shape.SetAsArray contour_original_low_detail, contour_original_low_detail.length
+
+    ###
     for fixture in contour
       @fixDef.shape.SetAsArray(fixture, fixture.length)
       @body.CreateFixture(@fixDef)
+    ###
+
+    #if not e = b2Separator.Validate(contour_original)
+    b2Separator.Separate(@body, @fixDef, contour_original_low_detail, 1000, 0.177, 0.192)
+    ###
+    #else
+      console.log "can't import contour, validator error " + e
+      console.log """
+              0 if the vertices can be properly processed.
+              1 If there are overlapping lines.
+              2 if the points are not in counter-clockwise order.
+              3 if there are overlapping lines and the points are not in counter-clockwise order.
+      """
+    ###
 
     #add head (hole)
     @fixDef.density = 0.00001
@@ -304,7 +320,7 @@ class physics
     md.center.Set(contourCenter.x, contourCenter.y)
     md.I = @body.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y)
     @body.SetMassData(md)
-    
+
     #show center of mass
     #@fixDef.density = 0.00001
     #@fixDef.shape = new b2CircleShape
@@ -337,10 +353,10 @@ class physics
     md.I = @body2.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y)
     @body2.SetMassData(md)
     @body2.SetPositionAndAngle(new b2Vec2(arm1Center.x, arm1Center.y), 0)
-    
+
     #initialise friction and motor state
     @body2.z2 = 0
-    
+
     #add motor mass separately to imitate moment of inertia different from only COM based
     ###
     @fixDef2.density = 14.2
@@ -366,7 +382,7 @@ class physics
     jointDef.motorSpeed = 0.0
     jointDef.enableMotor = true
     @upper_joint = @world.CreateJoint(jointDef)
-    
+
     #initialize
     @upper_joint.joint_name = 'upper'
     @upper_joint.motor_control = 0
@@ -379,7 +395,7 @@ class physics
     @upper_joint.bounce_active = false
     @upper_joint.bounce_sign = 1
     @upper_joint.bounce_vel = 0.0003
-    
+
     #####
 
     #lower arm (not at body)
@@ -387,7 +403,7 @@ class physics
     bodyDef3.type = b2Body.b2_dynamicBody
     #bodyDef3.position.Set(x0, y0 + 0.4)
     @body3 = @world.CreateBody(bodyDef3)
-    
+
     @fixDef3 = new b2FixtureDef
     @fixDef3.density = lowerArmDensity
     @fixDef3.friction = lowerArmFriction
@@ -405,7 +421,7 @@ class physics
     md.I = @body3.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y)
     @body3.SetMassData(md)
     @body3.SetPositionAndAngle(new b2Vec2(arm1Center.x, arm1Center.y), 0)
-    
+
     #add motor mass separately to imitate moment of inertia different from only COM based
     ###
     @fixDef3.density = 22.4  #=72g
@@ -426,7 +442,7 @@ class physics
 
     #initialise friction and motor state
     @body3.z2 = 0
-    
+
     #lower rotating joint
     jointDef = new b2RevoluteJointDef()
     jointDef.bodyA = @body2
@@ -438,12 +454,12 @@ class physics
     jointDef.maxMotorTorque = @beta
     jointDef.motorSpeed = 0.0
     jointDef.enableMotor = true
-    
+
     jointDef.upperAngle = 1.90816
     jointDef.lowerAngle = -3.2421
     jointDef.enableLimit = true
     @lower_joint = @world.CreateJoint(jointDef)
-    
+
     @lower_joint.joint_name = 'lower'
     @lower_joint.motor_control = 0
     @lower_joint.I_t = 0
@@ -708,7 +724,7 @@ class physics
         i--
 
       @world.ClearForces()
-      
+
       @ui.update()
 
       #@tracePlayer()

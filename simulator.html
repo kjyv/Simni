@@ -18,6 +18,7 @@ Neurorobotics Research Laboratory, Berlin
         <script src="libs/d3.v2.min.js"></script>
         <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
+        <script src="libs/b2Separator.js"></script>
         <script src="libs/arbor.js"></script>  
         <script src="graph-renderer.js"></script>
         <script src="semni.data.js"></script>
@@ -59,7 +60,7 @@ Neurorobotics Research Laboratory, Berlin
                 <button id="start_log" onclick="ui.toggleRecorder()">Start</button>
                 <button id="get_log" onclick="ui.getLogfile()">Get</button>
             </div>
-        
+
             <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;<sub>hip</sub>/&phi;<sub>knee</sub><button id="clear_phase">clear</button></div>
             <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled">motor torque upper (green) and lower (blue)</div>
             <div id="state_to_mode_mapping" style="display:none;"><input type="checkbox" id="phase_space_2_enabled">phase space U/&phi;'<br/></div>

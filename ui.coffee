@@ -10,7 +10,11 @@ class ui
   update: =>
       if @draw_graphics and @halftime
         @physics.world.DrawDebugData()
+        @drawSemniOutline()
       @halftime = not @halftime
+
+  drawSemniOutline: =>
+
 
   init: =>
     #set up map to mode checkbox and get values
@@ -100,7 +104,7 @@ class ui
       aabb = new b2AABB()
       aabb.lowerBound.Set mouseX - 0.001, mouseY - 0.001
       aabb.upperBound.Set mouseX + 0.001, mouseY + 0.001
-      
+
       # Query the world for overlapping shapes.
       window.selectedBody = null
       @physics.world.QueryAABB getBodyCB, aabb
@@ -152,7 +156,7 @@ class ui
     #  0
     #else
     #  mode
-    
+
     #single pendulum
     if mode > 1
       mode * 0.00125 + 1
@@ -354,26 +358,6 @@ window.requestAnimFrame = (->
     #fall back for other/old browsers
     window.setTimeout callback, 1000 / 60
 )()
-
-###
-#set up 60 fps animation loop (triggers physics)
-lastTime = 0
-vendors = ['ms', 'moz', 'webkit', 'o']
-@cancelAnimationFrame or= @cancelRequestAnimationFrame
-unless @requestAnimationFrame
-  for vendor in vendors
-    @requestAnimationFrame or= @[vendor+'RequestAnimationFrame']
-    @cancelAnimationFrame = @cancelAnimationFrame or= @[vendor+'CancelRequestAnimationFrame']
-unless @requestAnimationFrame
-  @requestAnimationFrame = (callback, element) ->
-    currTime = new Date().getTime()
-    timeToCall = Math.max 0, 16 - (currTime - lastTime)
-    id = @setTimeout (-> callback currTime + timeToCall), timeToCall
-    lastTime = currTime + timeToCall
-    id
-unless @cancelAnimationFrame
-  @cancelAnimationFrame = @cancelAnimationFrame = (id) -> clearTimeout id
-###
 
 $ ->
     ##after document load: read some values from the ui into variables so the ui sets the defaults

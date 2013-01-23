@@ -106,7 +106,7 @@ physics = (function() {
     this.debugDraw = new b2DebugDraw();
     this.debugDraw.SetSprite($("#simulation canvas")[0].getContext("2d"));
     this.debugDraw.SetDrawScale(260);
-    this.debugDraw.SetFillAlpha(0.3);
+    this.debugDraw.SetFillAlpha(0);
     this.debugDraw.SetLineThickness(1.0);
     this.debugDraw.AppendFlags(b2DebugDraw.e_shapeBit);
     this.world.SetDebugDraw(this.debugDraw);
@@ -261,7 +261,7 @@ physics = (function() {
 
 
   physics.prototype.createSemni = function(x0, y0) {
-    var bodyDef, bodyDef2, bodyDef3, bodyDensity, bodyFriction, bodyRestitution, fixture, jointDef, lowerArmDensity, lowerArmFriction, lowerArmRestitution, md, upperArmDensity, upperArmFriction, upperArmRestitution, _i, _j, _k, _len, _len1, _len2;
+    var bodyDef, bodyDef2, bodyDef3, bodyDensity, bodyFriction, bodyRestitution, fixture, jointDef, lowerArmDensity, lowerArmFriction, lowerArmRestitution, md, upperArmDensity, upperArmFriction, upperArmRestitution, _i, _j, _len, _len1;
     if (x0 == null) {
       x0 = 1;
     }
@@ -287,11 +287,24 @@ physics = (function() {
     this.fixDef.restitution = bodyRestitution;
     this.fixDef.filter.groupIndex = -1;
     this.fixDef.shape = new b2PolygonShape;
-    for (_i = 0, _len = contour.length; _i < _len; _i++) {
-      fixture = contour[_i];
-      this.fixDef.shape.SetAsArray(fixture, fixture.length);
-      this.body.CreateFixture(this.fixDef);
-    }
+    /*
+        for fixture in contour
+          @fixDef.shape.SetAsArray(fixture, fixture.length)
+          @body.CreateFixture(@fixDef)
+    */
+
+    b2Separator.Separate(this.body, this.fixDef, contour_original_low_detail, 1000, 0.177, 0.192);
+    /*
+        #else
+          console.log "can't import contour, validator error " + e
+          console.log """
+                  0 if the vertices can be properly processed.
+                  1 If there are overlapping lines.
+                  2 if the points are not in counter-clockwise order.
+                  3 if there are overlapping lines and the points are not in counter-clockwise order.
+          """
+    */
+
     this.fixDef.density = 0.00001;
     this.fixDef.shape = new b2CircleShape;
     this.fixDef.shape.m_p.Set(head[0].x, head[0].y);
@@ -312,8 +325,8 @@ physics = (function() {
     this.fixDef2.restitution = upperArmRestitution;
     this.fixDef2.filter.groupIndex = -1;
     this.fixDef2.shape = new b2PolygonShape;
-    for (_j = 0, _len1 = arm1ContourConvex.length; _j < _len1; _j++) {
-      fixture = arm1ContourConvex[_j];
+    for (_i = 0, _len = arm1ContourConvex.length; _i < _len; _i++) {
+      fixture = arm1ContourConvex[_i];
       this.fixDef2.shape.SetAsArray(fixture, fixture.length);
       this.body2.CreateFixture(this.fixDef2);
     }
@@ -363,8 +376,8 @@ physics = (function() {
     this.fixDef3.restitution = lowerArmRestitution;
     this.fixDef3.filter.groupIndex = -1;
     this.fixDef3.shape = new b2PolygonShape;
-    for (_k = 0, _len2 = arm2ContourConvex.length; _k < _len2; _k++) {
-      fixture = arm2ContourConvex[_k];
+    for (_j = 0, _len1 = arm2ContourConvex.length; _j < _len1; _j++) {
+      fixture = arm2ContourConvex[_j];
       this.fixDef3.shape.SetAsArray(fixture, fixture.length);
       this.body3.CreateFixture(this.fixDef3);
     }
