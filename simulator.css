@@ -83,9 +83,13 @@ input[type="range"] {
 
 #posture_graph {
     float: left;
-    width: 1400px;
-    margin-top: 10px;
-    border-top: 1px solid black;
+    width: 1100px;
+}
+
+#semni_svg {
+    float: left;
+    width: 200px;
+    height: 200px;
 }
 
 #state_to_mode_mapping {

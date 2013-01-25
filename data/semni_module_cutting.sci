@@ -107,7 +107,7 @@ resolution0 = 1/100;
 R01 = [ 0.04*sin(0:resolution0*%pi:2*%pi) + 0.255 ; 0.04*cos(0:resolution0*%pi:2*%pi) + 0.070]
 R01 = [ [                    -1 ;
           2 * 1/resolution0 + 1 ] R01 ]
-          
+
 R02 = [ [ -2 ;
            0 ] [] ]
 R03 = [ [ -3 ;

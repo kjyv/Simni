@@ -167,6 +167,11 @@ function calcShapes(verticesVec)
                         v1 = vec[j1];
                         v2 = vec[j2];
 
+                        if (v1 == undefined || v2 == undefined) {
+                            console.log("problems with points: "+p1+", "+p2+", "+p3)
+                            console.log("(p1:"+ p1.x*ptm_ratio2/1000 +", "+p1.y*ptm_ratio2/1000)
+                        }
+
                         v = hitRay(p1.x, p1.y, p2.x, p2.y, v1.x, v1.y, v2.x, v2.y);
 
                         if(v)
@@ -195,6 +200,11 @@ function calcShapes(verticesVec)
                 j2 = k;
                 v1 = vec[j1];
                 v2 = vec[j2];
+
+                if (v1 == undefined || v2 == undefined) {
+                    console.log("problems with points: "+p1+", "+p2+", "+p3)
+                    console.log("(p1:"+ p1.x*ptm_ratio2/1000 +", "+p1.y*ptm_ratio2/1000+")")
+                }
 
                 if(!pointsMatch(hitV.x, hitV.y, v2.x, v2.y)) vec1.push(hitV);
                 if(!pointsMatch(hitV.x, hitV.y, v1.x, v1.y)) vec2.push(hitV);

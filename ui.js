@@ -42,6 +42,8 @@ ui = (function() {
     this.physics = physics;
     this.init();
     this.halftime = true;
+    this.svg = d3.select("div#semni_svg").append("svg:svg").attr("width", 200).attr("height", 200);
+    this.semni_body = this.svg.append("svg:path").attr("d", "M 0 60 L 50 110 L 90 70 L 140 100").style("stroke-width", 2).style("stroke", "steelblue");
   }
 
   ui.prototype.update = function() {
@@ -52,7 +54,11 @@ ui = (function() {
     return this.halftime = !this.halftime;
   };
 
-  ui.prototype.drawSemniOutline = function() {};
+  ui.prototype.drawSemniOutline = function() {
+    var angl;
+    angl = this.physics.body.GetAngle();
+    return this.semni_body.attr("transform", "rotate(" + angl / Math.PI * 180 + ")");
+  };
 
   ui.prototype.init = function() {
     var canvas, canvasPosition, getBodyCB, getElementPosition, handleMouseMove,

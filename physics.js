@@ -287,12 +287,6 @@ physics = (function() {
     this.fixDef.restitution = bodyRestitution;
     this.fixDef.filter.groupIndex = -1;
     this.fixDef.shape = new b2PolygonShape;
-    /*
-        for fixture in contour
-          @fixDef.shape.SetAsArray(fixture, fixture.length)
-          @body.CreateFixture(@fixDef)
-    */
-
     b2Separator.Separate(this.body, this.fixDef, contour_original_low_detail, 1000, 0.177, 0.192);
     /*
         #else

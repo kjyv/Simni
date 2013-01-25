@@ -7,6 +7,13 @@ class ui
     @init()
     @halftime = true
 
+    @svg = d3.select("div#semni_svg").append("svg:svg")
+            .attr("width", 200)
+            .attr("height", 200)
+    @semni_body = @svg.append("svg:path").attr("d","M 0 60 L 50 110 L 90 70 L 140 100")
+            .style("stroke-width", 2)
+            .style("stroke", "steelblue")
+
   update: =>
       if @draw_graphics and @halftime
         @physics.world.DrawDebugData()
@@ -14,6 +21,8 @@ class ui
       @halftime = not @halftime
 
   drawSemniOutline: =>
+    angl = @physics.body.GetAngle()
+    @semni_body.attr("transform", "rotate("+angl/Math.PI*180+")")
 
 
   init: =>

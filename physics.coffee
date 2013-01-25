@@ -285,13 +285,11 @@ class physics
     @fixDef.restitution = bodyRestitution
     @fixDef.filter.groupIndex = -1  #negative groups never collide with each other
     @fixDef.shape = new b2PolygonShape
-    #@fixDef.shape.SetAsArray contour_original_low_detail, contour_original_low_detail.length
+    #@fixDef.shape.SetAsArray contour, contour.length
 
-    ###
-    for fixture in contour
-      @fixDef.shape.SetAsArray(fixture, fixture.length)
-      @body.CreateFixture(@fixDef)
-    ###
+    #for fixture in contour
+    #  @fixDef.shape.SetAsArray(fixture, fixture.length)
+    #  @body.CreateFixture(@fixDef)
 
     #if not e = b2Separator.Validate(contour_original)
     b2Separator.Separate(@body, @fixDef, contour_original_low_detail, 1000, 0.177, 0.192)
