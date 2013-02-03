@@ -288,7 +288,7 @@ abc = (function() {
       friction: .5,
       gravity: true
     });
-    this.graph.renderer = new Renderer("#viewport", this.graph, this);
+    this.graph.renderer = new RendererSVG("#viewport_svg", this.graph, this);
     this.mode_strategy = "unseen";
   }
 
@@ -344,7 +344,7 @@ abc = (function() {
       d = this.searchSubarray(last, trajectory, function(a, i, b, j) {
         return Math.abs(a[i][0] - b[j][0]) < eps && Math.abs(a[i][1] - b[j][1]) < eps && Math.abs(a[i][2] - b[j][2]) < eps;
       });
-      if (d.length > 4) {
+      if (d.length > 3) {
         position = trajectory.pop();
         action(position, this);
         trajectory = [];
@@ -361,7 +361,7 @@ abc = (function() {
     var addEdge, ctx, ctx2, current_p, f, found, i, imageData, n, newCanvas, p, parent, pix, range, x, y, _i, _ref;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
-      var current_node, distance, edge, n0, n1, source_node, timedelta;
+      var current_node, distance, edge, init_node, n0, n1, source_node, timedelta;
       if (edge_list == null) {
         edge_list = start_node.edges_out;
       }
@@ -386,6 +386,11 @@ abc = (function() {
           distance: distance.toFixed(3),
           timedelta: timedelta
         });
+        if (n0 === 0 && n1 === 1) {
+          init_node = parent.graph.getNode(n0);
+          init_node.data.label = start_node.csl_mode;
+          init_node.data.number = start_node.name;
+        }
         parent.graph.current_node = current_node = parent.graph.getNode(n1);
         current_node.data.label = target_node.csl_mode;
         current_node.data.number = target_node.name;

@@ -92,6 +92,11 @@ input[type="range"] {
     height: 200px;
 }
 
+#viewport_svg {
+    width: 1400px;
+    height: 800px;
+}
+
 #state_to_mode_mapping {
     float:left;
     margin-bottom: 10px;
@@ -159,4 +164,18 @@ circle {
 }
 .hold {
     fill: green;
+}
+
+/* svg */
+line {
+    stroke-width: 1;
+    stroke: gray;
+    fill: none;
+}
+
+text {
+  font-family: Verdana; sans-serif;
+  font-size: 7pt;
+  text-anchor: middle;
+  fill: #333333;
 }

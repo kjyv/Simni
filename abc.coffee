@@ -184,7 +184,7 @@ class abc
 #      timeout: 5
 #      fps: 10
 
-    @graph.renderer = new Renderer("#viewport", @graph, @)
+    @graph.renderer = new RendererSVG("#viewport_svg", @graph, @)
     @mode_strategy = "unseen"
 
   toggleExplore: =>
@@ -236,8 +236,7 @@ class abc
         Math.abs(a[i][0] - b[j][0]) < eps and Math.abs(a[i][1] - b[j][1]) < eps and Math.abs(a[i][2] - b[j][2]) < eps
       #console.log(d)
 
-      if d.length > 4    #need to find sample more than once to be periodic
-
+      if d.length > 3    #need to find sample more than once to be periodic
         #found a posture, call user method
         position = trajectory.pop()
         action(position, @)
@@ -277,6 +276,13 @@ class abc
         parent.graph.addEdge n0, n1,
           distance: distance.toFixed(3)
           timedelta: timedelta
+
+        #if we're here for the first time, n0 is not yet initialized (this time addEdge adds two nodes)
+        if n0 == 0 and n1 == 1
+          init_node = parent.graph.getNode(n0)
+          init_node.data.label = start_node.csl_mode
+          init_node.data.number = start_node.name
+
         parent.graph.current_node = current_node = parent.graph.getNode(n1)
         current_node.data.label = target_node.csl_mode
         current_node.data.number = target_node.name
@@ -301,8 +307,6 @@ class abc
       p.position[0] = (current_p.position[0] + p.position[0]) / 2
       p.position[1] = (current_p.position[1] + p.position[1]) / 2
       p.position[2] = (current_p.position[2] + p.position[2]) / 2
-
-      #TODO: update image
 
       #update graph render stuff
       @graph.current_node = @graph.getNode p.name

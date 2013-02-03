@@ -27,7 +27,7 @@ class Renderer
 
     # set up some event handlers to allow for node-dragging
     @initMouseHandling()
-     
+
   # helpers for figuring out where to draw arrows (thanks springy.js)
   intersect_line_line: (p1, p2, p3, p4) ->
     denom = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y))
