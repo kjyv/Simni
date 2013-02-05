@@ -358,7 +358,7 @@ abc = (function() {
   };
 
   abc.prototype.savePosture = function(position, body, upper_csl, lower_csl) {
-    var addEdge, ctx, ctx2, current_p, f, found, i, imageData, n, newCanvas, p, parent, pix, range, x, y, _i, _ref;
+    var addEdge, current_p, f, found, n, p, parent;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
       var current_node, distance, edge, init_node, n0, n1, source_node, timedelta;
@@ -417,27 +417,37 @@ abc = (function() {
       p.body_x = body.GetWorldCenter().x;
       p.timestamp = Date.now();
       addEdge(this.last_posture, p);
-      ctx = $("#simulation canvas")[0].getContext('2d');
-      x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale();
-      y = physics.body.GetWorldCenter().y * physics.debugDraw.GetDrawScale();
-      range = 120;
-      imageData = ctx.getImageData(x - range, y - range, range * 2, range * 2);
-      pix = imageData.data;
-      for (i = _i = 0, _ref = pix.length - 4; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-        if (pix[i] === 255 && pix[i + 1] === 255 && pix[i + 2] === 255) {
-          pix[i + 4] = 0;
-        }
-      }
-      newCanvas = $("<canvas>").attr("width", imageData.width).attr("height", imageData.height)[0];
-      ctx = newCanvas.getContext("2d");
-      ctx.putImageData(imageData, 0, 0);
-      ctx2 = $("#tempimage")[0].getContext('2d');
-      ctx2.clearRect(0, 0, ctx2.canvas.width, ctx2.canvas.height);
-      ctx2.scale(0.5, 0.5);
-      ctx2.drawImage(newCanvas, 0, 0);
+      /*
+            ctx = $("#simulation canvas")[0].getContext('2d')
+            x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale()
+            y = physics.body.GetWorldCenter().y * physics.debugDraw.GetDrawScale()
+            range = 120
+            imageData = ctx.getImageData x-range, y-range, range*2, range*2
+      
+            #loop over each pixel and make white pixels (the background) transparent
+            pix = imageData.data
+            for i in [0..pix.length-4]
+              if pix[i] is 255 and pix[i+1] is 255 and pix[i+2] is 255
+                pix[i+4] = 0
+      
+            #scale image data
+            newCanvas = $("<canvas>").attr("width", imageData.width).attr("height", imageData.height)[0]
+            ctx = newCanvas.getContext("2d")
+            ctx.putImageData imageData, 0, 0
+      
+            #save in node
+            ctx2 = $("#tempimage")[0].getContext('2d')
+            ctx2.clearRect(0,0, ctx2.canvas.width, ctx2.canvas.height)
+            ctx2.scale(0.5, 0.5)
+            ctx2.drawImage(newCanvas, 0, 0)
+            n = @graph.getNode(p.name)
+            n.data.imageData = ctx2.getImageData 0, 0, range * 2, range *2
+            ctx2.scale(2,2)
+      */
+
       n = this.graph.getNode(p.name);
-      n.data.imageData = ctx2.getImageData(0, 0, range * 2, range * 2);
-      ctx2.scale(2, 2);
+      n.data.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()];
+      n.data.angles = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()];
     }
     this.previous_posture = this.last_posture;
     this.last_posture = p;

@@ -2,35 +2,12 @@ mode(-1);
 // ==================================================
 // ========== S E M N I - M O D U L E S ==========
 // ==================================================
-//separate semni cutting data, triangulate for convex shapes
-//for delaunay, you need to run atomsInstall('cglab') and install libCGAL
+//separate semni cutting data
 
 Semni = fscanfMat("/Users/stefan/Dropbox/diplomarbeit/2d-simulation/data/SemniOutline.txt");
 
-function decompose(x,y, filename)
-    nump = size(x,2);
-    //C = [x(1:(nump-1))' y(2:nump)'; nump 1];
-    //tri = constrained_delaunay_2(x, y, C)
-    tri = delaunay_2(x, y)
-    [nbtri,nb] = size(tri);
-    tri = [tri tri(:,1)];
-
-    F = mopen(filename,mode="w")
-    for k = 1:nbtri
-        plot2d(x(tri(k,:)),y(tri(k,:)), style = 2)
-        fixture = [x(tri(k,:)); y(tri(k,:))]
-        mfprintf(F, format="new Array(\n")
-        for v = 1:size(fixture, 2)-1
-            mfprintf(F, format="\t new b2Vec2(%f, %f), \n", fixture(1,v), fixture(2,v))
-        end
-        mfprintf(F, format="),\n\n")
-        //fprintfMat(F, [x(tri(k,:)); y(tri(k,:))])
-    end
-    mclose(F)
-endfunction
-
-normfactor = 1 / 333.3 / 100
-resolution = 4 // every 4th contour point is taken into account
+normfactor = 1 //1 / 333.3 / 100
+resolution = 1 // every 4th contour point is taken into account
 
 contour = normfactor*[Semni(121:resolution:241, :); Semni(763:resolution:1004, :)]
 plot2d(contour(:,1), contour(:,2),frameflag=4)

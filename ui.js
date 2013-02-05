@@ -5,6 +5,8 @@ var ui,
 ui = (function() {
 
   function ui(physics) {
+    this.getPostureGraphAsFile = __bind(this.getPostureGraphAsFile, this);
+
     this.setSemniTransformAsFile = __bind(this.setSemniTransformAsFile, this);
 
     this.setSemniTransformAsJSON = __bind(this.setSemniTransformAsJSON, this);
@@ -35,7 +37,7 @@ ui = (function() {
 
     this.init = __bind(this.init, this);
 
-    this.drawSemniOutlineSVG = __bind(this.drawSemniOutlineSVG, this);
+    this.getSemniOutlineSVG = __bind(this.getSemniOutlineSVG, this);
 
     this.rotate_point = __bind(this.rotate_point, this);
 
@@ -44,25 +46,23 @@ ui = (function() {
     this.physics = physics;
     this.init();
     this.halftime = true;
-    this.svg = d3.select("div#semni_svg").append("svg:svg").attr("width", 200).attr("height", 200);
     this.svg_scale = 100;
-    this.d3line2 = d3.svg.line().x(function(d) {
-      return d.x * this.svg_scale;
-    }).y(function(d) {
-      return d.y * this.svg_scale;
-    }).interpolate("linear");
-    this.svg_semni_body = this.svg.append("svg:path").attr("d", this.d3line2(contour_original_low_detail)).style("stroke-width", 1).style("stroke", "gray").style("fill", "none");
-    this.svg_semni_arm1 = this.svg.append("svg:path").attr("d", this.d3line2(arm1Contour)).style("stroke-width", 1).style("stroke", "gray").style("fill", "none");
-    this.svg_joint = this.svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", "1").style("stroke", "red");
-    this.svg_semni_arm2 = this.svg.append("svg:path").attr("d", this.d3line2(arm2Contour)).style("stroke-width", 1).style("stroke", "gray").style("fill", "none");
-    this.svg_joint2 = this.svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", "1").style("stroke", "red");
-    this.svg_semni_head = this.svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", head2[1] * this.svg_scale).style("stroke-width", 1).style("stroke", "gray").style("fill", "none");
   }
 
   ui.prototype.update = function() {
     if (this.draw_graphics && this.halftime) {
       this.physics.world.DrawDebugData();
-      this.drawSemniOutlineSVG(this.physics.body.GetPosition(), this.physics.body2.GetPosition(), this.physics.body3.GetPosition(), this.physics.body.GetAngle(), this.physics.body2.GetAngle(), this.physics.body3.GetAngle());
+      /*
+              @drawSemniOutlineSVG(
+                @physics.body.GetPosition(),
+                @physics.body2.GetPosition(),
+                @physics.body3.GetPosition(),
+                @physics.body.GetAngle(),
+                @physics.body2.GetAngle(),
+                @physics.body3.GetAngle()
+              )
+      */
+
     }
     return this.halftime = !this.halftime;
   };
@@ -80,27 +80,40 @@ ui = (function() {
     return p;
   };
 
-  ui.prototype.drawSemniOutlineSVG = function(body_pos, arm1_pos, arm2_pos, body_angle, arm1_angle, arm2_angle) {
-    var arm1_joint, arm2_joint, b_x, b_y, h_x, h_y;
+  ui.prototype.getSemniOutlineSVG = function(body_pos, arm1_pos, arm2_pos, body_angle, arm1_angle, arm2_angle, container) {
+    var arm1_joint, arm2_joint, b_x, b_y, d3line2, h_x, h_y, svg, svg_joint, svg_joint2, svg_semni_arm1, svg_semni_arm2, svg_semni_body, svg_semni_head;
+    svg = container.append("svg:g");
+    d3line2 = d3.svg.line().x(function(d) {
+      return d.x * physics.ui.svg_scale;
+    }).y(function(d) {
+      return d.y * physics.ui.svg_scale;
+    }).interpolate("linear");
+    svg_semni_body = svg.append("svg:path").attr("d", d3line2(contour_original_lowest_detail)).style("stroke-width", 1).style("stroke", "gray").style("fill", "none");
+    svg_semni_arm1 = svg.append("svg:path").attr("d", d3line2(arm1Contour)).style("stroke-width", 1).style("stroke", "gray").style("fill", "none");
+    svg_joint = svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", "1").style("stroke", "red");
+    svg_semni_arm2 = svg.append("svg:path").attr("d", d3line2(arm2Contour)).style("stroke-width", 1).style("stroke", "gray").style("fill", "none");
+    svg_joint2 = svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", "1").style("stroke", "red");
+    svg_semni_head = svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", head2[1] * this.svg_scale).style("stroke-width", 1).style("stroke", "gray").style("fill", "none");
     b_x = body_pos.x * this.svg_scale;
     b_y = body_pos.y * this.svg_scale;
-    this.svg_semni_body.attr("transform", "translate(" + b_x + "," + b_y + ") rotate(" + body_angle * 180 / Math.PI + ")");
+    svg_semni_body.attr("transform", "rotate(" + body_angle * 180 / Math.PI + ")");
     arm1_joint = new b2Vec2();
-    arm1_joint.x = arm1JointAnchor2.x * this.svg_scale + b_x;
-    arm1_joint.y = arm1JointAnchor2.y * this.svg_scale + b_y;
-    arm1_joint = this.rotate_point(b_x, b_y, body_angle, arm1_joint);
-    this.svg_joint.attr("transform", "translate(" + arm1_joint.x + "," + arm1_joint.y + ")");
-    this.svg_semni_arm1.attr("transform", "rotate(" + arm1_angle * 180 / Math.PI + "," + arm1_joint.x + "," + arm1_joint.y + ") translate(" + arm1_joint.x + "," + arm1_joint.y + ")");
+    arm1_joint.x = arm1JointAnchor2.x * this.svg_scale;
+    arm1_joint.y = arm1JointAnchor2.y * this.svg_scale;
+    arm1_joint = this.rotate_point(0, 0, body_angle, arm1_joint);
+    svg_joint.attr("transform", "translate(" + arm1_joint.x + "," + arm1_joint.y + ")");
+    svg_semni_arm1.attr("transform", "rotate(" + arm1_angle * 180 / Math.PI + "," + arm1_joint.x + "," + arm1_joint.y + ") translate(" + arm1_joint.x + "," + arm1_joint.y + ")");
     arm2_joint = new b2Vec2();
-    arm2_joint.x = arm2JointAnchor2.x * this.svg_scale + b_x;
-    arm2_joint.y = arm2JointAnchor2.y * this.svg_scale + b_y;
-    arm2_joint = this.rotate_point(b_x, b_y, body_angle, arm2_joint);
+    arm2_joint.x = arm2JointAnchor2.x * this.svg_scale;
+    arm2_joint.y = arm2JointAnchor2.y * this.svg_scale;
+    arm2_joint = this.rotate_point(0, 0, body_angle, arm2_joint);
     arm2_joint = this.rotate_point(arm1_joint.x, arm1_joint.y, arm1_angle - body_angle - 0.85, arm2_joint);
-    this.svg_joint2.attr("transform", "translate(" + arm2_joint.x + "," + arm2_joint.y + ")");
-    this.svg_semni_arm2.attr("transform", "rotate(" + arm2_angle * 180 / Math.PI + "," + arm2_joint.x + "," + arm2_joint.y + ") translate(" + arm2_joint.x + "," + arm2_joint.y + ")");
-    h_x = head2[0].x * this.svg_scale + b_x;
-    h_y = head2[0].y * this.svg_scale + b_y;
-    return this.svg_semni_head.attr("transform", "rotate(" + body_angle * 180 / Math.PI + "," + b_x + "," + b_y + ") translate(" + h_x + "," + h_y + ")");
+    svg_joint2.attr("transform", "translate(" + arm2_joint.x + "," + arm2_joint.y + ")");
+    svg_semni_arm2.attr("transform", "rotate(" + arm2_angle * 180 / Math.PI + "," + arm2_joint.x + "," + arm2_joint.y + ") translate(" + arm2_joint.x + "," + arm2_joint.y + ")");
+    h_x = head2[0].x * this.svg_scale;
+    h_y = head2[0].y * this.svg_scale;
+    svg_semni_head.attr("transform", "rotate(" + body_angle * 180 / Math.PI + "," + 0 + "," + 0 + ") translate(" + h_x + "," + h_y + ")");
+    return svg;
   };
 
   ui.prototype.init = function() {
@@ -435,6 +448,13 @@ ui = (function() {
         return window.ui.setSemniTransformAsJSON(evt.target.result);
       });
     }
+  };
+
+  ui.prototype.getPostureGraphAsFile = function() {
+    var svg;
+    svg = $("#viewport_svg").clone();
+    svg.find("defs").append("<style>\n   line {\n      stroke-width: 1;\n      stroke: black;\n      fill: none;\n  }\n\n  text {\n    font-family: Verdana; sans-serif;\n    font-size: 7pt;\n    text-anchor: middle;\n    fill: #333333;\n  } \n</style>");
+    return location.href = 'data:text;charset=utf-8,' + encodeURI('<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + svg.html());
   };
 
   return ui;

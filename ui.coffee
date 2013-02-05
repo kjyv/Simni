@@ -6,44 +6,12 @@ class ui
     @physics = physics
     @init()
     @halftime = true
-
-    #set up svg objects
-    @svg = d3.select("div#semni_svg").append("svg:svg")
-            .attr("width", 200)
-            .attr("height", 200)
-
     @svg_scale = 100
-    @d3line2 = d3.svg.line().x((d) ->
-      d.x*@svg_scale
-    ).y((d) ->
-      d.y*@svg_scale
-    ).interpolate("linear")
-
-    @svg_semni_body = @svg.append("svg:path").attr("d",@d3line2(contour_original_low_detail))
-            .style("stroke-width", 1)
-            .style("stroke", "gray")
-            .style("fill", "none")
-
-    @svg_semni_arm1 = @svg.append("svg:path").attr("d",@d3line2(arm1Contour))
-            .style("stroke-width", 1)
-            .style("stroke", "gray")
-            .style("fill", "none")
-    @svg_joint = @svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", "1")
-            .style("stroke", "red")
-    @svg_semni_arm2 = @svg.append("svg:path").attr("d",@d3line2(arm2Contour))
-            .style("stroke-width", 1)
-            .style("stroke", "gray")
-            .style("fill", "none")
-    @svg_joint2 = @svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", "1")
-            .style("stroke", "red")
-    @svg_semni_head = @svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", head2[1]*@svg_scale)
-            .style("stroke-width", 1)
-            .style("stroke", "gray")
-            .style("fill", "none")
 
   update: =>
       if @draw_graphics and @halftime
         @physics.world.DrawDebugData()
+        ###
         @drawSemniOutlineSVG(
           @physics.body.GetPosition(),
           @physics.body2.GetPosition(),
@@ -52,6 +20,7 @@ class ui
           @physics.body2.GetAngle(),
           @physics.body3.GetAngle()
         )
+        ###
       @halftime = not @halftime
 
 
@@ -73,39 +42,72 @@ class ui
 
     return p
 
-  drawSemniOutlineSVG: (body_pos, arm1_pos, arm2_pos, body_angle, arm1_angle, arm2_angle) =>
+  getSemniOutlineSVG: (body_pos, arm1_pos, arm2_pos, body_angle, arm1_angle, arm2_angle, container) =>
+    #draw semni with given angles and position values into given svg container, return
+    #set up svg objects
+    svg = container.append("svg:g")
+
+    d3line2 = d3.svg.line().x((d) ->
+      d.x*physics.ui.svg_scale
+    ).y((d) ->
+      d.y*physics.ui.svg_scale
+    ).interpolate("linear")
+
+    svg_semni_body = svg.append("svg:path").attr("d",d3line2(contour_original_lowest_detail))
+            .style("stroke-width", 1)
+            .style("stroke", "gray")
+            .style("fill", "none")
+
+    svg_semni_arm1 = svg.append("svg:path").attr("d",d3line2(arm1Contour))
+            .style("stroke-width", 1)
+            .style("stroke", "gray")
+            .style("fill", "none")
+    svg_joint = svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", "1")
+            .style("stroke", "red")
+    svg_semni_arm2 = svg.append("svg:path").attr("d",d3line2(arm2Contour))
+            .style("stroke-width", 1)
+            .style("stroke", "gray")
+            .style("fill", "none")
+    svg_joint2 = svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", "1")
+            .style("stroke", "red")
+    svg_semni_head = svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", head2[1]*@svg_scale)
+            .style("stroke-width", 1)
+            .style("stroke", "gray")
+            .style("fill", "none")
+
     #draw body at current position and angle
-    #body_angle = @physics.body.GetAngle()/Math.PI*180
-    #b_x = @physics.body.GetPosition().x*@svg_scale
-    #b_y = @physics.body.GetPosition().y*@svg_scale
     b_x = body_pos.x*@svg_scale
     b_y = body_pos.y*@svg_scale
-    @svg_semni_body.attr("transform", "translate(" +b_x+ "," +b_y+ ") rotate("+body_angle*180/Math.PI+")")
+    #svg_semni_body.attr("transform", "translate(" +b_x+ "," +b_y+ ") rotate("+body_angle*180/Math.PI+")")
+    svg_semni_body.attr("transform", "rotate("+body_angle*180/Math.PI+")")
 
     #draw upper arm at first joint that is moved and rotated with the body, then rotated by arm angle
     arm1_joint = new b2Vec2()
-    arm1_joint.x = arm1JointAnchor2.x*@svg_scale+b_x
-    arm1_joint.y = arm1JointAnchor2.y*@svg_scale+b_y
-    arm1_joint = @rotate_point(b_x, b_y, body_angle, arm1_joint)
-    @svg_joint.attr("transform", "translate(" +arm1_joint.x+ "," +arm1_joint.y+ ")")
-    #arm1_angle = @physics.body2.GetAngle()/Math.PI*180
-    @svg_semni_arm1.attr("transform", "rotate(" +arm1_angle*180/Math.PI+ "," +arm1_joint.x+ "," +arm1_joint.y+ ") translate(" +arm1_joint.x+ "," +arm1_joint.y+ ")")
+    arm1_joint.x = arm1JointAnchor2.x*@svg_scale #+b_x
+    arm1_joint.y = arm1JointAnchor2.y*@svg_scale #+b_y
+    #arm1_joint = @rotate_point(b_x, b_y, body_angle, arm1_joint)
+    arm1_joint = @rotate_point(0, 0, body_angle, arm1_joint)
+    svg_joint.attr("transform", "translate(" +arm1_joint.x+ "," +arm1_joint.y+ ")")
+    svg_semni_arm1.attr("transform", "rotate(" +arm1_angle*180/Math.PI+ "," +arm1_joint.x+ "," +arm1_joint.y+ ") translate(" +arm1_joint.x+ "," +arm1_joint.y+ ")")
 
     #draw lower arm at second joint that is moved with body and rotated, then rotated by upper arm angle, then by own angle
     arm2_joint = new b2Vec2()
-    arm2_joint.x = arm2JointAnchor2.x*@svg_scale+b_x
-    arm2_joint.y = arm2JointAnchor2.y*@svg_scale+b_y
+    arm2_joint.x = arm2JointAnchor2.x*@svg_scale #+b_x
+    arm2_joint.y = arm2JointAnchor2.y*@svg_scale #+b_y
 
-    arm2_joint = @rotate_point(b_x, b_y, body_angle, arm2_joint)
+    #arm2_joint = @rotate_point(b_x, b_y, body_angle, arm2_joint)
+    arm2_joint = @rotate_point(0, 0, body_angle, arm2_joint)
     arm2_joint = @rotate_point(arm1_joint.x, arm1_joint.y, arm1_angle-body_angle-0.85, arm2_joint) #confused why angle offset is necessary
-    @svg_joint2.attr("transform", "translate(" +arm2_joint.x+ "," +arm2_joint.y+ ")")
-    #arm2_angle = @physics.body3.GetAngle()/Math.PI*180
-    @svg_semni_arm2.attr("transform", "rotate(" +arm2_angle*180/Math.PI+ "," +arm2_joint.x+ "," +arm2_joint.y+ ") translate(" +arm2_joint.x+ "," +arm2_joint.y+ ")")
+    svg_joint2.attr("transform", "translate(" +arm2_joint.x+ "," +arm2_joint.y+ ")")
+    svg_semni_arm2.attr("transform", "rotate(" +arm2_angle*180/Math.PI+ "," +arm2_joint.x+ "," +arm2_joint.y+ ") translate(" +arm2_joint.x+ "," +arm2_joint.y+ ")")
 
     #draw head
-    h_x = head2[0].x*@svg_scale+b_x
-    h_y = head2[0].y*@svg_scale+b_y
-    @svg_semni_head.attr("transform", "rotate(" +body_angle*180/Math.PI+ "," +b_x+ "," +b_y+ ") translate(" +h_x+ "," +h_y+ ")")
+    h_x = head2[0].x*@svg_scale #+b_x
+    h_y = head2[0].y*@svg_scale #+b_y
+    #svg_semni_head.attr("transform", "rotate(" +body_angle*180/Math.PI+ "," +b_x+ "," +b_y+ ") translate(" +h_x+ "," +h_y+ ")")
+    svg_semni_head.attr("transform", "rotate(" +body_angle*180/Math.PI+ "," +0+ "," +0+ ") translate(" +h_x+ "," +h_y+ ")")
+
+    return svg
 
   init: =>
     #set up map to mode checkbox and get values
@@ -436,6 +438,26 @@ class ui
     if files.length > 0
       readFile files[0], (file, evt) ->
         window.ui.setSemniTransformAsJSON(evt.target.result)
+
+  getPostureGraphAsFile: =>
+    svg = $("#viewport_svg").clone()
+    svg.find("defs").append """
+    <style>
+       line {
+          stroke-width: 1;
+          stroke: black;
+          fill: none;
+      }
+
+      text {
+        font-family: Verdana; sans-serif;
+        font-size: 7pt;
+        text-anchor: middle;
+        fill: #333333;
+      } 
+    </style>
+    """
+    location.href = 'data:text;charset=utf-8,'+encodeURI ('<?xml version="1.0" encoding="UTF-8" standalone="no"?>')+svg.html()
 
 
 #set up 60 fps animation loop (triggers physics)

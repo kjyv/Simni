@@ -15,7 +15,7 @@ class posture   #i.e. node
   constructor: (position, csl_mode=[], x_pos=0, timestamp=Date.now()) ->
     @name = -1
     @csl_mode = csl_mode  # [upper, lower]
-    @position = position  # [body angle, hip joint angle, knee joint angle]
+    @position = position  # [body angle, hip joint angle, knee joint angle]  #TODO: rename to configuration
     @body_x = x_pos
     @timestamp = timestamp
     @edges_out = []
@@ -320,6 +320,7 @@ class abc
       addEdge @last_posture, p
 
       ## save posture image
+      ###
       ctx = $("#simulation canvas")[0].getContext('2d')
       x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale()
       y = physics.body.GetWorldCenter().y * physics.debugDraw.GetDrawScale()
@@ -345,6 +346,12 @@ class abc
       n = @graph.getNode(p.name)
       n.data.imageData = ctx2.getImageData 0, 0, range * 2, range *2
       ctx2.scale(2,2)
+      ###
+
+      #save posture for graph drawing
+      n = @graph.getNode(p.name)
+      n.data.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]
+      n.data.angles = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()]
 
     @previous_posture = @last_posture
     @last_posture = p
