@@ -315,10 +315,10 @@ ui = (function() {
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_hip = 0.6;
-    release_gf = 0.3;
+    release_bias_hip = 0.5;
+    release_gf = 0;
     contract_gf_hip = 1.0030;
-    gi_hip = 30;
+    gi_hip = 25;
     stall_gb = 15;
     if (hipCSL === "r+") {
       gf = release_gf;
@@ -356,10 +356,10 @@ ui = (function() {
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_knee = 0.6;
+    release_bias_knee = 0.5;
     contract_gf_knee = 1.0020;
-    release_gf = 0.3;
-    gi_knee = 35;
+    release_gf = 0;
+    gi_knee = 20;
     stall_gb = 15;
     if (kneeCSL === "r+") {
       gf = release_gf;

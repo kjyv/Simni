@@ -283,7 +283,7 @@ abc = (function() {
     this.explore_active = false;
     this.graph = arbor.ParticleSystem();
     this.graph.parameters({
-      repulsion: 6000,
+      repulsion: 1000,
       stiffness: 100,
       friction: .5,
       gravity: true
@@ -466,7 +466,7 @@ abc = (function() {
   };
 
   abc.prototype.newCSLMode = function() {
-    var back_dir, back_dir_offset, current_mode, dir_index, direction, joint_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, _ref;
+    var back_dir, back_dir_offset, current_mode, dir_index, direction, found_index, joint_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, _ref;
     set_random_mode = function(curent_mode) {
       var mode, which;
       which = Math.floor(Math.random() * 2);
@@ -526,7 +526,7 @@ abc = (function() {
     if (this.mode_strategy === "unseen") {
       if (this.last_dir && ((_ref = this.last_joint_index) === 0 || _ref === 1)) {
         back_dir = this.last_dir === "+" ? "-" : "+";
-        back_dir_offset = this.last_dir === "+" ? 1 : 0;
+        back_dir_offset = this.last_dir === "+" ? 0 : 1;
         dir_index = this.last_joint_index + back_dir_offset;
         if (this.last_posture.exit_directions[dir_index] === 0) {
           next_mode = next_mode_for_direction(current_mode[this.last_joint_index], back_dir);
@@ -539,6 +539,15 @@ abc = (function() {
       if (!next_mode) {
         if (__indexOf.call(this.last_posture.exit_directions, 0) >= 0) {
           dir_index = this.last_posture.exit_directions.indexOf(0);
+          found_index = 0;
+          while (found_index > -1) {
+            joint_index = Math.ceil((found_index + 1) / 2) - 1;
+            if (joint_index !== this.last_joint_index) {
+              dir_index = found_index;
+              break;
+            }
+            found_index = this.last_posture.exit_directions.indexOf(0, found_index + 1);
+          }
         } else {
           while (!(dir_index != null) || this.last_posture.exit_directions[dir_index] === -1) {
             dir_index = Math.floor(Math.random() * 3.99);

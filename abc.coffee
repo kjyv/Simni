@@ -177,7 +177,7 @@ class abc
 
     @graph = arbor.ParticleSystem()  # display graph, has its own nodes and edges and data for display
     @graph.parameters                # use center-gravity to make the graph settle nicely (ymmv)
-      repulsion: 6000
+      repulsion: 1000
       stiffness: 100
       friction: .5
       gravity: true
@@ -413,10 +413,10 @@ class abc
       #use list of +/- possibilities for each joint: -1 stall, 0 not visited, >0 visited count
       #[h+,h-,k+,k-]
 
-      #try to go back to previous mode
+      #try to go back to previous mode (same joint)
       if @last_dir and @last_joint_index in [0, 1]
         back_dir = if @last_dir is "+" then "-" else "+"         #reverse direction
-        back_dir_offset = if @last_dir is "+" then 1 else 0
+        back_dir_offset = if @last_dir is "+" then 0 else 1      #offset for index
         dir_index = @last_joint_index+back_dir_offset            #get index for reverse direction
         if @last_posture.exit_directions[dir_index] is 0         #if we have not gone this direction from here, we go back
           next_mode = next_mode_for_direction current_mode[@last_joint_index], back_dir
@@ -426,9 +426,20 @@ class abc
           dir_index = undefined
 
       unless next_mode
+        #we are not going back again
+
         if 0 in @last_posture.exit_directions
-          #we have not seen one of the directions, go there
-          dir_index = @last_posture.exit_directions.indexOf 0
+          #we have not seen one of the directions yet
+          dir_index =  @last_posture.exit_directions.indexOf 0
+          found_index = 0
+
+          #go through all directions we haven't tried yet and see if switching the joint is possible
+          while found_index > -1
+            joint_index = Math.ceil((found_index+1) / 2) - 1
+            if joint_index != @last_joint_index
+              dir_index = found_index
+              break
+            found_index = @last_posture.exit_directions.indexOf 0, found_index+1
         else
           #we went all directions already, take random one
           while not dir_index? or @last_posture.exit_directions[dir_index] is -1
