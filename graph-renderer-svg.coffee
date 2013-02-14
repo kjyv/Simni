@@ -175,37 +175,43 @@ class RendererSVG
       color = edge.data.color
       label = edge.data.distance
 
-      #find the visible end points
-      tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name])
-      head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name])
-
       #ctx.strokeStyle = ctx.fillStyle = if color then color else "rgba(0,0,0, .333)"
 
       if pt1.x == pt2.x and pt1.y == pt2.y
         #loop edge, draw a circle line
-        corner = parent.nodeBoxes[edge.source.name]
+        #corner = parent.nodeBoxes[edge.source.name]
         #ctx.beginPath()
-        x = corner[0]
-        y = corner[1]
-        w = corner[2]
+        #x = corner[0]
+        #y = corner[1]
+        #w = corner[2]
         #ctx.arc(x+w, y, w/4, Math.PI, 0.5*Math.PI, false)
         #ctx.stroke()
 
         #TODO: draw self loops again and arrow
       else
-        # draw a line from pt1 to pt2
+        #normal edge, draw straight line
+
+        #find the visible end points
+        tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name])
+        if tail is false
+          tail = pt1
+        head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name])
+        if head is false
+          head = pt2
+
         if edge.data.name == null or edge.data.name == undefined
           edge.data.name = edge.source.name+"-"+edge.target.name
 
+        #add svg element if not existing
         if parent.svg_edges[edge.data.name] == undefined
           parent.svg_edges[edge.data.name] = parent.svg.append("svg:line")
 
+        #refresh coordinates
         parent.svg_edges[edge.data.name].attr("x1", tail.x).attr("y1", tail.y)
                                         .attr("x2", head.x).attr("y2", head.y)
                                         .attr("marker-end", "url(#arrowtip)")
 
         #draw a label
-        #we're expecting the label to be a numeric value here, not so nice...
         if label != undefined and Math.abs(label) > 0.05
           if not edge.data.label_svg
             edge.data.label_svg = parent.svg.append("svg:text")

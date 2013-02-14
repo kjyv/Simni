@@ -131,18 +131,21 @@ RendererSVG = (function() {
       return parent.nodeBoxes[node.name] = [pt.x - w2, pt.y - w2, w, w];
     });
     return this.particleSystem.eachEdge(function(edge, pt1, pt2) {
-      var angle, color, corner, head, label, mid, offset, tail, w, weight, x, y;
+      var angle, color, head, label, mid, offset, tail, weight;
       weight = edge.data.weight;
       color = edge.data.color;
       label = edge.data.distance;
-      tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name]);
-      head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name]);
       if (pt1.x === pt2.x && pt1.y === pt2.y) {
-        corner = parent.nodeBoxes[edge.source.name];
-        x = corner[0];
-        y = corner[1];
-        return w = corner[2];
+
       } else {
+        tail = parent.intersect_line_box(pt1, pt2, parent.nodeBoxes[edge.source.name]);
+        if (tail === false) {
+          tail = pt1;
+        }
+        head = parent.intersect_line_box(tail, pt2, parent.nodeBoxes[edge.target.name]);
+        if (head === false) {
+          head = pt2;
+        }
         if (edge.data.name === null || edge.data.name === void 0) {
           edge.data.name = edge.source.name + "-" + edge.target.name;
         }

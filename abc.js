@@ -274,6 +274,8 @@ abc = (function() {
 
     this.detectAttractor = __bind(this.detectAttractor, this);
 
+    this.wrapAngle = __bind(this.wrapAngle, this);
+
     this.searchSubarray = __bind(this.searchSubarray, this);
 
     this.toggleExplore = __bind(this.toggleExplore, this);
@@ -283,8 +285,8 @@ abc = (function() {
     this.explore_active = false;
     this.graph = arbor.ParticleSystem();
     this.graph.parameters({
-      repulsion: 1000,
-      stiffness: 100,
+      repulsion: 500,
+      stiffness: 20,
       friction: .5,
       gravity: true
     });
@@ -296,7 +298,10 @@ abc = (function() {
     if (!physics.upper_joint.csl_active) {
       $("#toggle_csl").click();
     }
-    return this.explore_active = !this.explore_active;
+    this.explore_active = !this.explore_active;
+    if (this.explore_active) {
+      return console.log("start explore run at " + new Date);
+    }
   };
 
   abc.prototype.searchSubarray = function(sub, array, cmp) {
@@ -320,6 +325,12 @@ abc = (function() {
     }
   };
 
+  abc.prototype.wrapAngle = function(angle) {
+    var twoPi;
+    twoPi = 2 * Math.PI;
+    return angle - twoPi * Math.floor(angle / twoPi);
+  };
+
   MAX_UNIX_TIME = 1924988399;
 
   time = MAX_UNIX_TIME;
@@ -331,10 +342,10 @@ abc = (function() {
     if (!physics.run) {
       return;
     }
-    p_body = Math.atan(Math.tan(body.GetAngle()));
+    p_body = this.wrapAngle(body.GetAngle());
     p_hip = upper_joint.GetJointAngle();
     p_knee = lower_joint.GetJointAngle();
-    if (trajectory.length === 4000) {
+    if (trajectory.length === 10000) {
       trajectory.shift();
     }
     trajectory.push([p_body, p_hip, p_knee]);

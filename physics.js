@@ -90,10 +90,10 @@ physics = (function() {
     fixDef.restitution = 0.1;
     this.fixDef = fixDef;
     this.ground_height = 0.03;
-    this.ground_width = 3;
+    this.ground_width = 10;
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_staticBody;
-    bodyDef.position.x = 1;
+    bodyDef.position.x = -5;
     bodyDef.position.y = 1.1;
     bodyDef.linearDamping = 50;
     fixDef.shape = new b2PolygonShape;
@@ -131,7 +131,7 @@ physics = (function() {
     fixDef.shape.SetAsBox(0.1, 0.1);
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_staticBody;
-    bodyDef.position.Set(1.3, 0.8);
+    bodyDef.position.Set(2, 0.8);
     box = this.world.CreateBody(bodyDef);
     return box.CreateFixture(fixDef);
   };
@@ -147,7 +147,7 @@ physics = (function() {
     fixDef.shape.m_radius = 0.12;
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_staticBody;
-    bodyDef.position.Set(1.3, 0.8);
+    bodyDef.position.Set(2, 0.8);
     box = this.world.CreateBody(bodyDef);
     return box.CreateFixture(fixDef);
   };
@@ -161,7 +161,7 @@ physics = (function() {
     bodyDef.type = b2Body.b2_dynamicBody;
     this.fixDef.density = 35;
     this.fixDef.shape = new b2PolygonShape;
-    pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x, this.ground_bodyDef.position.y - this.ground_height - 0.005), new b2Vec2(this.ground_bodyDef.position.x, this.ground_bodyDef.position.y - this.ground_height - pend_length));
+    pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x + (this.ground_width / 2) + 1.4, this.ground_bodyDef.position.y - this.ground_height - 0.005), new b2Vec2(this.ground_bodyDef.position.x + (this.ground_width / 2) + 1.4, this.ground_bodyDef.position.y - this.ground_height - pend_length));
     this.fixDef.shape.SetAsArray(pend_vertices, 2);
     bodyDef.linearDamping = damping;
     bodyDef.angularDamping = damping;
@@ -199,7 +199,7 @@ physics = (function() {
     bodyDef.type = b2Body.b2_dynamicBody;
     this.fixDef.density = 10;
     this.fixDef.shape = new b2PolygonShape;
-    pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x, this.ground_bodyDef.position.y - this.ground_height - 0.005), new b2Vec2(this.ground_bodyDef.position.x, this.ground_bodyDef.position.y - this.ground_height - pend_length));
+    pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x + (this.ground_width / 2) + 1.4, this.ground_bodyDef.position.y - this.ground_height - 0.005), new b2Vec2(this.ground_bodyDef.position.x + (this.ground_width / 2) + 1.4, this.ground_bodyDef.position.y - this.ground_height - pend_length));
     this.fixDef.shape.SetAsArray(pend_vertices, 2);
     bodyDef.linearDamping = damping;
     bodyDef.angularDamping = damping;
@@ -223,7 +223,7 @@ physics = (function() {
     this.fixDef.shape = new b2CircleShape(mass_size);
     this.fixDef.shape.m_p = pend_vertices[1];
     mass = this.body.CreateFixture(this.fixDef);
-    pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x, this.ground_bodyDef.position.y - this.ground_height - pend_length - 0.005), new b2Vec2(this.ground_bodyDef.position.x, this.ground_bodyDef.position.y - this.ground_height - (2 * pend_length)));
+    pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x + (this.ground_width / 2) + 1.4, this.ground_bodyDef.position.y - this.ground_height - pend_length - 0.005), new b2Vec2(this.ground_bodyDef.position.x + (this.ground_width / 2) + 1.4, this.ground_bodyDef.position.y - this.ground_height - (2 * pend_length)));
     this.fixDef.shape = new b2PolygonShape;
     this.fixDef.shape.SetAsArray(pend_vertices, 2);
     bodyDef.linearDamping = damping;
@@ -601,7 +601,7 @@ physics = (function() {
       this.step = false;
       if (isMouseDown && (!mouseJoint)) {
         body = window.getBodyAtMouse();
-        if (body) {
+        if (body && !(body === this.ground && this.pend_style === 3)) {
           md = new b2MouseJointDef();
           md.bodyA = this.world.GetGroundBody();
           if (body.GetType() === b2Body.b2_staticBody) {

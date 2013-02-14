@@ -38,10 +38,10 @@ class physics
 
     #create ground
     @ground_height = 0.03
-    @ground_width = 3
+    @ground_width = 10
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_staticBody
-    bodyDef.position.x = 1
+    bodyDef.position.x = -5
     bodyDef.position.y = 1.1
     bodyDef.linearDamping = 50
 
@@ -90,7 +90,7 @@ class physics
 
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_staticBody
-    bodyDef.position.Set 1.3, 0.8
+    bodyDef.position.Set 2, 0.8
     box = @world.CreateBody bodyDef
     box.CreateFixture fixDef
 
@@ -106,7 +106,7 @@ class physics
 
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_staticBody
-    bodyDef.position.Set 1.3, 0.8
+    bodyDef.position.Set 2, 0.8
     box = @world.CreateBody bodyDef
     box.CreateFixture fixDef
 
@@ -122,8 +122,8 @@ class physics
     @fixDef.shape = new b2PolygonShape
     pend_vertices = new Array(
       #don't "touch" the ground so we don't get collisions while rotating
-      new b2Vec2(@ground_bodyDef.position.x, @ground_bodyDef.position.y - @ground_height - 0.005),
-      new b2Vec2(@ground_bodyDef.position.x, @ground_bodyDef.position.y - @ground_height - pend_length)
+      new b2Vec2(@ground_bodyDef.position.x+(@ground_width/2)+1.4, @ground_bodyDef.position.y - @ground_height - 0.005),
+      new b2Vec2(@ground_bodyDef.position.x+(@ground_width/2)+1.4, @ground_bodyDef.position.y - @ground_height - pend_length)
     )
     @fixDef.shape.SetAsArray pend_vertices, 2
     bodyDef.linearDamping = damping
@@ -172,8 +172,8 @@ class physics
     @fixDef.shape = new b2PolygonShape
     pend_vertices = new Array(
       #0.005 -> don't "touch" the ground so we don't get collisions while rotating
-      new b2Vec2(@ground_bodyDef.position.x, @ground_bodyDef.position.y - @ground_height - 0.005),
-      new b2Vec2(@ground_bodyDef.position.x, @ground_bodyDef.position.y - @ground_height - pend_length)
+      new b2Vec2(@ground_bodyDef.position.x+(@ground_width/2)+1.4, @ground_bodyDef.position.y - @ground_height - 0.005),
+      new b2Vec2(@ground_bodyDef.position.x+(@ground_width/2)+1.4, @ground_bodyDef.position.y - @ground_height - pend_length)
     )
     @fixDef.shape.SetAsArray pend_vertices, 2
     bodyDef.linearDamping = damping
@@ -209,8 +209,8 @@ class physics
 
     #second line
     pend_vertices = new Array(
-      new b2Vec2(@ground_bodyDef.position.x, @ground_bodyDef.position.y - @ground_height - pend_length - 0.005),
-      new b2Vec2(@ground_bodyDef.position.x, @ground_bodyDef.position.y - @ground_height - (2*pend_length))
+      new b2Vec2(@ground_bodyDef.position.x+(@ground_width/2)+1.4, @ground_bodyDef.position.y - @ground_height - pend_length - 0.005),
+      new b2Vec2(@ground_bodyDef.position.x+(@ground_width/2)+1.4, @ground_bodyDef.position.y - @ground_height - (2*pend_length))
     )
     @fixDef.shape = new b2PolygonShape
     @fixDef.shape.SetAsArray pend_vertices, 2
@@ -652,7 +652,7 @@ class physics
 
       if isMouseDown and (not mouseJoint)
         body = window.getBodyAtMouse()
-        if body
+        if body and not (body is @ground and @pend_style is 3)
           md = new b2MouseJointDef()
           md.bodyA = @world.GetGroundBody()
           if body.GetType() is b2Body.b2_staticBody

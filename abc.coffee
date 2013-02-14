@@ -177,8 +177,8 @@ class abc
 
     @graph = arbor.ParticleSystem()  # display graph, has its own nodes and edges and data for display
     @graph.parameters                # use center-gravity to make the graph settle nicely (ymmv)
-      repulsion: 1000
-      stiffness: 100
+      repulsion: 500 #1000
+      stiffness: 20 #100
       friction: .5
       gravity: true
 #      timeout: 5
@@ -191,6 +191,8 @@ class abc
     if not physics.upper_joint.csl_active
       $("#toggle_csl").click()
     @explore_active = not @explore_active
+    if @explore_active
+      console.log "start explore run at "+new Date
 
   searchSubarray: (sub, array, cmp) =>
     #returns index(es) if subarray is found in array using cmp (list1, index1, list2, index2) as comparator
@@ -209,6 +211,10 @@ class abc
     else
       return found
 
+  wrapAngle: (angle) =>
+    twoPi = 2*Math.PI
+    return angle - twoPi * Math.floor( angle / twoPi )
+
   MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
   time = MAX_UNIX_TIME
   trajectory = []   #last n state points
@@ -217,13 +223,13 @@ class abc
     if not physics.run
       return
 
-    p_body = Math.atan(Math.tan body.GetAngle())     #p = φ, wrap around
+    p_body = @wrapAngle body.GetAngle()     #p = φ
     p_hip = upper_joint.GetJointAngle()
     p_knee = lower_joint.GetJointAngle()
 
     #find attractors, take a sample of trajectory and try to find it multiple times in the
     #past trajectory (with epsilon), hence (quasi)periodic behaviour
-    if trajectory.length==4000   #corresponds to max periode duration that can be detected
+    if trajectory.length==10000   #corresponds to max periode duration that can be detected
       trajectory.shift()
 
     trajectory.push [p_body, p_hip, p_knee]
@@ -466,7 +472,7 @@ class abc
 
   limitCSL: (upper_joint, lower_joint) =>
     # if csl goes against limit, set to release mode in same direction with
-    # current csl value as bias
+    # current csl value as bias (stall mode)
     if upper_joint.csl_active and upper_joint.csl_mode is "c"
       mc = upper_joint.motor_control
       limit = 15
