@@ -324,8 +324,9 @@ class ui
     release_bias_hip = 0.5
     release_gf = 0
     contract_gf_hip = 1.0030 #1.0025 #1.006
-    gi_hip = 25 #30 #27 #50
-    stall_gb = 15
+    gi = 25 #30 #27 #50
+    stall_gb = 1 #15
+    hold_gf = 1
 
     if hipCSL is "r+"
       gf = release_gf
@@ -341,18 +342,20 @@ class ui
       #prefill integrator to pre-determine direction
       @physics.upper_joint.last_integrated = @physics.upper_joint.csl_prefill
     else if hipCSL is "s+"
-      gf = release_gf
+      gf = hold_gf
       gb = stall_gb
+      @physics.upper_joint.last_integrated = 0
     else if hipCSL is "s-"
-      gf = release_gf
+      gf = hold_gf
       gb = -stall_gb
+      @physics.upper_joint.last_integrated = 0
 
     if change_select
       #re-select select option in case we came from another function and not from select widget
       $("#csl_mode_hip option[value='" + hipCSL + "']").attr "selected", true
 
-    $("#gi_param_upper").val(gi_hip)
-    @physics.upper_joint.gi = gi_hip
+    $("#gi_param_upper").val(gi)
+    @physics.upper_joint.gi = gi
 
     $("#gf_param_upper").val(gf)
     @physics.upper_joint.gf = gf
@@ -363,36 +366,39 @@ class ui
 
   set_csl_mode_lower: (kneeCSL, change_select=true) =>
     release_bias_knee = 0.5
-    contract_gf_knee = 1.0020 #1.0015 #1.006
+    contract_gf_knee = 1.003 #1.002 #1.0015 #1.006
     release_gf = 0
-    gi_knee = 20 #35 #26 #50
-    stall_gb = 15
+    gi = 25 #20 #35 #26 #50
+    stall_gb = 3 #15
+    hold_gf = 1
 
     if kneeCSL is "r+"
       gf = release_gf
       gb = release_bias_knee
-      @physics.lower_joint.csl_prefill = -0.5
+      @physics.lower_joint.csl_prefill = 0.5
     else if kneeCSL is "r-"
       gf = release_gf
       gb = -release_bias_knee
-      @physics.lower_joint.csl_prefill = 0.5
+      @physics.lower_joint.csl_prefill = -0.5
     else if kneeCSL is "c"
       gf = contract_gf_knee
       gb = 0
-      @physics.upper_joint.last_integrated = @physics.upper_joint.csl_prefill
+      @physics.lower_joint.last_integrated = @physics.lower_joint.csl_prefill
     else if kneeCSL is "s+"
-      gf = release_gf
+      gf = hold_gf
       gb = stall_gb
+      @physics.lower_joint.last_integrated = 0
     else if kneeCSL is "s-"
-      gf = release_gf
+      gf = hold_gf
       gb = -stall_gb
+      @physics.lower_joint.last_integrated = 0
 
     if change_select
       #re-select select option in case we came from another function
       $("#csl_mode_knee option[value='" + kneeCSL + "']").attr 'selected', true
 
-    $("#gi_param_lower").val(gi_knee)
-    @physics.lower_joint.gi = gi_knee
+    $("#gi_param_lower").val(gi)
+    @physics.lower_joint.gi = gi
 
     $("#gf_param_lower").val(gf)
     @physics.lower_joint.gf = gf

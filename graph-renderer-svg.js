@@ -11,7 +11,7 @@ RendererSVG = (function() {
 
     var MAX_UNIX_TIME, arrowLength, arrowWidth;
     this.width = 1400;
-    this.height = 800;
+    this.height = 900;
     this.svg = d3.select(container).append("svg:svg").attr("width", this.width).attr("height", this.height).attr("xmlns", "http://www.w3.org/2000/svg");
     this.svg_nodes = {};
     this.svg_edges = {};

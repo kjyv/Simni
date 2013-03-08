@@ -66,7 +66,8 @@ Neurorobotics Research Laboratory, Berlin
             <div id="state_to_mode_mapping" style="display:none;"><input type="checkbox" id="phase_space_2_enabled">phase space U/&phi;'<br/></div>
         </div>
         <div id="bottom-panel">
-            <div id="controls">
+            <div id="controls" class="box">
+                <h1>Simulation controls</h1>
                 <select id="pendulum_style">
                     <option value="1">Single Pendulum</option>
                     <option value="2">Double Pendulum</option>
@@ -84,7 +85,7 @@ Neurorobotics Research Laboratory, Berlin
                                 if joint
                                     physics.world.DestroyJoint joint
                                     joint = null
-                                
+
                             removeBody = (body) ->
                                 if body
                                     physics.world.DestroyBody body
@@ -103,22 +104,22 @@ Neurorobotics Research Laboratory, Berlin
                             if style is "1"
                                 physics.pend_style = 1
                                 physics.createPendulum()
-          
+
                                 #get initial gi/gf from current mode setting
                                 ui.map_mode physics.lower_joint
-                                
+
                                 $("#semni_posture_controls").fadeOut "fast", ->
                                     $("#map_state_to_mode_panel").fadeIn("fast")
                                     $("#state_to_mode_presets").fadeIn("fast")
                                     $("#state_to_mode_mapping").fadeIn("fast")
-                                    
+
                             else if style is "2"
                                 physics.pend_style = 2
 
                                 physics.createDoublePendulum()
                                 ui.map_mode physics.lower_joint
                                 ui.map_mode physics.upper_joint
-                                
+
                             else if style is "3"
                                 physics.pend_style = 3
                                 physics.createSemni()
@@ -150,7 +151,7 @@ Neurorobotics Research Laboratory, Berlin
                                 physics.toggleCSL physics.lower_joint
                                 if physics.upper_joint
                                     physics.toggleCSL physics.upper_joint
-                                    
+
                         $("#toggle_bounce").on 'click', ->
                             if physics.pend_style is 3
                                 physics.toggleBounce physics.upper_joint
@@ -203,7 +204,7 @@ Neurorobotics Research Laboratory, Berlin
                 <span id="mode_val_lower"></span> <span id="csl_mode_name_lower">contraction</span><br/>
             </div>
 
-            <div id="map_state_to_mode_panel" style="display:none;">
+            <div id="map_state_to_mode_panel" style="display:none;" class="box">
                 <label for="map_state_to_mode">map state to mode [m]</label><input type="checkbox" id="map_state_to_mode"><br/>
                 mode = w<sub>0</sub> &middot; U + w<sub>1</sub> &middot; &phi;' + w<sub>2</sub><br/>
                 <div class="vertical-range-box">
@@ -247,16 +248,16 @@ Neurorobotics Research Laboratory, Berlin
                     draw_state_to_mode_mapping()
                 })
             </script>
-            <div id="state_to_mode_presets" style="display:none;">
+            <div id="state_to_mode_presets" style="display:none;" class="box">
                 <br/>
                 <button id="preset_1" onclick="ui.set_preset(114,52,0.25,false,false)">Preset 1</button>left down-c<br/>
                 <button id="preset_2" onclick="ui.set_preset(-811,-162,-1.08,false,false)">Preset 2</button>s right, c up,</br>f=0.018<br/>
                 <button id="preset_3" onclick="ui.set_preset(450,0,1.001,true,true)">Preset 3</button>self-inhibit c,<br/>f=0.022<br/>
                 <button id="preset_4" onclick="ui.set_preset(81,-3676,-0.5,false,false)">Preset 4</button>r right, s left
             </div>
-            <div id="semni_posture_controls">
-                <br/>
-                <button id="toggle_explore" class="toggle-button">toggle abc explore [e]</button>
+            <div id="semni_posture_controls" class="box">
+                <h1>ABC learning</h1>
+                <button id="toggle_explore" class="toggle-button">toggle explore [e]</button>
                 <script type="text/coffeescript">
                     $("#toggle_explore").on 'click', ->
                         if physics.pend_style is 3
@@ -284,15 +285,20 @@ Neurorobotics Research Laboratory, Berlin
                     <option value="random">random</option>
                     <option value="unseen" selected="selected">unseen</option>
                 </select><br/>
+                <br/>
                 <button id="find_circles" onclick="physics.abc.posture_graph.findElementaryCircles(); console.log(p.abc.posture_graph.circles);">Find circles</button>
                 <button id="walk_best_circle" class="toggle-button" onclick="physics.abc.posture_graph.walkCircle()">Walk best circle</button>
                 <br/>
                 <button id="save_graph_svg" onclick="physics.ui.getPostureGraphAsFile()">Save graph as SVG</button>
 
             </div>
-            <div id="semni_svg"></div>
+            <div id="graph_controls" class="box">
+                <h1>Graph properties</h1>
+                <label for="graph_repulsion">Repulsion:</label><input id="graph_repulsion" type="range" min="100" max="2000" value="500" step="1" onchange="p.abc.graph.parameters({'repulsion': parseInt(this.value)})" /></br>
+                <label for="graph_stiffness">Stiffness:</label><input id="graph_stiffness" type="range" min="10" max="200" value="20" step="1" onchange="p.abc.graph.parameters({'stiffness': parseInt(this.value)})" />
+            </div>
             <div id="posture_graph">
-                <canvas width="1400" height="800" id="viewport"></canvas>
+                <canvas width="1400" height="900" id="viewport"></canvas>
                 <canvas width="300" height="300" id="tempimage" style="display:none;"></canvas>
                 <div id="viewport_svg"></div>
             </div> 
@@ -573,19 +579,19 @@ Neurorobotics Research Laboratory, Berlin
                 $(document).bind('keydown', 't', function (evt){
                    $('#toggle_csl').click(); return false;
                 })
-                
+
                 $(document).bind('keydown', 'b', function (evt){
                    $('#toggle_bounce').click(); return false;
                 })
-                
+
                 $(document).bind('keydown', 'e', function (evt){
                    $('#toggle_explore').click(); return false;
                 })
-                
+
                 $(document).bind('keydown', 'p', function (evt){
                    $('#toggle_pause').click(); return false;
                 })
-                
+
                 $(document).bind('keydown', 'n', function (evt){
                    $('#next_step').click(); return false;
                 })

@@ -473,30 +473,22 @@ class abc
   limitCSL: (upper_joint, lower_joint) =>
     # if csl goes against limit, set to release mode in same direction with
     # current csl value as bias (stall mode)
+    limit = 15
     if upper_joint.csl_active and upper_joint.csl_mode is "c"
       mc = upper_joint.motor_control
-      limit = 15
       if Math.abs(mc) > limit #and upper_joint.GetJointSpeed() closeTo 0
         if mc > limit
           ui.set_csl_mode_upper "s+"
-          $("#gb_param_upper").val(limit)
-          physics.upper_joint.gb = limit
         else if mc < -limit
           ui.set_csl_mode_upper "s-"
-          $("#gb_param_upper").val(-limit)
-          physics.upper_joint.gb = -limit
 
     if lower_joint.csl_active and lower_joint.csl_mode is "c"
       mc = lower_joint.motor_control
       if Math.abs(mc) > limit
         if mc > limit
           ui.set_csl_mode_lower "s+"
-          $("#gb_param_lower").val(limit)
-          physics.lower_joint.gb = limit
         else if mc < -limit
-          ui.set_csl_mode_lower "s-", false
-          $("#gb_param_lower").val(-limit)
-          physics.lower_joint.gb = -limit
+          ui.set_csl_mode_lower "s-"
 
 
   update: (body, upper_joint, lower_joint) =>

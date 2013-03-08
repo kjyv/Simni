@@ -311,15 +311,16 @@ ui = (function() {
   };
 
   ui.prototype.set_csl_mode_upper = function(hipCSL, change_select) {
-    var contract_gf_hip, gb, gf, gi_hip, release_bias_hip, release_gf, stall_gb;
+    var contract_gf_hip, gb, gf, gi, hold_gf, release_bias_hip, release_gf, stall_gb;
     if (change_select == null) {
       change_select = true;
     }
     release_bias_hip = 0.5;
     release_gf = 0;
     contract_gf_hip = 1.0030;
-    gi_hip = 25;
-    stall_gb = 15;
+    gi = 25;
+    stall_gb = 1;
+    hold_gf = 1;
     if (hipCSL === "r+") {
       gf = release_gf;
       gb = release_bias_hip;
@@ -333,17 +334,19 @@ ui = (function() {
       gb = 0;
       this.physics.upper_joint.last_integrated = this.physics.upper_joint.csl_prefill;
     } else if (hipCSL === "s+") {
-      gf = release_gf;
+      gf = hold_gf;
       gb = stall_gb;
+      this.physics.upper_joint.last_integrated = 0;
     } else if (hipCSL === "s-") {
-      gf = release_gf;
+      gf = hold_gf;
       gb = -stall_gb;
+      this.physics.upper_joint.last_integrated = 0;
     }
     if (change_select) {
       $("#csl_mode_hip option[value='" + hipCSL + "']").attr("selected", true);
     }
-    $("#gi_param_upper").val(gi_hip);
-    this.physics.upper_joint.gi = gi_hip;
+    $("#gi_param_upper").val(gi);
+    this.physics.upper_joint.gi = gi;
     $("#gf_param_upper").val(gf);
     this.physics.upper_joint.gf = gf;
     $("#gb_param_upper").val(gb);
@@ -352,39 +355,42 @@ ui = (function() {
   };
 
   ui.prototype.set_csl_mode_lower = function(kneeCSL, change_select) {
-    var contract_gf_knee, gb, gf, gi_knee, release_bias_knee, release_gf, stall_gb;
+    var contract_gf_knee, gb, gf, gi, hold_gf, release_bias_knee, release_gf, stall_gb;
     if (change_select == null) {
       change_select = true;
     }
     release_bias_knee = 0.5;
-    contract_gf_knee = 1.0020;
+    contract_gf_knee = 1.003;
     release_gf = 0;
-    gi_knee = 20;
-    stall_gb = 15;
+    gi = 25;
+    stall_gb = 3;
+    hold_gf = 1;
     if (kneeCSL === "r+") {
       gf = release_gf;
       gb = release_bias_knee;
-      this.physics.lower_joint.csl_prefill = -0.5;
+      this.physics.lower_joint.csl_prefill = 0.5;
     } else if (kneeCSL === "r-") {
       gf = release_gf;
       gb = -release_bias_knee;
-      this.physics.lower_joint.csl_prefill = 0.5;
+      this.physics.lower_joint.csl_prefill = -0.5;
     } else if (kneeCSL === "c") {
       gf = contract_gf_knee;
       gb = 0;
-      this.physics.upper_joint.last_integrated = this.physics.upper_joint.csl_prefill;
+      this.physics.lower_joint.last_integrated = this.physics.lower_joint.csl_prefill;
     } else if (kneeCSL === "s+") {
-      gf = release_gf;
+      gf = hold_gf;
       gb = stall_gb;
+      this.physics.lower_joint.last_integrated = 0;
     } else if (kneeCSL === "s-") {
-      gf = release_gf;
+      gf = hold_gf;
       gb = -stall_gb;
+      this.physics.lower_joint.last_integrated = 0;
     }
     if (change_select) {
       $("#csl_mode_knee option[value='" + kneeCSL + "']").attr('selected', true);
     }
-    $("#gi_param_lower").val(gi_knee);
-    this.physics.lower_joint.gi = gi_knee;
+    $("#gi_param_lower").val(gi);
+    this.physics.lower_joint.gi = gi;
     $("#gf_param_lower").val(gf);
     this.physics.lower_joint.gf = gf;
     $("#gb_param_lower").val(gb);

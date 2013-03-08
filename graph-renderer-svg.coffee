@@ -2,7 +2,7 @@
 class RendererSVG
   constructor: (container, parent, abc) ->
     @width = 1400
-    @height = 800
+    @height = 900
     @svg = d3.select(container).append("svg:svg")
             .attr("width", @width)
             .attr("height", @height)

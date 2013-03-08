@@ -587,18 +587,14 @@ abc = (function() {
 
   abc.prototype.limitCSL = function(upper_joint, lower_joint) {
     var limit, mc;
+    limit = 15;
     if (upper_joint.csl_active && upper_joint.csl_mode === "c") {
       mc = upper_joint.motor_control;
-      limit = 15;
       if (Math.abs(mc) > limit) {
         if (mc > limit) {
           ui.set_csl_mode_upper("s+");
-          $("#gb_param_upper").val(limit);
-          physics.upper_joint.gb = limit;
         } else if (mc < -limit) {
           ui.set_csl_mode_upper("s-");
-          $("#gb_param_upper").val(-limit);
-          physics.upper_joint.gb = -limit;
         }
       }
     }
@@ -606,13 +602,9 @@ abc = (function() {
       mc = lower_joint.motor_control;
       if (Math.abs(mc) > limit) {
         if (mc > limit) {
-          ui.set_csl_mode_lower("s+");
-          $("#gb_param_lower").val(limit);
-          return physics.lower_joint.gb = limit;
+          return ui.set_csl_mode_lower("s+");
         } else if (mc < -limit) {
-          ui.set_csl_mode_lower("s-", false);
-          $("#gb_param_lower").val(-limit);
-          return physics.lower_joint.gb = -limit;
+          return ui.set_csl_mode_lower("s-");
         }
       }
     }

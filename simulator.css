@@ -4,6 +4,18 @@ body {
     font-size: 12px;
 }
 
+h1 {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.box {
+    padding: 0px 10px 10px 10px;
+    border: 1px solid darkgray;
+    border-radius: 4px;
+    min-height: 250px;
+}
+
 #simulation {
     float: left;
 }
@@ -86,15 +98,14 @@ input[type="range"] {
     width: 1100px;
 }
 
-#semni_svg {
+#graph_controls {
     float: left;
-    width: 200px;
-    height: 200px;
+    width: 416px;
 }
 
 #viewport_svg {
     width: 1400px;
-    height: 800px;
+    height: 1000px;
 }
 
 #state_to_mode_mapping {
