@@ -16,26 +16,42 @@ class posture   #i.e. node
     @name = -1
     @csl_mode = csl_mode  # [upper, lower]
     @position = position  # [body angle, hip joint angle, knee joint angle]  #TODO: rename to configuration
+    @positions = []  #positions of the body part for svg drawing
     @body_x = x_pos
     @timestamp = timestamp
     @edges_out = []
+    @edges_in = []
     @exit_directions = [0,0,0,0]   #h+,h-,k+,k- : list of how often each direction of each joint this posture has been travelled from
     @length = 1  #quirk for searchSubarray
+    @activation = 1
 
-  isEqualTo: (node) =>
-    @position[0] == node.position[0] and @position[1] == node.position[1] and @position[2] == node.position[2] and @csl_mode[0] == node.csl_mode[0] and @csl_mode[1] == node.csl_mode[1]
+  asJSON: =>
+    replacer = (edges)->
+      new_edges = []
+      for e in edges
+        new_edges.push e.target_node.name
+      new_edges
+
+    JSON.stringify {"name": @name, "csl_mode":@csl_mode, "position": @position, "positions": @positions, "body_x": @body_x, "timestamp": @timestamp, "exit_directions": @exit_directions, "activation": @activation, "edges_out": replacer(@edges_out)}, null, 4
 
   getEdgeTo: (target) =>
     for edge in @edges_out
       return edge if edge.target_node is target
 
-  #method to determine if this posture is near another one
-  e = 0.35  #0.6  #default possible posture distance (quite large...)
-  isCloseExplore: (a,i, b,j, eps=e) =>
-      Math.abs(a.position[0] - b[j].position[0]) < eps and Math.abs(a.position[1] - b[j].position[1]) < eps and Math.abs(a.position[2] - b[j].position[2]) < eps and a.csl_mode[0] == b[j].csl_mode[0] and a.csl_mode[1] == b[j].csl_mode[1]
+  getEdgeFrom: (source) =>
+    for edge in source.edges_out
+      return edge if edge.target_node is this
+
+  isEqualTo: (node) =>
+    @position[0] == node.position[0] and @position[1] == node.position[1] and @position[2] == node.position[2] and @csl_mode[0] == node.csl_mode[0] and @csl_mode[1] == node.csl_mode[1]
 
   isClose: (a,b=this, eps=0.25) =>
       Math.abs(a.position[0] - b.position[0]) < eps and Math.abs(a.position[1] - b.position[1]) < eps and Math.abs(a.position[2] - b.position[2]) < eps and a.csl_mode[0] == b.csl_mode[0] and a.csl_mode[1] == b.csl_mode[1]
+
+  #method to determine if this posture is near another one
+  e = 0.4  #0.6  #default possible posture distance
+  isCloseExplore: (a,i, b,j, eps=e) =>
+      Math.abs(a.position[0] - b[j].position[0]) < eps and Math.abs(a.position[1] - b[j].position[1]) < eps and Math.abs(a.position[2] - b[j].position[2]) < eps and a.csl_mode[0] == b[j].csl_mode[0] and a.csl_mode[1] == b[j].csl_mode[1]
 
 class transition  #i.e. edge
   constructor: (start_node, target_node) ->
@@ -54,10 +70,10 @@ class transition  #i.e. edge
     return false
 
 class postureGraph
-  #TODO: save graph, load graph (+ arbor graph)
-  constructor: () ->
+  constructor: (arborGraph) ->
     @nodes = []  #list of the posture nodes
     @walk_circle_active = false
+    @arborGraph = arborGraph
 
   addNode: (node) =>
     node.name = @nodes.length
@@ -68,6 +84,85 @@ class postureGraph
 
   length: =>
     @nodes.length
+
+  saveGaphToFile: =>
+    graph_as_string = ""
+    for n in @nodes
+      graph_as_string += "\n"+n.asJSON()+","
+
+    #remove last comma
+    graph_as_string = graph_as_string.substring(0, graph_as_string.length - 1)
+    location.href = 'data:text;charset=utf-8,'+encodeURI "{\n"+"\"nodes\": ["+graph_as_string+"]\n"+"}"
+
+
+  populateGraphFromJSON: (tj=null) =>
+    #flatten file and parse it (parse chokes on newlines)
+    tj = tj.replace(/(\r\n|\n|\r)/gm,"")
+    t = JSON.parse(tj)
+
+    #clear nodes we might already have
+    @nodes = []
+
+    #put the new nodes in
+    for n in t.nodes
+      nn = new posture(n.position, n.csl_mode, n.body_x, n.timestamp)
+      nn.name = n.name
+      nn.activation = n.activation
+      nn.exit_directions = n.exit_directions
+      nn.positions = n.positions
+      @nodes.push nn
+
+    #put in edges
+    #TODO: save edges with unique id separately in JSON file and get all associated data as well
+    for n in t.nodes
+      nn = @getNode n.name
+      for e in n.edges_out
+        nn.edges_out.push(new transition(nn, @getNode(e)))
+
+    #refresh display graph
+    ag = @arborGraph
+    @arborGraph.prune()
+
+    @arborGraph.renderer.svg_nodes = {}
+    @arborGraph.renderer.svg_edges = {}
+
+    $("#viewport_svg svg g").remove()
+    $("#viewport_svg svg rect").remove()
+    $("#viewport_svg svg text").remove()
+    $("#viewport_svg svg line").remove()
+
+    for n in @nodes
+      for e in n.edges_out
+        nn = e.target_node
+        ag.addEdge(n.name, nn.name)
+        source_node = ag.getNode(n.name)
+        target_node = ag.getNode(nn.name)
+
+        source_node.data =
+          label: n.csl_mode
+          number: n.name
+          activation: n.activation
+          configuration: n.position
+          positions: n.positions
+
+        target_node.data =
+          label: nn.csl_mode
+          number: nn.name
+          activation: nn.activation
+          configuration: nn.position
+          positions: nn.positions
+
+  loadGraphFromFile: (files) =>
+    readFile = (file, callback) ->
+      reader = new FileReader()
+      reader.onload = (evt) ->
+        callback file, evt  if typeof callback is "function"
+      reader.readAsBinaryString file
+
+    if files.length > 0
+      readFile files[0], (file, evt) ->
+        p.abc.posture_graph.populateGraphFromJSON evt.target.result
+
 
   findElementaryCircles: =>
     #implement Tarjan's algorithm for finding circles in directed graphs
@@ -167,14 +262,20 @@ class postureGraph
         @best_circle[0].active = true
         p.abc.graph.renderer.redraw()
 
+  diffuseLearnProgress: =>
+    #for each node, get activation through all incoming edges and sum up
+    activation_in = 0
+    for node in @nodes
+      for e in node.edges_out
+        activation_in += e.start_node.activation
+      if node.edges_in.length
+        activation_in /= node.edges_out.length
+
+      node.activation = node.activation * 0.9 + activation_in * 0.1
+      @arborGraph.getNode(node.name).data.activation = node.activation
 
 class abc
   constructor: ->
-    @posture_graph = new postureGraph()   # posture graph, logical representation
-    @last_posture = null             # the posture that was visited/created last
-    @previous_posture = null         # the posture that was visited before
-    @explore_active = false
-
     @graph = arbor.ParticleSystem()  # display graph, has its own nodes and edges and data for display
     @graph.parameters                # use center-gravity to make the graph settle nicely (ymmv)
       repulsion: 500 #1000
@@ -186,6 +287,12 @@ class abc
 
     @graph.renderer = new RendererSVG("#viewport_svg", @graph, @)
     @mode_strategy = "unseen"
+
+    @posture_graph = new postureGraph(@graph)   # posture graph, logical representation
+    @last_posture = null             # the posture that was visited/created last
+    @previous_posture = null         # the posture that was visited before
+    @explore_active = false
+    @trajectory = []   #last n state points
 
   toggleExplore: =>
     if not physics.upper_joint.csl_active
@@ -214,10 +321,10 @@ class abc
   wrapAngle: (angle) =>
     twoPi = 2*Math.PI
     return angle - twoPi * Math.floor( angle / twoPi )
+    #return Math.acos(Math.cos(angle))
 
   MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
   time = MAX_UNIX_TIME
-  trajectory = []   #last n state points
   detectAttractor: (body, upper_joint, lower_joint, action) =>
     #detect if current csl mode found a posture
     if not physics.run
@@ -229,26 +336,26 @@ class abc
 
     #find attractors, take a sample of trajectory and try to find it multiple times in the
     #past trajectory (with epsilon), hence (quasi)periodic behaviour
-    if trajectory.length==10000   #corresponds to max periode duration that can be detected
-      trajectory.shift()
+    if @trajectory.length==10000   #corresponds to max periode duration that can be detected
+      @trajectory.shift()
 
-    trajectory.push [p_body, p_hip, p_knee]
+    @trajectory.push [p_body, p_hip, p_knee]
 
-    if trajectory.length > 200 and (Date.now() - time) > 2000
+    if @trajectory.length > 200 and (Date.now() - time) > 2000
       #take last 50 points
-      last = trajectory.slice(-50)
+      last = @trajectory.slice(-50)
       eps=0.025
-      d = @searchSubarray last, trajectory, (a,i, b,j) ->
+      d = @searchSubarray last, @trajectory, (a,i, b,j) ->
         Math.abs(a[i][0] - b[j][0]) < eps and Math.abs(a[i][1] - b[j][1]) < eps and Math.abs(a[i][2] - b[j][2]) < eps
       #console.log(d)
 
       if d.length > 3    #need to find sample more than once to be periodic
         #found a posture, call user method
-        position = trajectory.pop()
+        position = @trajectory.pop()
         action(position, @)
 
         #get rid of saved trajectory
-        trajectory = []
+        @trajectory = []
 
       time = Date.now()
 
@@ -263,35 +370,43 @@ class abc
       if not edge.isInList(edge_list) and parent.posture_graph.length() > 1 and not start_node.isEqualTo target_node
         console.log("adding edge from posture " + start_node.name + " to posture: " + target_node.name)
 
-        #add new edge to logic graph
+        #add new edge to logical graph
         distance = target_node.body_x - start_node.body_x
         edge.distance = distance
         timedelta = target_node.timestamp - start_node.timestamp
         edge.timedelta = timedelta
         edge_list.push edge
+        target_node.edges_in.push edge
 
-        #display new edge
+        ##create new edge in display graph
         n0 = start_node.name
         n1 = target_node.name
 
         #position new node close to previous one (if there is one)
         if parent.posture_graph.length() > 2
           source_node = parent.graph.getNode n0
-          parent.graph.getNode(n1) or parent.graph.addNode n1, {'x': source_node.p.x + 0.01, 'y': source_node.p.y + 0.01}
+          parent.graph.getNode(n1) or parent.graph.addNode n1, {'x': source_node.p.x + 0.3, 'y': source_node.p.y + 0.3}
 
         parent.graph.addEdge n0, n1,
           distance: distance.toFixed(3)
           timedelta: timedelta
+
+        parent.posture_graph.diffuseLearnProgress()
 
         #if we're here for the first time, n0 is not yet initialized (this time addEdge adds two nodes)
         if n0 == 0 and n1 == 1
           init_node = parent.graph.getNode(n0)
           init_node.data.label = start_node.csl_mode
           init_node.data.number = start_node.name
+          init_node.data.activation = start_node.activation
 
+        source_node = parent.graph.getNode n0
         parent.graph.current_node = current_node = parent.graph.getNode(n1)
         current_node.data.label = target_node.csl_mode
         current_node.data.number = target_node.name
+        current_node.data.activation = target_node.activation
+        source_node.data.activation = start_node.activation
+
 
         #re-enable suspended graph layouting for a bit to find new layout
         parent.graph.start(true)
@@ -325,39 +440,10 @@ class abc
       p.timestamp = Date.now()
       addEdge @last_posture, p
 
-      ## save posture image
-      ###
-      ctx = $("#simulation canvas")[0].getContext('2d')
-      x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale()
-      y = physics.body.GetWorldCenter().y * physics.debugDraw.GetDrawScale()
-      range = 120
-      imageData = ctx.getImageData x-range, y-range, range*2, range*2
-
-      #loop over each pixel and make white pixels (the background) transparent
-      pix = imageData.data
-      for i in [0..pix.length-4]
-        if pix[i] is 255 and pix[i+1] is 255 and pix[i+2] is 255
-          pix[i+4] = 0
-
-      #scale image data
-      newCanvas = $("<canvas>").attr("width", imageData.width).attr("height", imageData.height)[0]
-      ctx = newCanvas.getContext("2d")
-      ctx.putImageData imageData, 0, 0
-
-      #save in node
-      ctx2 = $("#tempimage")[0].getContext('2d')
-      ctx2.clearRect(0,0, ctx2.canvas.width, ctx2.canvas.height)
-      ctx2.scale(0.5, 0.5)
-      ctx2.drawImage(newCanvas, 0, 0)
-      n = @graph.getNode(p.name)
-      n.data.imageData = ctx2.getImageData 0, 0, range * 2, range *2
-      ctx2.scale(2,2)
-      ###
-
       #save posture for graph drawing
       n = @graph.getNode(p.name)
-      n.data.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]
-      n.data.angles = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()]
+      p.positions = n.data.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]
+      n.data.configuration = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()]
 
     @previous_posture = @last_posture
     @last_posture = p
@@ -408,6 +494,31 @@ class abc
           when "s+" then return "r-"
           when "s-" then return "s-"
 
+    dir_index_for_modes = (start_mode, target_mode) ->
+      #get dir index to get from start mode to target mode
+      [s_h, s_k] = start_mode
+      [t_h, t_k] = target_mode
+
+      if s_h is t_h
+        #it's a change in the knee joint, now get direction
+        a = s_k
+        b = t_k
+        i = 2
+      else
+        #it's a change in the hip joint
+        a = s_h
+        b = t_h
+        i = 0
+
+      #TODO: handle s modes (discard as c)
+      d = 0
+      if a == "r+" and b == "c" then d = 0
+      if a == "r-" and b == "r+" then d = 0
+      if a == "r+" and b == "r-" then d = 1
+      if a == "c" and b == "r-" then d = 1
+      if a == "c" and b == "r+" then d = 0
+      return i+d
+
     current_mode = @last_posture.csl_mode
     if @previous_posture
       previous_mode = @previous_posture.csl_mode
@@ -447,9 +558,14 @@ class abc
               break
             found_index = @last_posture.exit_directions.indexOf 0, found_index+1
         else
-          #we went all directions already, take random one
+          #we went all directions already, take one with largest activation
           while not dir_index? or @last_posture.exit_directions[dir_index] is -1
-            dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four by # of joints - 0.01
+            #dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four by # of joints - 0.01
+            go_this_edge = @last_posture.edges_out[0]
+            for e in @last_posture.edges_out
+              if e.target_node.activation > go_this_edge.target_node.activation
+                go_this_edge = e
+            dir_index = dir_index_for_modes @last_posture.csl_mode, e.target_node.csl_mode
 
         joint_index = Math.ceil((dir_index+1) / 2) - 1
         if dir_index % 2
@@ -467,8 +583,15 @@ class abc
       @last_dir = direction
       @last_joint_index = joint_index
 
+      #refresh activation
+      @last_posture.activation = 0.25 * @last_posture.exit_directions.reduce ((x, y) -> if y is 0 then x+1 else x), 0
+
     else if @mode_strategy is "random"
       set_random_mode current_mode
+
+    else if @mode_strategy is "manual"
+      #don't do anything
+      1
 
   limitCSL: (upper_joint, lower_joint) =>
     # if csl goes against limit, set to release mode in same direction with

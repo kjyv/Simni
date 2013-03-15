@@ -364,6 +364,9 @@ class ui
     @physics.upper_joint.gb = gb
     @physics.upper_joint.csl_mode = hipCSL
 
+    if physics.abc.mode_strategy is "manual"
+      physics.abc.trajectory = []
+
   set_csl_mode_lower: (kneeCSL, change_select=true) =>
     release_bias_knee = 0.5
     contract_gf_knee = 1.003 #1.002 #1.0015 #1.006
@@ -406,6 +409,9 @@ class ui
     $("#gb_param_lower").val(gb)
     @physics.lower_joint.gb = gb
     @physics.lower_joint.csl_mode = kneeCSL
+
+    if physics.abc.mode_strategy is "manual"
+      physics.abc.trajectory = []
 
   toggleRecorder: =>
     @physics.startLog = true

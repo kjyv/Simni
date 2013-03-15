@@ -19,7 +19,20 @@ Neurorobotics Research Laboratory, Berlin
         <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
         <script src="libs/b2Separator.js"></script>
-        <script src="libs/arbor.js"></script>  
+        <!--<script src="libs/arbor.js"></script> -->
+        <script src="libs/arbor-start-stop-fixed/src/etc.js"></script>
+        <script src="libs/arbor-start-stop-fixed/src/kernel.js"></script>
+        <script src="libs/arbor-start-stop-fixed/src/graphics/colors.js"></script>
+        <script src="libs/arbor-start-stop-fixed/src/graphics/primitives.js"></script>
+        <script src="libs/arbor-start-stop-fixed/src/graphics/graphics.js"></script>
+        <script src="libs/arbor-start-stop-fixed/src/tween/easing.js"></script>
+        <script src="libs/arbor-start-stop-fixed/src/tween/tween.js"></script>
+        <script src="libs/arbor-start-stop-fixed/src/physics/atoms.js"></script>
+        <script src="libs/arbor-start-stop-fixed/src/physics/barnes-hut.js"></script>
+        <script src="libs/arbor-start-stop-fixed/src/physics/physics.js"></script>
+        <script src="libs/arbor-start-stop-fixed/src/physics/system.js"></script>
+        <script src="libs/arbor-start-stop-fixed/src/dev.js"></script>
+
         <script src="graph-renderer-svg.js"></script>
         <script src="semni.data.js"></script>
         <script src="abc.js"></script>
@@ -282,6 +295,7 @@ Neurorobotics Research Laboratory, Berlin
                 </select><br/>
                 <label for="csl_strategy">Next Mode Strategy</label>:
                 <select id="csl_strategy" onchange="physics.abc.set_strategy($('#csl_strategy').val())">
+                    <option value="manual">manual</option>
                     <option value="random">random</option>
                     <option value="unseen" selected="selected">unseen</option>
                 </select><br/>
@@ -289,7 +303,10 @@ Neurorobotics Research Laboratory, Berlin
                 <button id="find_circles" onclick="physics.abc.posture_graph.findElementaryCircles(); console.log(p.abc.posture_graph.circles);">Find circles</button>
                 <button id="walk_best_circle" class="toggle-button" onclick="physics.abc.posture_graph.walkCircle()">Walk best circle</button>
                 <br/>
-                <button id="save_graph_svg" onclick="physics.ui.getPostureGraphAsFile()">Save graph as SVG</button>
+                <button id="save_graph_svg" onclick="physics.ui.getPostureGraphAsFile()">Save graph as SVG</button><br/>
+                <button id="save_graph_json" onclick="p.abc.posture_graph.saveGaphToFile()">Save graph as JSON</button><br/>
+                <button id="set_graph_json" onclick="$('#set_graph_json_file').click()">Load graph from JSON</button><br/>
+                <input type="file" id="set_graph_json_file" style="display:none" onchange="p.abc.posture_graph.loadGraphFromFile(this.files)">
 
             </div>
             <div id="graph_controls" class="box">

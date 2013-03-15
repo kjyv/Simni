@@ -103,7 +103,8 @@ class RendererSVG
       number = node.data.number
       image = node.data.imageData
       positions = node.data.positions
-      angles = node.data.angles
+      configuration = node.data.configuration
+      activation = node.data.activation
 
       if label
         w = 26
@@ -113,9 +114,9 @@ class RendererSVG
         w2 = 4
 
       #draw semni contour and posture
-      if posture and angles and not node.data.semni
+      if positions.length and configuration and not node.data.semni
         #put new svg elements with nodes posture if not existent
-        node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], angles[0], angles[1], angles[2], parent.svg)
+        node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], configuration[0], configuration[1], configuration[2], parent.svg)
 
       if node.data.semni
         #move to current nodes position
@@ -151,16 +152,26 @@ class RendererSVG
       ###
 
 
-      if label
+      if label and activation
+        a = activation.toFixed(1)
         if node.data.label_svg == undefined
+          #id
           node.data.label_svg = parent.svg.append("svg:text")
           node.data.label_svg[0][0].textContent = number.toString()
 
+          #mode
           node.data.label_svg2 = parent.svg.append("svg:text")
           node.data.label_svg2[0][0].textContent = label || ""
 
+          #activation
+          #node.data.label_svg3 = parent.svg.append("svg:text")
+          #node.data.label_svg3[0][0].textContent = "a:"+a || ""
+
         node.data.label_svg.attr("x",pt.x).attr("y",pt.y-3)
         node.data.label_svg2.attr("x",pt.x).attr("y",pt.y+4)
+        #node.data.label_svg3.attr("x",pt.x).attr("y",pt.y+11)
+        #node.data.label_svg3[0][0].textContent = "a:"+a
+
 
       # save box coordinates
       parent.nodeBoxes[node.name] = [pt.x-w2, pt.y-w2, w, w]
@@ -171,9 +182,9 @@ class RendererSVG
       # pt1:  {x:#, y:#}  source position in screen coords
       # pt2:  {x:#, y:#}  target position in screen coords
 
-      weight = edge.data.weight
       color = edge.data.color
-      label = edge.data.distance
+      distance = edge.data.distance
+      label = edge.data.label
 
       #ctx.strokeStyle = ctx.fillStyle = if color then color else "rgba(0,0,0, .333)"
 
@@ -212,7 +223,7 @@ class RendererSVG
                                         .attr("marker-end", "url(#arrowtip)")
 
         #draw a label
-        if label != undefined and Math.abs(label) > 0.05
+        if label != undefined
           if not edge.data.label_svg
             edge.data.label_svg = parent.svg.append("svg:text")
             edge.data.label_svg[0][0].textContent = (label or "")
@@ -223,6 +234,9 @@ class RendererSVG
           angle = Math.atan2(pt2.y - pt1.y, pt2.x - pt1.x)
           if angle > Math.PI then offset = 2 else offset = -2
           edge.data.label_svg.attr("x",mid.x).attr("y",mid.y+offset).attr("transform", "rotate(" +angle/Math.PI*180+ "," +mid.x+ "," +(mid.y)+ ")")
+
+        #if distance and Math.abs(distance) > 0.05
+        #draw distance label
 
 
   initMouseHandling: =>

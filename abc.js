@@ -34,26 +34,53 @@ posture = (function() {
     if (timestamp == null) {
       timestamp = Date.now();
     }
+    this.isCloseExplore = __bind(this.isCloseExplore, this);
+
     this.isClose = __bind(this.isClose, this);
 
-    this.isCloseExplore = __bind(this.isCloseExplore, this);
+    this.isEqualTo = __bind(this.isEqualTo, this);
+
+    this.getEdgeFrom = __bind(this.getEdgeFrom, this);
 
     this.getEdgeTo = __bind(this.getEdgeTo, this);
 
-    this.isEqualTo = __bind(this.isEqualTo, this);
+    this.asJSON = __bind(this.asJSON, this);
 
     this.name = -1;
     this.csl_mode = csl_mode;
     this.position = position;
+    this.positions = [];
     this.body_x = x_pos;
     this.timestamp = timestamp;
     this.edges_out = [];
+    this.edges_in = [];
     this.exit_directions = [0, 0, 0, 0];
     this.length = 1;
+    this.activation = 1;
   }
 
-  posture.prototype.isEqualTo = function(node) {
-    return this.position[0] === node.position[0] && this.position[1] === node.position[1] && this.position[2] === node.position[2] && this.csl_mode[0] === node.csl_mode[0] && this.csl_mode[1] === node.csl_mode[1];
+  posture.prototype.asJSON = function() {
+    var replacer;
+    replacer = function(edges) {
+      var e, new_edges, _i, _len;
+      new_edges = [];
+      for (_i = 0, _len = edges.length; _i < _len; _i++) {
+        e = edges[_i];
+        new_edges.push(e.target_node.name);
+      }
+      return new_edges;
+    };
+    return JSON.stringify({
+      "name": this.name,
+      "csl_mode": this.csl_mode,
+      "position": this.position,
+      "positions": this.positions,
+      "body_x": this.body_x,
+      "timestamp": this.timestamp,
+      "exit_directions": this.exit_directions,
+      "activation": this.activation,
+      "edges_out": replacer(this.edges_out)
+    }, null, 4);
   };
 
   posture.prototype.getEdgeTo = function(target) {
@@ -67,13 +94,19 @@ posture = (function() {
     }
   };
 
-  e = 0.35;
-
-  posture.prototype.isCloseExplore = function(a, i, b, j, eps) {
-    if (eps == null) {
-      eps = e;
+  posture.prototype.getEdgeFrom = function(source) {
+    var edge, _i, _len, _ref;
+    _ref = source.edges_out;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      edge = _ref[_i];
+      if (edge.target_node === this) {
+        return edge;
+      }
     }
-    return Math.abs(a.position[0] - b[j].position[0]) < eps && Math.abs(a.position[1] - b[j].position[1]) < eps && Math.abs(a.position[2] - b[j].position[2]) < eps && a.csl_mode[0] === b[j].csl_mode[0] && a.csl_mode[1] === b[j].csl_mode[1];
+  };
+
+  posture.prototype.isEqualTo = function(node) {
+    return this.position[0] === node.position[0] && this.position[1] === node.position[1] && this.position[2] === node.position[2] && this.csl_mode[0] === node.csl_mode[0] && this.csl_mode[1] === node.csl_mode[1];
   };
 
   posture.prototype.isClose = function(a, b, eps) {
@@ -84,6 +117,15 @@ posture = (function() {
       eps = 0.25;
     }
     return Math.abs(a.position[0] - b.position[0]) < eps && Math.abs(a.position[1] - b.position[1]) < eps && Math.abs(a.position[2] - b.position[2]) < eps && a.csl_mode[0] === b.csl_mode[0] && a.csl_mode[1] === b.csl_mode[1];
+  };
+
+  e = 0.4;
+
+  posture.prototype.isCloseExplore = function(a, i, b, j, eps) {
+    if (eps == null) {
+      eps = e;
+    }
+    return Math.abs(a.position[0] - b[j].position[0]) < eps && Math.abs(a.position[1] - b[j].position[1]) < eps && Math.abs(a.position[2] - b[j].position[2]) < eps && a.csl_mode[0] === b[j].csl_mode[0] && a.csl_mode[1] === b[j].csl_mode[1];
   };
 
   return posture;
@@ -123,10 +165,18 @@ transition = (function() {
 
 postureGraph = (function() {
 
-  function postureGraph() {
+  function postureGraph(arborGraph) {
+    this.diffuseLearnProgress = __bind(this.diffuseLearnProgress, this);
+
     this.walkCircle = __bind(this.walkCircle, this);
 
     this.findElementaryCircles = __bind(this.findElementaryCircles, this);
+
+    this.loadGraphFromFile = __bind(this.loadGraphFromFile, this);
+
+    this.populateGraphFromJSON = __bind(this.populateGraphFromJSON, this);
+
+    this.saveGaphToFile = __bind(this.saveGaphToFile, this);
 
     this.length = __bind(this.length, this);
 
@@ -135,6 +185,7 @@ postureGraph = (function() {
     this.addNode = __bind(this.addNode, this);
     this.nodes = [];
     this.walk_circle_active = false;
+    this.arborGraph = arborGraph;
   }
 
   postureGraph.prototype.addNode = function(node) {
@@ -148,6 +199,108 @@ postureGraph = (function() {
 
   postureGraph.prototype.length = function() {
     return this.nodes.length;
+  };
+
+  postureGraph.prototype.saveGaphToFile = function() {
+    var graph_as_string, n, _i, _len, _ref;
+    graph_as_string = "";
+    _ref = this.nodes;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      n = _ref[_i];
+      graph_as_string += "\n" + n.asJSON() + ",";
+    }
+    graph_as_string = graph_as_string.substring(0, graph_as_string.length - 1);
+    return location.href = 'data:text;charset=utf-8,' + encodeURI("{\n" + "\"nodes\": [" + graph_as_string + "]\n" + "}");
+  };
+
+  postureGraph.prototype.populateGraphFromJSON = function(tj) {
+    var ag, e, n, nn, source_node, t, target_node, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _ref2, _ref3, _results;
+    if (tj == null) {
+      tj = null;
+    }
+    tj = tj.replace(/(\r\n|\n|\r)/gm, "");
+    t = JSON.parse(tj);
+    this.nodes = [];
+    _ref = t.nodes;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      n = _ref[_i];
+      nn = new posture(n.position, n.csl_mode, n.body_x, n.timestamp);
+      nn.name = n.name;
+      nn.activation = n.activation;
+      nn.exit_directions = n.exit_directions;
+      nn.positions = n.positions;
+      this.nodes.push(nn);
+    }
+    _ref1 = t.nodes;
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      n = _ref1[_j];
+      nn = this.getNode(n.name);
+      _ref2 = n.edges_out;
+      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+        e = _ref2[_k];
+        nn.edges_out.push(new transition(nn, this.getNode(e)));
+      }
+    }
+    ag = this.arborGraph;
+    this.arborGraph.prune();
+    this.arborGraph.renderer.svg_nodes = {};
+    this.arborGraph.renderer.svg_edges = {};
+    $("#viewport_svg svg g").remove();
+    $("#viewport_svg svg rect").remove();
+    $("#viewport_svg svg text").remove();
+    $("#viewport_svg svg line").remove();
+    _ref3 = this.nodes;
+    _results = [];
+    for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
+      n = _ref3[_l];
+      _results.push((function() {
+        var _len4, _m, _ref4, _results1;
+        _ref4 = n.edges_out;
+        _results1 = [];
+        for (_m = 0, _len4 = _ref4.length; _m < _len4; _m++) {
+          e = _ref4[_m];
+          nn = e.target_node;
+          ag.addEdge(n.name, nn.name);
+          source_node = ag.getNode(n.name);
+          target_node = ag.getNode(nn.name);
+          source_node.data = {
+            label: n.csl_mode,
+            number: n.name,
+            activation: n.activation,
+            configuration: n.position,
+            positions: n.positions
+          };
+          _results1.push(target_node.data = {
+            label: nn.csl_mode,
+            number: nn.name,
+            activation: nn.activation,
+            configuration: nn.position,
+            positions: nn.positions
+          });
+        }
+        return _results1;
+      })());
+    }
+    return _results;
+  };
+
+  postureGraph.prototype.loadGraphFromFile = function(files) {
+    var readFile;
+    readFile = function(file, callback) {
+      var reader;
+      reader = new FileReader();
+      reader.onload = function(evt) {
+        if (typeof callback === "function") {
+          return callback(file, evt);
+        }
+      };
+      return reader.readAsBinaryString(file);
+    };
+    if (files.length > 0) {
+      return readFile(files[0], function(file, evt) {
+        return p.abc.posture_graph.populateGraphFromJSON(evt.target.result);
+      });
+    }
   };
 
   postureGraph.prototype.findElementaryCircles = function() {
@@ -252,12 +405,33 @@ postureGraph = (function() {
     }
   };
 
+  postureGraph.prototype.diffuseLearnProgress = function() {
+    var activation_in, e, node, _i, _j, _len, _len1, _ref, _ref1, _results;
+    activation_in = 0;
+    _ref = this.nodes;
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      node = _ref[_i];
+      _ref1 = node.edges_out;
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        e = _ref1[_j];
+        activation_in += e.start_node.activation;
+      }
+      if (node.edges_in.length) {
+        activation_in /= node.edges_out.length;
+      }
+      node.activation = node.activation * 0.9 + activation_in * 0.1;
+      _results.push(this.arborGraph.getNode(node.name).data.activation = node.activation);
+    }
+    return _results;
+  };
+
   return postureGraph;
 
 })();
 
 abc = (function() {
-  var MAX_UNIX_TIME, time, trajectory;
+  var MAX_UNIX_TIME, time;
 
   function abc() {
     this.update = __bind(this.update, this);
@@ -279,10 +453,6 @@ abc = (function() {
     this.searchSubarray = __bind(this.searchSubarray, this);
 
     this.toggleExplore = __bind(this.toggleExplore, this);
-    this.posture_graph = new postureGraph();
-    this.last_posture = null;
-    this.previous_posture = null;
-    this.explore_active = false;
     this.graph = arbor.ParticleSystem();
     this.graph.parameters({
       repulsion: 500,
@@ -292,6 +462,11 @@ abc = (function() {
     });
     this.graph.renderer = new RendererSVG("#viewport_svg", this.graph, this);
     this.mode_strategy = "unseen";
+    this.posture_graph = new postureGraph(this.graph);
+    this.last_posture = null;
+    this.previous_posture = null;
+    this.explore_active = false;
+    this.trajectory = [];
   }
 
   abc.prototype.toggleExplore = function() {
@@ -335,8 +510,6 @@ abc = (function() {
 
   time = MAX_UNIX_TIME;
 
-  trajectory = [];
-
   abc.prototype.detectAttractor = function(body, upper_joint, lower_joint, action) {
     var d, eps, last, p_body, p_hip, p_knee, position;
     if (!physics.run) {
@@ -345,20 +518,20 @@ abc = (function() {
     p_body = this.wrapAngle(body.GetAngle());
     p_hip = upper_joint.GetJointAngle();
     p_knee = lower_joint.GetJointAngle();
-    if (trajectory.length === 10000) {
-      trajectory.shift();
+    if (this.trajectory.length === 10000) {
+      this.trajectory.shift();
     }
-    trajectory.push([p_body, p_hip, p_knee]);
-    if (trajectory.length > 200 && (Date.now() - time) > 2000) {
-      last = trajectory.slice(-50);
+    this.trajectory.push([p_body, p_hip, p_knee]);
+    if (this.trajectory.length > 200 && (Date.now() - time) > 2000) {
+      last = this.trajectory.slice(-50);
       eps = 0.025;
-      d = this.searchSubarray(last, trajectory, function(a, i, b, j) {
+      d = this.searchSubarray(last, this.trajectory, function(a, i, b, j) {
         return Math.abs(a[i][0] - b[j][0]) < eps && Math.abs(a[i][1] - b[j][1]) < eps && Math.abs(a[i][2] - b[j][2]) < eps;
       });
       if (d.length > 3) {
-        position = trajectory.pop();
+        position = this.trajectory.pop();
         action(position, this);
-        trajectory = [];
+        this.trajectory = [];
       }
       time = Date.now();
     }
@@ -384,27 +557,33 @@ abc = (function() {
         timedelta = target_node.timestamp - start_node.timestamp;
         edge.timedelta = timedelta;
         edge_list.push(edge);
+        target_node.edges_in.push(edge);
         n0 = start_node.name;
         n1 = target_node.name;
         if (parent.posture_graph.length() > 2) {
           source_node = parent.graph.getNode(n0);
           parent.graph.getNode(n1) || parent.graph.addNode(n1, {
-            'x': source_node.p.x + 0.01,
-            'y': source_node.p.y + 0.01
+            'x': source_node.p.x + 0.3,
+            'y': source_node.p.y + 0.3
           });
         }
         parent.graph.addEdge(n0, n1, {
           distance: distance.toFixed(3),
           timedelta: timedelta
         });
+        parent.posture_graph.diffuseLearnProgress();
         if (n0 === 0 && n1 === 1) {
           init_node = parent.graph.getNode(n0);
           init_node.data.label = start_node.csl_mode;
           init_node.data.number = start_node.name;
+          init_node.data.activation = start_node.activation;
         }
+        source_node = parent.graph.getNode(n0);
         parent.graph.current_node = current_node = parent.graph.getNode(n1);
         current_node.data.label = target_node.csl_mode;
         current_node.data.number = target_node.name;
+        current_node.data.activation = target_node.activation;
+        source_node.data.activation = start_node.activation;
         parent.graph.start(true);
         return parent.graph.renderer.click_time = Date.now();
       }
@@ -428,37 +607,9 @@ abc = (function() {
       p.body_x = body.GetWorldCenter().x;
       p.timestamp = Date.now();
       addEdge(this.last_posture, p);
-      /*
-            ctx = $("#simulation canvas")[0].getContext('2d')
-            x = physics.body.GetWorldCenter().x * physics.debugDraw.GetDrawScale()
-            y = physics.body.GetWorldCenter().y * physics.debugDraw.GetDrawScale()
-            range = 120
-            imageData = ctx.getImageData x-range, y-range, range*2, range*2
-      
-            #loop over each pixel and make white pixels (the background) transparent
-            pix = imageData.data
-            for i in [0..pix.length-4]
-              if pix[i] is 255 and pix[i+1] is 255 and pix[i+2] is 255
-                pix[i+4] = 0
-      
-            #scale image data
-            newCanvas = $("<canvas>").attr("width", imageData.width).attr("height", imageData.height)[0]
-            ctx = newCanvas.getContext("2d")
-            ctx.putImageData imageData, 0, 0
-      
-            #save in node
-            ctx2 = $("#tempimage")[0].getContext('2d')
-            ctx2.clearRect(0,0, ctx2.canvas.width, ctx2.canvas.height)
-            ctx2.scale(0.5, 0.5)
-            ctx2.drawImage(newCanvas, 0, 0)
-            n = @graph.getNode(p.name)
-            n.data.imageData = ctx2.getImageData 0, 0, range * 2, range *2
-            ctx2.scale(2,2)
-      */
-
       n = this.graph.getNode(p.name);
-      n.data.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()];
-      n.data.angles = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()];
+      p.positions = n.data.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()];
+      n.data.configuration = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()];
     }
     this.previous_posture = this.last_posture;
     this.last_posture = p;
@@ -477,7 +628,7 @@ abc = (function() {
   };
 
   abc.prototype.newCSLMode = function() {
-    var back_dir, back_dir_offset, current_mode, dir_index, direction, found_index, joint_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, _ref;
+    var back_dir, back_dir_offset, current_mode, dir_index, dir_index_for_modes, direction, e, found_index, go_this_edge, joint_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, _i, _len, _ref, _ref1;
     set_random_mode = function(curent_mode) {
       var mode, which;
       which = Math.floor(Math.random() * 2);
@@ -528,6 +679,37 @@ abc = (function() {
         }
       }
     };
+    dir_index_for_modes = function(start_mode, target_mode) {
+      var a, b, d, i, s_h, s_k, t_h, t_k;
+      s_h = start_mode[0], s_k = start_mode[1];
+      t_h = target_mode[0], t_k = target_mode[1];
+      if (s_h === t_h) {
+        a = s_k;
+        b = t_k;
+        i = 2;
+      } else {
+        a = s_h;
+        b = t_h;
+        i = 0;
+      }
+      d = 0;
+      if (a === "r+" && b === "c") {
+        d = 0;
+      }
+      if (a === "r-" && b === "r+") {
+        d = 0;
+      }
+      if (a === "r+" && b === "r-") {
+        d = 1;
+      }
+      if (a === "c" && b === "r-") {
+        d = 1;
+      }
+      if (a === "c" && b === "r+") {
+        d = 0;
+      }
+      return i + d;
+    };
     current_mode = this.last_posture.csl_mode;
     if (this.previous_posture) {
       previous_mode = this.previous_posture.csl_mode;
@@ -561,7 +743,15 @@ abc = (function() {
           }
         } else {
           while (!(dir_index != null) || this.last_posture.exit_directions[dir_index] === -1) {
-            dir_index = Math.floor(Math.random() * 3.99);
+            go_this_edge = this.last_posture.edges_out[0];
+            _ref1 = this.last_posture.edges_out;
+            for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+              e = _ref1[_i];
+              if (e.target_node.activation > go_this_edge.target_node.activation) {
+                go_this_edge = e;
+              }
+            }
+            dir_index = dir_index_for_modes(this.last_posture.csl_mode, e.target_node.csl_mode);
           }
         }
         joint_index = Math.ceil((dir_index + 1) / 2) - 1;
@@ -579,9 +769,18 @@ abc = (function() {
         ui.set_csl_mode_lower(next_mode);
       }
       this.last_dir = direction;
-      return this.last_joint_index = joint_index;
+      this.last_joint_index = joint_index;
+      return this.last_posture.activation = 0.25 * this.last_posture.exit_directions.reduce((function(x, y) {
+        if (y === 0) {
+          return x + 1;
+        } else {
+          return x;
+        }
+      }), 0);
     } else if (this.mode_strategy === "random") {
       return set_random_mode(current_mode);
+    } else if (this.mode_strategy === "manual") {
+      return 1;
     }
   };
 

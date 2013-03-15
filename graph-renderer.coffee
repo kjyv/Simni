@@ -118,6 +118,7 @@ class Renderer
       ctx.strokeRect pt.x - w2, pt.y - w2, w, w
       ctx.lineWidth = 1
 
+      #draw label
       if label
         ctx.font = "7px Verdana; sans-serif"
         ctx.textAlign = "center"

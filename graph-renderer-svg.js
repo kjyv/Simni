@@ -80,12 +80,13 @@ RendererSVG = (function() {
     parent = this;
     graph = this.graph;
     this.particleSystem.eachNode(function(node, pt) {
-      var angles, crect, image, label, number, positions, strokeStyle, w, w2;
+      var a, activation, configuration, crect, image, label, number, positions, strokeStyle, w, w2;
       label = node.data.label;
       number = node.data.number;
       image = node.data.imageData;
       positions = node.data.positions;
-      angles = node.data.angles;
+      configuration = node.data.configuration;
+      activation = node.data.activation;
       if (label) {
         w = 26;
         w2 = 13;
@@ -93,8 +94,8 @@ RendererSVG = (function() {
         w = 8;
         w2 = 4;
       }
-      if (posture && angles && !node.data.semni) {
-        node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], angles[0], angles[1], angles[2], parent.svg);
+      if (positions.length && configuration && !node.data.semni) {
+        node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], configuration[0], configuration[1], configuration[2], parent.svg);
       }
       if (node.data.semni) {
         crect = node.data.semni[0][0].getBBox();
@@ -118,7 +119,8 @@ RendererSVG = (function() {
                     break
       */
 
-      if (label) {
+      if (label && activation) {
+        a = activation.toFixed(1);
         if (node.data.label_svg === void 0) {
           node.data.label_svg = parent.svg.append("svg:text");
           node.data.label_svg[0][0].textContent = number.toString();
@@ -131,10 +133,10 @@ RendererSVG = (function() {
       return parent.nodeBoxes[node.name] = [pt.x - w2, pt.y - w2, w, w];
     });
     return this.particleSystem.eachEdge(function(edge, pt1, pt2) {
-      var angle, color, head, label, mid, offset, tail, weight;
-      weight = edge.data.weight;
+      var angle, color, distance, head, label, mid, offset, tail;
       color = edge.data.color;
-      label = edge.data.distance;
+      distance = edge.data.distance;
+      label = edge.data.label;
       if (pt1.x === pt2.x && pt1.y === pt2.y) {
 
       } else {
@@ -153,7 +155,7 @@ RendererSVG = (function() {
           parent.svg_edges[edge.data.name] = parent.svg.append("svg:line");
         }
         parent.svg_edges[edge.data.name].attr("x1", tail.x).attr("y1", tail.y).attr("x2", head.x).attr("y2", head.y).attr("marker-end", "url(#arrowtip)");
-        if (label !== void 0 && Math.abs(label) > 0.05) {
+        if (label !== void 0) {
           if (!edge.data.label_svg) {
             edge.data.label_svg = parent.svg.append("svg:text");
             edge.data.label_svg[0][0].textContent = label || "";

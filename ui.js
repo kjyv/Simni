@@ -351,7 +351,10 @@ ui = (function() {
     this.physics.upper_joint.gf = gf;
     $("#gb_param_upper").val(gb);
     this.physics.upper_joint.gb = gb;
-    return this.physics.upper_joint.csl_mode = hipCSL;
+    this.physics.upper_joint.csl_mode = hipCSL;
+    if (physics.abc.mode_strategy === "manual") {
+      return physics.abc.trajectory = [];
+    }
   };
 
   ui.prototype.set_csl_mode_lower = function(kneeCSL, change_select) {
@@ -395,7 +398,10 @@ ui = (function() {
     this.physics.lower_joint.gf = gf;
     $("#gb_param_lower").val(gb);
     this.physics.lower_joint.gb = gb;
-    return this.physics.lower_joint.csl_mode = kneeCSL;
+    this.physics.lower_joint.csl_mode = kneeCSL;
+    if (physics.abc.mode_strategy === "manual") {
+      return physics.abc.trajectory = [];
+    }
   };
 
   ui.prototype.toggleRecorder = function() {
