@@ -16,6 +16,8 @@ class RendererSVG
     @graph = parent
     @abc = abc
     $("canvas#viewport").hide()
+    @draw_color_activation = true
+    @draw_activation = false
 
     arrowLength = 6 + 1
     arrowWidth = 2 + 1
@@ -96,6 +98,8 @@ class RendererSVG
     parent = this
     graph = @graph
 
+    parent.abc.posture_graph.diffuseLearnProgress()
+
     @particleSystem.eachNode (node, pt) ->
       # node: {mass:#, p:{x,y}, name:"", data:{}}
       # pt:   {x:#, y:#}  node position in screen coords
@@ -114,7 +118,7 @@ class RendererSVG
         w2 = 4
 
       #draw semni contour and posture
-      if positions.length and configuration and not node.data.semni
+      if positions and positions.length and configuration and not node.data.semni
         #put new svg elements with nodes posture if not existent
         node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], configuration[0], configuration[1], configuration[2], parent.svg)
 
@@ -152,8 +156,17 @@ class RendererSVG
       ###
 
 
-      if label and activation
-        a = activation.toFixed(1)
+      if label
+        if activation?
+          a = activation.toFixed(1)
+
+          if parent.draw_color_activation
+            c = p.ui.powerColor a
+            parent.svg_nodes[number].style("fill","rgb("+c[0]+","+c[1]+","+c[2]+")")
+          else
+            parent.svg_nodes[number].style("fill", "none")
+        else
+          a = ""
         if node.data.label_svg == undefined
           #id
           node.data.label_svg = parent.svg.append("svg:text")
@@ -164,13 +177,16 @@ class RendererSVG
           node.data.label_svg2[0][0].textContent = label || ""
 
           #activation
-          #node.data.label_svg3 = parent.svg.append("svg:text")
-          #node.data.label_svg3[0][0].textContent = "a:"+a || ""
+          node.data.label_svg3 = parent.svg.append("svg:text")
 
         node.data.label_svg.attr("x",pt.x).attr("y",pt.y-3)
         node.data.label_svg2.attr("x",pt.x).attr("y",pt.y+4)
-        #node.data.label_svg3.attr("x",pt.x).attr("y",pt.y+11)
-        #node.data.label_svg3[0][0].textContent = "a:"+a
+
+        node.data.label_svg3.attr("x",pt.x).attr("y",pt.y+11)
+        if parent.draw_activation
+          node.data.label_svg3[0][0].textContent = "a:"+a
+        else
+          node.data.label_svg3[0][0].textContent = ""
 
 
       # save box coordinates

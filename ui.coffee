@@ -471,6 +471,57 @@ class ui
     """
     location.href = 'data:text;charset=utf-8,'+encodeURI ('<?xml version="1.0" encoding="UTF-8" standalone="no"?>')+svg.html()
 
+  hsvToRgb: (h, s, v) =>
+    r = undefined
+    g = undefined
+    b = undefined
+    i = Math.floor(h * 6)
+    f = h * 6 - i
+    p = v * (1 - s)
+    q = v * (1 - f * s)
+    t = v * (1 - (1 - f) * s)
+    switch i % 6
+      when 0
+        r = v
+        g = t
+        b = p
+      when 1
+        r = q
+        g = v
+        b = p
+      when 2
+        r = p
+        g = v
+        b = t
+      when 3
+        r = p
+        g = q
+        b = v
+      when 4
+        r = t
+        g = p
+        b = v
+      when 5
+        r = v
+        g = p
+        b = q
+    [Math.floor(r * 255), Math.floor(g * 255), Math.floor(b * 255)]
+
+  powerColor: (value) =>
+    #for a value from 0..1 return color from green to red
+    h = (1-value) * 0.4   #hue, 0.4 = green
+    s = 0.9           #saturation
+    b = 0.9           #brightness
+
+    @hsvToRgb h,s,b
+
+  set_color_activation: (value) =>
+    p.abc.graph.renderer.draw_color_activation = value
+    p.abc.graph.renderer.redraw()
+
+  set_activation: (value) =>
+    p.abc.graph.renderer.draw_activation = value
+    p.abc.graph.renderer.redraw()
 
 #set up 60 fps animation loop (triggers physics)
 window.requestAnimFrame = (->

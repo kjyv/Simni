@@ -12,10 +12,10 @@ if (typeof String::startsWith != 'function')
     this.substring(0, input.length) == input
 
 class posture   #i.e. node
-  constructor: (position, csl_mode=[], x_pos=0, timestamp=Date.now()) ->
+  constructor: (configuration, csl_mode=[], x_pos=0, timestamp=Date.now()) ->
     @name = -1
     @csl_mode = csl_mode  # [upper, lower]
-    @position = position  # [body angle, hip joint angle, knee joint angle]  #TODO: rename to configuration
+    @configuration = configuration  # [body angle, hip joint angle, knee joint angle]
     @positions = []  #positions of the body part for svg drawing
     @body_x = x_pos
     @timestamp = timestamp
@@ -32,7 +32,7 @@ class posture   #i.e. node
         new_edges.push e.target_node.name
       new_edges
 
-    JSON.stringify {"name": @name, "csl_mode":@csl_mode, "position": @position, "positions": @positions, "body_x": @body_x, "timestamp": @timestamp, "exit_directions": @exit_directions, "activation": @activation, "edges_out": replacer(@edges_out)}, null, 4
+    JSON.stringify {"name": @name, "csl_mode":@csl_mode, "configuration":@configuration, "positions":@positions, "body_x": @body_x, "timestamp": @timestamp, "exit_directions": @exit_directions, "activation": @activation, "edges_out": replacer(@edges_out)}, null, 4
 
   getEdgeTo: (target) =>
     for edge in @edges_out
@@ -43,15 +43,15 @@ class posture   #i.e. node
       return edge if edge.target_node is this
 
   isEqualTo: (node) =>
-    @position[0] == node.position[0] and @position[1] == node.position[1] and @position[2] == node.position[2] and @csl_mode[0] == node.csl_mode[0] and @csl_mode[1] == node.csl_mode[1]
+    @configuration[0] == node.configuration[0] and @configuration[1] == node.configuration[1] and @configuration[2] == node.configuration[2] and @csl_mode[0] == node.csl_mode[0] and @csl_mode[1] == node.csl_mode[1]
 
   isClose: (a,b=this, eps=0.25) =>
-      Math.abs(a.position[0] - b.position[0]) < eps and Math.abs(a.position[1] - b.position[1]) < eps and Math.abs(a.position[2] - b.position[2]) < eps and a.csl_mode[0] == b.csl_mode[0] and a.csl_mode[1] == b.csl_mode[1]
+      Math.abs(a.configuration[0] - b.configuration[0]) < eps and Math.abs(a.configuration[1] - b.configuration[1]) < eps and Math.abs(a.configuration[2] - b.configuration[2]) < eps and a.csl_mode[0] == b.csl_mode[0] and a.csl_mode[1] == b.csl_mode[1]
 
   #method to determine if this posture is near another one
   e = 0.4  #0.6  #default possible posture distance
   isCloseExplore: (a,i, b,j, eps=e) =>
-      Math.abs(a.position[0] - b[j].position[0]) < eps and Math.abs(a.position[1] - b[j].position[1]) < eps and Math.abs(a.position[2] - b[j].position[2]) < eps and a.csl_mode[0] == b[j].csl_mode[0] and a.csl_mode[1] == b[j].csl_mode[1]
+      Math.abs(a.configuration[0] - b[j].configuration[0]) < eps and Math.abs(a.configuration[1] - b[j].configuration[1]) < eps and Math.abs(a.configuration[2] - b[j].configuration[2]) < eps and a.csl_mode[0] == b[j].csl_mode[0] and a.csl_mode[1] == b[j].csl_mode[1]
 
 class transition  #i.e. edge
   constructor: (start_node, target_node) ->
@@ -105,7 +105,7 @@ class postureGraph
 
     #put the new nodes in
     for n in t.nodes
-      nn = new posture(n.position, n.csl_mode, n.body_x, n.timestamp)
+      nn = new posture(n.configuration, n.csl_mode, n.body_x, n.timestamp)
       nn.name = n.name
       nn.activation = n.activation
       nn.exit_directions = n.exit_directions
@@ -142,14 +142,14 @@ class postureGraph
           label: n.csl_mode
           number: n.name
           activation: n.activation
-          configuration: n.position
+          configuration: n.configuration
           positions: n.positions
 
         target_node.data =
           label: nn.csl_mode
           number: nn.name
           activation: nn.activation
-          configuration: nn.position
+          configuration: nn.configuration
           positions: nn.positions
 
   loadGraphFromFile: (files) =>
@@ -254,7 +254,7 @@ class postureGraph
 
         #TODO: go to first posture before we can start walking
         #find path from current posture to this one
-        #use best_circle[0].start_node .csl_mode .position
+        #use best_circle[0].start_node .csl_mode .configuration
 
         @walk_circle_active = true
 
@@ -264,14 +264,18 @@ class postureGraph
 
   diffuseLearnProgress: =>
     #for each node, get activation through all incoming edges and sum up
-    activation_in = 0
+    #loop over nodes twice to properly deal with recurrent loops
+    #TODO: for s modes, divide self activation by proper amount of possible edges,
+    #e.g. s+,r+ only has 3 possible outgoing edges, s-,s- only has two
     for node in @nodes
-      for e in node.edges_out
-        activation_in += e.start_node.activation
-      if node.edges_in.length
+      activation_in = 0
+      node.activation_self = 0.25 * node.exit_directions.reduce ((x, y) -> if y is 0 then x+1 else x), 0
+      if node.edges_out.length
+        activation_in += e.target_node.activation for e in node.edges_out
         activation_in /= node.edges_out.length
-
-      node.activation = node.activation * 0.9 + activation_in * 0.1
+      node.activation_tmp = node.activation_self * 0.9 + activation_in * 0.1
+    for node in @nodes
+      node.activation = node.activation_tmp
       @arborGraph.getNode(node.name).data.activation = node.activation
 
 class abc
@@ -351,8 +355,8 @@ class abc
 
       if d.length > 3    #need to find sample more than once to be periodic
         #found a posture, call user method
-        position = @trajectory.pop()
-        action(position, @)
+        configuration = @trajectory.pop()
+        action(configuration, @)
 
         #get rid of saved trajectory
         @trajectory = []
@@ -363,7 +367,7 @@ class abc
       @graph.renderer.click_time = Date.now()
       @graph.stop()
 
-  savePosture: (position, body, upper_csl, lower_csl) =>
+  savePosture: (configuration, body, upper_csl, lower_csl) =>
     parent = this
     addEdge = (start_node, target_node, edge_list=start_node.edges_out) ->
       edge = new transition start_node, target_node
@@ -391,11 +395,9 @@ class abc
           distance: distance.toFixed(3)
           timedelta: timedelta
 
-        parent.posture_graph.diffuseLearnProgress()
-
         #if we're here for the first time, n0 is not yet initialized (this time addEdge adds two nodes)
         if n0 == 0 and n1 == 1
-          init_node = parent.graph.getNode(n0)
+          init_node = parent.graph.getNode n0
           init_node.data.label = start_node.csl_mode
           init_node.data.number = start_node.name
           init_node.data.activation = start_node.activation
@@ -412,11 +414,11 @@ class abc
         parent.graph.start(true)
         parent.graph.renderer.click_time = Date.now()
 
-    p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x)
+    p = new posture(configuration, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x)
     found = @searchSubarray p, @posture_graph.nodes, p.isCloseExplore
     if not found
       #we dont have something close to this posture yet, add it
-      console.log("found new pose/attractor: " + p.position)
+      console.log("found new pose/attractor: " + p.configuration)
       @posture_graph.addNode p
     else
       #we have this posture already, update it
@@ -424,10 +426,10 @@ class abc
       current_p = p
       p = @posture_graph.getNode f
 
-      #update to mean of positions
-      p.position[0] = (current_p.position[0] + p.position[0]) / 2
-      p.position[1] = (current_p.position[1] + p.position[1]) / 2
-      p.position[2] = (current_p.position[2] + p.position[2]) / 2
+      #update to mean of configurations
+      p.configuration[0] = (current_p.configuration[0] + p.configuration[0]) / 2
+      p.configuration[1] = (current_p.configuration[1] + p.configuration[1]) / 2
+      p.configuration[2] = (current_p.configuration[2] + p.configuration[2]) / 2
 
       #update graph render stuff
       @graph.current_node = @graph.getNode p.name
@@ -459,7 +461,8 @@ class abc
 
   newCSLMode: =>
     #random: randomly select next mode + different mode than the current one
-    #unseen: try new mode that is not in neighbors of the current one, prefer previous mode. if all are seen, try random
+    #unseen: try new mode that is not in neighbors of the current one, prefer previous mode. if all are seen,
+    #        use direction of largest expected learn progress
 
     #TODO: try more strategies
     #- change csl mode of the joint that was not changed from the node before
@@ -519,12 +522,19 @@ class abc
       if a == "c" and b == "r+" then d = 0
       return i+d
 
+    dir_index_for_dir_and_joint = (dir, joint_index) ->
+      if dir is "-" then dir_index = 1 else dir_index = 0
+      dir_index + joint_index
+
     current_mode = @last_posture.csl_mode
     if @previous_posture
       previous_mode = @previous_posture.csl_mode
     else
       previous_mode = undefined
 
+    #prevent further going in the last direction if we now are in stall
+    if @last_joint_index? and "s" in current_mode[@last_joint_index]
+      @last_posture.exit_directions[dir_index_for_dir_and_joint @last_dir, @last_joint_index] = -1
 
     if @mode_strategy is "unseen"
       #use list of +/- possibilities for each joint: -1 stall, 0 not visited, >0 visited count
@@ -547,11 +557,13 @@ class abc
 
         if 0 in @last_posture.exit_directions
           #we have not seen one of the directions yet
-          dir_index =  @last_posture.exit_directions.indexOf 0
-          found_index = 0
+          dir_index = @last_posture.exit_directions.indexOf 0
 
-          #go through all directions we haven't tried yet and see if switching the joint is possible
+          #go through all directions we haven't tried yet and try to use the other joint
+          #if not, use the joint we have used before
+          found_index = 0
           while found_index > -1
+            #TODO: also check that this direction is allowed and we don't have a stall condition
             joint_index = Math.ceil((found_index+1) / 2) - 1
             if joint_index != @last_joint_index
               dir_index = found_index
@@ -569,9 +581,9 @@ class abc
 
         joint_index = Math.ceil((dir_index+1) / 2) - 1
         if dir_index % 2
-          direction = "+"  #odds are +, evens are -
+          direction = "-"  #odds are -, evens are +
         else
-          direction = "-"
+          direction = "+"
         next_mode = next_mode_for_direction current_mode[joint_index], direction
 
       @last_posture.exit_directions[dir_index] += 1   #count number of times we went this way
@@ -583,9 +595,6 @@ class abc
       @last_dir = direction
       @last_joint_index = joint_index
 
-      #refresh activation
-      @last_posture.activation = 0.25 * @last_posture.exit_directions.reduce ((x, y) -> if y is 0 then x+1 else x), 0
-
     else if @mode_strategy is "random"
       set_random_mode current_mode
 
@@ -594,12 +603,11 @@ class abc
       1
 
   limitCSL: (upper_joint, lower_joint) =>
-    # if csl goes against limit, set to release mode in same direction with
-    # current csl value as bias (stall mode)
+    # if csl goes against limit, set to stall mode (hold with small bias)
     limit = 15
     if upper_joint.csl_active and upper_joint.csl_mode is "c"
       mc = upper_joint.motor_control
-      if Math.abs(mc) > limit #and upper_joint.GetJointSpeed() closeTo 0
+      if Math.abs(mc) > limit
         if mc > limit
           ui.set_csl_mode_upper "s+"
         else if mc < -limit
@@ -617,13 +625,13 @@ class abc
   update: (body, upper_joint, lower_joint) =>
     @limitCSL upper_joint, lower_joint
     if @explore_active
-      @detectAttractor body, upper_joint, lower_joint, (position, parent) ->
+      @detectAttractor body, upper_joint, lower_joint, (configuration, parent) ->
         #save posture
-        parent.savePosture position, body, upper_joint, lower_joint
+        parent.savePosture configuration, body, upper_joint, lower_joint
 
     if @posture_graph.walk_circle_active
-      @detectAttractor body, upper_joint, lower_joint, (position, parent) ->
-        current_posture = new posture(position, [physics.upper_joint.csl_mode, physics.lower_joint.csl_mode])
+      @detectAttractor body, upper_joint, lower_joint, (configuration, parent) ->
+        current_posture = new posture(configuration, [physics.upper_joint.csl_mode, physics.lower_joint.csl_mode])
         for edge in parent.posture_graph.best_circle
           if edge.start_node.isClose(current_posture)
             edge.active = true

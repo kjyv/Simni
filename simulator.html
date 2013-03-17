@@ -312,7 +312,13 @@ Neurorobotics Research Laboratory, Berlin
             <div id="graph_controls" class="box">
                 <h1>Graph properties</h1>
                 <label for="graph_repulsion">Repulsion:</label><input id="graph_repulsion" type="range" min="100" max="2000" value="500" step="1" onchange="p.abc.graph.parameters({'repulsion': parseInt(this.value)})" /></br>
-                <label for="graph_stiffness">Stiffness:</label><input id="graph_stiffness" type="range" min="10" max="200" value="20" step="1" onchange="p.abc.graph.parameters({'stiffness': parseInt(this.value)})" />
+                <label for="graph_stiffness">Stiffness:</label><input id="graph_stiffness" type="range" min="10" max="200" value="20" step="1" onchange="p.abc.graph.parameters({'stiffness': parseInt(this.value)})" /><br/>
+
+                <label for="graph_activation">Show node activation (exected new postures)</label>
+                <input type="checkbox" id="graph_activation" value="yes" onchange="ui.set_activation(this.checked)"/></br>
+
+                <label for="graph_color_activation">Show node activation colors</label>
+                <input type="checkbox" id="graph_color_activation" value="yes" checked onchange="ui.set_color_activation(this.checked)"/></br>
             </div>
             <div id="posture_graph">
                 <canvas width="1400" height="900" id="viewport"></canvas>

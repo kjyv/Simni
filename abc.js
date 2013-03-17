@@ -24,7 +24,7 @@ if (typeof String.prototype.startsWith !== 'function') {
 posture = (function() {
   var e;
 
-  function posture(position, csl_mode, x_pos, timestamp) {
+  function posture(configuration, csl_mode, x_pos, timestamp) {
     if (csl_mode == null) {
       csl_mode = [];
     }
@@ -48,7 +48,7 @@ posture = (function() {
 
     this.name = -1;
     this.csl_mode = csl_mode;
-    this.position = position;
+    this.configuration = configuration;
     this.positions = [];
     this.body_x = x_pos;
     this.timestamp = timestamp;
@@ -73,7 +73,7 @@ posture = (function() {
     return JSON.stringify({
       "name": this.name,
       "csl_mode": this.csl_mode,
-      "position": this.position,
+      "configuration": this.configuration,
       "positions": this.positions,
       "body_x": this.body_x,
       "timestamp": this.timestamp,
@@ -106,7 +106,7 @@ posture = (function() {
   };
 
   posture.prototype.isEqualTo = function(node) {
-    return this.position[0] === node.position[0] && this.position[1] === node.position[1] && this.position[2] === node.position[2] && this.csl_mode[0] === node.csl_mode[0] && this.csl_mode[1] === node.csl_mode[1];
+    return this.configuration[0] === node.configuration[0] && this.configuration[1] === node.configuration[1] && this.configuration[2] === node.configuration[2] && this.csl_mode[0] === node.csl_mode[0] && this.csl_mode[1] === node.csl_mode[1];
   };
 
   posture.prototype.isClose = function(a, b, eps) {
@@ -116,7 +116,7 @@ posture = (function() {
     if (eps == null) {
       eps = 0.25;
     }
-    return Math.abs(a.position[0] - b.position[0]) < eps && Math.abs(a.position[1] - b.position[1]) < eps && Math.abs(a.position[2] - b.position[2]) < eps && a.csl_mode[0] === b.csl_mode[0] && a.csl_mode[1] === b.csl_mode[1];
+    return Math.abs(a.configuration[0] - b.configuration[0]) < eps && Math.abs(a.configuration[1] - b.configuration[1]) < eps && Math.abs(a.configuration[2] - b.configuration[2]) < eps && a.csl_mode[0] === b.csl_mode[0] && a.csl_mode[1] === b.csl_mode[1];
   };
 
   e = 0.4;
@@ -125,7 +125,7 @@ posture = (function() {
     if (eps == null) {
       eps = e;
     }
-    return Math.abs(a.position[0] - b[j].position[0]) < eps && Math.abs(a.position[1] - b[j].position[1]) < eps && Math.abs(a.position[2] - b[j].position[2]) < eps && a.csl_mode[0] === b[j].csl_mode[0] && a.csl_mode[1] === b[j].csl_mode[1];
+    return Math.abs(a.configuration[0] - b[j].configuration[0]) < eps && Math.abs(a.configuration[1] - b[j].configuration[1]) < eps && Math.abs(a.configuration[2] - b[j].configuration[2]) < eps && a.csl_mode[0] === b[j].csl_mode[0] && a.csl_mode[1] === b[j].csl_mode[1];
   };
 
   return posture;
@@ -224,7 +224,7 @@ postureGraph = (function() {
     _ref = t.nodes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       n = _ref[_i];
-      nn = new posture(n.position, n.csl_mode, n.body_x, n.timestamp);
+      nn = new posture(n.configuration, n.csl_mode, n.body_x, n.timestamp);
       nn.name = n.name;
       nn.activation = n.activation;
       nn.exit_directions = n.exit_directions;
@@ -267,14 +267,14 @@ postureGraph = (function() {
             label: n.csl_mode,
             number: n.name,
             activation: n.activation,
-            configuration: n.position,
+            configuration: n.configuration,
             positions: n.positions
           };
           _results1.push(target_node.data = {
             label: nn.csl_mode,
             number: nn.name,
             activation: nn.activation,
-            configuration: nn.position,
+            configuration: nn.configuration,
             positions: nn.positions
           });
         }
@@ -406,21 +406,33 @@ postureGraph = (function() {
   };
 
   postureGraph.prototype.diffuseLearnProgress = function() {
-    var activation_in, e, node, _i, _j, _len, _len1, _ref, _ref1, _results;
-    activation_in = 0;
+    var activation_in, e, node, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
     _ref = this.nodes;
-    _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       node = _ref[_i];
-      _ref1 = node.edges_out;
-      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-        e = _ref1[_j];
-        activation_in += e.start_node.activation;
-      }
-      if (node.edges_in.length) {
+      activation_in = 0;
+      node.activation_self = 0.25 * node.exit_directions.reduce((function(x, y) {
+        if (y === 0) {
+          return x + 1;
+        } else {
+          return x;
+        }
+      }), 0);
+      if (node.edges_out.length) {
+        _ref1 = node.edges_out;
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          e = _ref1[_j];
+          activation_in += e.target_node.activation;
+        }
         activation_in /= node.edges_out.length;
       }
-      node.activation = node.activation * 0.9 + activation_in * 0.1;
+      node.activation_tmp = node.activation_self * 0.9 + activation_in * 0.1;
+    }
+    _ref2 = this.nodes;
+    _results = [];
+    for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+      node = _ref2[_k];
+      node.activation = node.activation_tmp;
       _results.push(this.arborGraph.getNode(node.name).data.activation = node.activation);
     }
     return _results;
@@ -511,7 +523,7 @@ abc = (function() {
   time = MAX_UNIX_TIME;
 
   abc.prototype.detectAttractor = function(body, upper_joint, lower_joint, action) {
-    var d, eps, last, p_body, p_hip, p_knee, position;
+    var configuration, d, eps, last, p_body, p_hip, p_knee;
     if (!physics.run) {
       return;
     }
@@ -529,8 +541,8 @@ abc = (function() {
         return Math.abs(a[i][0] - b[j][0]) < eps && Math.abs(a[i][1] - b[j][1]) < eps && Math.abs(a[i][2] - b[j][2]) < eps;
       });
       if (d.length > 3) {
-        position = this.trajectory.pop();
-        action(position, this);
+        configuration = this.trajectory.pop();
+        action(configuration, this);
         this.trajectory = [];
       }
       time = Date.now();
@@ -541,7 +553,7 @@ abc = (function() {
     }
   };
 
-  abc.prototype.savePosture = function(position, body, upper_csl, lower_csl) {
+  abc.prototype.savePosture = function(configuration, body, upper_csl, lower_csl) {
     var addEdge, current_p, f, found, n, p, parent;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
@@ -571,7 +583,6 @@ abc = (function() {
           distance: distance.toFixed(3),
           timedelta: timedelta
         });
-        parent.posture_graph.diffuseLearnProgress();
         if (n0 === 0 && n1 === 1) {
           init_node = parent.graph.getNode(n0);
           init_node.data.label = start_node.csl_mode;
@@ -588,18 +599,18 @@ abc = (function() {
         return parent.graph.renderer.click_time = Date.now();
       }
     };
-    p = new posture(position, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x);
+    p = new posture(configuration, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x);
     found = this.searchSubarray(p, this.posture_graph.nodes, p.isCloseExplore);
     if (!found) {
-      console.log("found new pose/attractor: " + p.position);
+      console.log("found new pose/attractor: " + p.configuration);
       this.posture_graph.addNode(p);
     } else {
       f = found[0];
       current_p = p;
       p = this.posture_graph.getNode(f);
-      p.position[0] = (current_p.position[0] + p.position[0]) / 2;
-      p.position[1] = (current_p.position[1] + p.position[1]) / 2;
-      p.position[2] = (current_p.position[2] + p.position[2]) / 2;
+      p.configuration[0] = (current_p.configuration[0] + p.configuration[0]) / 2;
+      p.configuration[1] = (current_p.configuration[1] + p.configuration[1]) / 2;
+      p.configuration[2] = (current_p.configuration[2] + p.configuration[2]) / 2;
       this.graph.current_node = this.graph.getNode(p.name);
       this.graph.renderer.redraw();
     }
@@ -628,7 +639,7 @@ abc = (function() {
   };
 
   abc.prototype.newCSLMode = function() {
-    var back_dir, back_dir_offset, current_mode, dir_index, dir_index_for_modes, direction, e, found_index, go_this_edge, joint_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, _i, _len, _ref, _ref1;
+    var back_dir, back_dir_offset, current_mode, dir_index, dir_index_for_dir_and_joint, dir_index_for_modes, direction, e, found_index, go_this_edge, joint_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, _i, _len, _ref, _ref1;
     set_random_mode = function(curent_mode) {
       var mode, which;
       which = Math.floor(Math.random() * 2);
@@ -710,11 +721,23 @@ abc = (function() {
       }
       return i + d;
     };
+    dir_index_for_dir_and_joint = function(dir, joint_index) {
+      var dir_index;
+      if (dir === "-") {
+        dir_index = 1;
+      } else {
+        dir_index = 0;
+      }
+      return dir_index + joint_index;
+    };
     current_mode = this.last_posture.csl_mode;
     if (this.previous_posture) {
       previous_mode = this.previous_posture.csl_mode;
     } else {
       previous_mode = void 0;
+    }
+    if ((this.last_joint_index != null) && __indexOf.call(current_mode[this.last_joint_index], "s") >= 0) {
+      this.last_posture.exit_directions[dir_index_for_dir_and_joint(this.last_dir, this.last_joint_index)] = -1;
     }
     if (this.mode_strategy === "unseen") {
       if (this.last_dir && ((_ref = this.last_joint_index) === 0 || _ref === 1)) {
@@ -756,9 +779,9 @@ abc = (function() {
         }
         joint_index = Math.ceil((dir_index + 1) / 2) - 1;
         if (dir_index % 2) {
-          direction = "+";
-        } else {
           direction = "-";
+        } else {
+          direction = "+";
         }
         next_mode = next_mode_for_direction(current_mode[joint_index], direction);
       }
@@ -769,14 +792,7 @@ abc = (function() {
         ui.set_csl_mode_lower(next_mode);
       }
       this.last_dir = direction;
-      this.last_joint_index = joint_index;
-      return this.last_posture.activation = 0.25 * this.last_posture.exit_directions.reduce((function(x, y) {
-        if (y === 0) {
-          return x + 1;
-        } else {
-          return x;
-        }
-      }), 0);
+      return this.last_joint_index = joint_index;
     } else if (this.mode_strategy === "random") {
       return set_random_mode(current_mode);
     } else if (this.mode_strategy === "manual") {
@@ -812,14 +828,14 @@ abc = (function() {
   abc.prototype.update = function(body, upper_joint, lower_joint) {
     this.limitCSL(upper_joint, lower_joint);
     if (this.explore_active) {
-      this.detectAttractor(body, upper_joint, lower_joint, function(position, parent) {
-        return parent.savePosture(position, body, upper_joint, lower_joint);
+      this.detectAttractor(body, upper_joint, lower_joint, function(configuration, parent) {
+        return parent.savePosture(configuration, body, upper_joint, lower_joint);
       });
     }
     if (this.posture_graph.walk_circle_active) {
-      return this.detectAttractor(body, upper_joint, lower_joint, function(position, parent) {
+      return this.detectAttractor(body, upper_joint, lower_joint, function(configuration, parent) {
         var csl_mode, current_posture, edge, _i, _len, _ref, _results;
-        current_posture = new posture(position, [physics.upper_joint.csl_mode, physics.lower_joint.csl_mode]);
+        current_posture = new posture(configuration, [physics.upper_joint.csl_mode, physics.lower_joint.csl_mode]);
         _ref = parent.posture_graph.best_circle;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {

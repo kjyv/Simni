@@ -5,6 +5,14 @@ var ui,
 ui = (function() {
 
   function ui(physics) {
+    this.set_activation = __bind(this.set_activation, this);
+
+    this.set_color_activation = __bind(this.set_color_activation, this);
+
+    this.powerColor = __bind(this.powerColor, this);
+
+    this.hsvToRgb = __bind(this.hsvToRgb, this);
+
     this.getPostureGraphAsFile = __bind(this.getPostureGraphAsFile, this);
 
     this.setSemniTransformAsFile = __bind(this.setSemniTransformAsFile, this);
@@ -467,6 +475,68 @@ ui = (function() {
     svg = $("#viewport_svg").clone();
     svg.find("defs").append("<style>\n   line {\n      stroke-width: 1;\n      stroke: black;\n      fill: none;\n  }\n\n  text {\n    font-family: Verdana; sans-serif;\n    font-size: 7pt;\n    text-anchor: middle;\n    fill: #333333;\n  } \n</style>");
     return location.href = 'data:text;charset=utf-8,' + encodeURI('<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + svg.html());
+  };
+
+  ui.prototype.hsvToRgb = function(h, s, v) {
+    var b, f, g, i, p, q, r, t;
+    r = void 0;
+    g = void 0;
+    b = void 0;
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+      case 0:
+        r = v;
+        g = t;
+        b = p;
+        break;
+      case 1:
+        r = q;
+        g = v;
+        b = p;
+        break;
+      case 2:
+        r = p;
+        g = v;
+        b = t;
+        break;
+      case 3:
+        r = p;
+        g = q;
+        b = v;
+        break;
+      case 4:
+        r = t;
+        g = p;
+        b = v;
+        break;
+      case 5:
+        r = v;
+        g = p;
+        b = q;
+    }
+    return [Math.floor(r * 255), Math.floor(g * 255), Math.floor(b * 255)];
+  };
+
+  ui.prototype.powerColor = function(value) {
+    var b, h, s;
+    h = (1 - value) * 0.4;
+    s = 0.9;
+    b = 0.9;
+    return this.hsvToRgb(h, s, b);
+  };
+
+  ui.prototype.set_color_activation = function(value) {
+    p.abc.graph.renderer.draw_color_activation = value;
+    return p.abc.graph.renderer.redraw();
+  };
+
+  ui.prototype.set_activation = function(value) {
+    p.abc.graph.renderer.draw_activation = value;
+    return p.abc.graph.renderer.redraw();
   };
 
   return ui;

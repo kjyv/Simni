@@ -22,6 +22,8 @@ RendererSVG = (function() {
     this.graph = parent;
     this.abc = abc;
     $("canvas#viewport").hide();
+    this.draw_color_activation = true;
+    this.draw_activation = false;
     arrowLength = 6 + 1;
     arrowWidth = 2 + 1;
     this.svg.append("svg:defs").append("svg:marker").attr("id", "arrowtip").attr("viewBox", "-10 -5 10 10").attr("refX", 0).attr("refY", 0).attr("markerWidth", 10).attr("markerHeight", 10).attr("orient", "auto").append("svg:path").attr("d", "M-7,3L0,0L-7,-3L-5.6,0");
@@ -79,8 +81,9 @@ RendererSVG = (function() {
     var graph, parent;
     parent = this;
     graph = this.graph;
+    parent.abc.posture_graph.diffuseLearnProgress();
     this.particleSystem.eachNode(function(node, pt) {
-      var a, activation, configuration, crect, image, label, number, positions, strokeStyle, w, w2;
+      var a, activation, c, configuration, crect, image, label, number, positions, strokeStyle, w, w2;
       label = node.data.label;
       number = node.data.number;
       image = node.data.imageData;
@@ -94,7 +97,7 @@ RendererSVG = (function() {
         w = 8;
         w2 = 4;
       }
-      if (positions.length && configuration && !node.data.semni) {
+      if (positions && positions.length && configuration && !node.data.semni) {
         node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], configuration[0], configuration[1], configuration[2], parent.svg);
       }
       if (node.data.semni) {
@@ -119,16 +122,33 @@ RendererSVG = (function() {
                     break
       */
 
-      if (label && activation) {
-        a = activation.toFixed(1);
+      if (label) {
+        if (activation != null) {
+          a = activation.toFixed(1);
+          if (parent.draw_color_activation) {
+            c = p.ui.powerColor(a);
+            parent.svg_nodes[number].style("fill", "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")");
+          } else {
+            parent.svg_nodes[number].style("fill", "none");
+          }
+        } else {
+          a = "";
+        }
         if (node.data.label_svg === void 0) {
           node.data.label_svg = parent.svg.append("svg:text");
           node.data.label_svg[0][0].textContent = number.toString();
           node.data.label_svg2 = parent.svg.append("svg:text");
           node.data.label_svg2[0][0].textContent = label || "";
+          node.data.label_svg3 = parent.svg.append("svg:text");
         }
         node.data.label_svg.attr("x", pt.x).attr("y", pt.y - 3);
         node.data.label_svg2.attr("x", pt.x).attr("y", pt.y + 4);
+        node.data.label_svg3.attr("x", pt.x).attr("y", pt.y + 11);
+        if (parent.draw_activation) {
+          node.data.label_svg3[0][0].textContent = "a:" + a;
+        } else {
+          node.data.label_svg3[0][0].textContent = "";
+        }
       }
       return parent.nodeBoxes[node.name] = [pt.x - w2, pt.y - w2, w, w];
     });
