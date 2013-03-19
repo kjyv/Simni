@@ -282,8 +282,8 @@ class abc
   constructor: ->
     @graph = arbor.ParticleSystem()  # display graph, has its own nodes and edges and data for display
     @graph.parameters                # use center-gravity to make the graph settle nicely (ymmv)
-      repulsion: 500 #1000
-      stiffness: 20 #100
+      repulsion: 1000 #500
+      stiffness: 100 #20
       friction: .5
       gravity: true
 #      timeout: 5
@@ -401,14 +401,17 @@ class abc
           init_node.data.label = start_node.csl_mode
           init_node.data.number = start_node.name
           init_node.data.activation = start_node.activation
+          init_node.data.positions = start_node.positions
+          init_node.data.world_angles = start_node.world_angles
 
         source_node = parent.graph.getNode n0
         parent.graph.current_node = current_node = parent.graph.getNode(n1)
         current_node.data.label = target_node.csl_mode
         current_node.data.number = target_node.name
+        current_node.data.positions = target_node.positions
+        current_node.data.world_angles = target_node.world_angles
         current_node.data.activation = target_node.activation
         source_node.data.activation = start_node.activation
-
 
         #re-enable suspended graph layouting for a bit to find new layout
         parent.graph.start(true)
@@ -418,34 +421,39 @@ class abc
     found = @searchSubarray p, @posture_graph.nodes, p.isCloseExplore
     if not found
       #we dont have something close to this posture yet, add it
-      console.log("found new pose/attractor: " + p.configuration)
+      console.log("found new posture: " + p.configuration)
       @posture_graph.addNode p
     else
       #we have this posture already, update it
       f = found[0]
-      current_p = p
+      new_p = p
       p = @posture_graph.getNode f
 
-      #update to mean of configurations
-      p.configuration[0] = (current_p.configuration[0] + p.configuration[0]) / 2
-      p.configuration[1] = (current_p.configuration[1] + p.configuration[1]) / 2
-      p.configuration[2] = (current_p.configuration[2] + p.configuration[2]) / 2
+      #update to mean of old and current configurations
+      p.configuration[0] = (new_p.configuration[0] + p.configuration[0]) / 2
+      p.configuration[1] = (new_p.configuration[1] + p.configuration[1]) / 2
+      p.configuration[2] = (new_p.configuration[2] + p.configuration[2]) / 2
+
+      #make renderer draw updated semni posture
+      n = @graph.getNode p.name
+
+      n.data.semni.remove()
+      n.data.semni = undefined
+
+    #body positions for svg drawing
+    p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]
+    p.world_angles = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()]
+    p.body_x = body.GetWorldCenter().x
+    p.timestamp = Date.now()
+
+    #put node and edges into drawing graph
+    if @last_posture and @posture_graph.length() > 1
+      #refresh target position to current x for distance calc
+      addEdge @last_posture, p
 
       #update graph render stuff
       @graph.current_node = @graph.getNode p.name
       @graph.renderer.redraw()
-
-    #add node+edges
-    if @last_posture and @posture_graph.length() > 1
-      #refresh target position to current x so distance calc works
-      p.body_x = body.GetWorldCenter().x
-      p.timestamp = Date.now()
-      addEdge @last_posture, p
-
-      #save posture for graph drawing
-      n = @graph.getNode(p.name)
-      p.positions = n.data.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]
-      n.data.configuration = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()]
 
     @previous_posture = @last_posture
     @last_posture = p
@@ -468,6 +476,7 @@ class abc
     #- change csl mode of the joint that was not changed from the node before
     #- alternate between c and r modes
 
+    ### helpers ###
     set_random_mode = (curent_mode) ->
       which = Math.floor(Math.random()*2)    #just change one joint at a time
       if which
@@ -526,6 +535,11 @@ class abc
       if dir is "-" then dir_index = 1 else dir_index = 0
       dir_index + joint_index
 
+
+    joint_from_dir_index = (index) ->
+      Math.ceil((index+1) / 2) - 1
+    ### end helpers ###
+
     current_mode = @last_posture.csl_mode
     if @previous_posture
       previous_mode = @previous_posture.csl_mode
@@ -541,52 +555,55 @@ class abc
       #[h+,h-,k+,k-]
 
       #try to go back to previous mode (same joint)
+      ###
       if @last_dir and @last_joint_index in [0, 1]
         back_dir = if @last_dir is "+" then "-" else "+"         #reverse direction
         back_dir_offset = if @last_dir is "+" then 0 else 1      #offset for index
-        dir_index = @last_joint_index+back_dir_offset            #get index for reverse direction
-        if @last_posture.exit_directions[dir_index] is 0         #if we have not gone this direction from here, we go back
+        next_dir_index = @last_joint_index+back_dir_offset            #get index for reverse direction
+        if @last_posture.exit_directions[next_dir_index] is 0         #if we have not gone this direction from here, we go back
           next_mode = next_mode_for_direction current_mode[@last_joint_index], back_dir
           direction = back_dir
           joint_index = @last_joint_index
         else
-          dir_index = undefined
+          next_dir_index = undefined
+      ###
 
       unless next_mode
         #we are not going back again
 
         if 0 in @last_posture.exit_directions
-          #we have not seen one of the directions yet
-          dir_index = @last_posture.exit_directions.indexOf 0
+          #we have not seen one of the directions yet, get first unvisited
+          next_dir_index = @last_posture.exit_directions.indexOf 0
 
-          #go through all directions we haven't tried yet and try to use the other joint
+          #go through all unvisted directions and check if it is possible to switch another joint now
           #if not, use the joint we have used before
-          found_index = 0
+          found_index = next_dir_index
           while found_index > -1
-            #TODO: also check that this direction is allowed and we don't have a stall condition
-            joint_index = Math.ceil((found_index+1) / 2) - 1
-            if joint_index != @last_joint_index
-              dir_index = found_index
-              break
+            if joint_from_dir_index(found_index) != @last_joint_index
+              next_dir_index = found_index
+              #we now have the first unvisited direction of the other joint
+              #if there are more, we should randomly decide between those, so maybe go on
+              if Math.floor(Math.random() / 0.5)
+                break
             found_index = @last_posture.exit_directions.indexOf 0, found_index+1
         else
           #we went all directions already, take one with largest activation
-          while not dir_index? or @last_posture.exit_directions[dir_index] is -1
-            #dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four by # of joints - 0.01
+          while not next_dir_index? or @last_posture.exit_directions[next_dir_index] is -1
+            #next_dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four by # of joints - 0.01
             go_this_edge = @last_posture.edges_out[0]
             for e in @last_posture.edges_out
               if e.target_node.activation > go_this_edge.target_node.activation
                 go_this_edge = e
-            dir_index = dir_index_for_modes @last_posture.csl_mode, e.target_node.csl_mode
+            next_dir_index = dir_index_for_modes @last_posture.csl_mode, e.target_node.csl_mode
 
-        joint_index = Math.ceil((dir_index+1) / 2) - 1
-        if dir_index % 2
+        joint_index = joint_from_dir_index next_dir_index
+        if next_dir_index % 2
           direction = "-"  #odds are -, evens are +
         else
           direction = "+"
         next_mode = next_mode_for_direction current_mode[joint_index], direction
 
-      @last_posture.exit_directions[dir_index] += 1   #count number of times we went this way
+      @last_posture.exit_directions[next_dir_index] += 1   #count number of times we went this way
       if joint_index is 0
         ui.set_csl_mode_upper next_mode
       else

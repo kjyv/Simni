@@ -2,7 +2,7 @@
 class RendererSVG
   constructor: (container, parent, abc) ->
     @width = 1400
-    @height = 900
+    @height = 850
     @svg = d3.select(container).append("svg:svg")
             .attr("width", @width)
             .attr("height", @height)
@@ -107,7 +107,7 @@ class RendererSVG
       number = node.data.number
       image = node.data.imageData
       positions = node.data.positions
-      configuration = node.data.configuration
+      world_angles = node.data.world_angles
       activation = node.data.activation
 
       if label
@@ -118,9 +118,9 @@ class RendererSVG
         w2 = 4
 
       #draw semni contour and posture
-      if positions and positions.length and configuration and not node.data.semni
+      if positions and positions.length and world_angles and not node.data.semni
         #put new svg elements with nodes posture if not existent
-        node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], configuration[0], configuration[1], configuration[2], parent.svg)
+        node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], world_angles[0], world_angles[1], world_angles[2], parent.svg)
 
       if node.data.semni
         #move to current nodes position

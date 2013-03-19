@@ -467,8 +467,8 @@ abc = (function() {
     this.toggleExplore = __bind(this.toggleExplore, this);
     this.graph = arbor.ParticleSystem();
     this.graph.parameters({
-      repulsion: 500,
-      stiffness: 20,
+      repulsion: 1000,
+      stiffness: 100,
       friction: .5,
       gravity: true
     });
@@ -554,7 +554,7 @@ abc = (function() {
   };
 
   abc.prototype.savePosture = function(configuration, body, upper_csl, lower_csl) {
-    var addEdge, current_p, f, found, n, p, parent;
+    var addEdge, f, found, n, new_p, p, parent;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
       var current_node, distance, edge, init_node, n0, n1, source_node, timedelta;
@@ -588,11 +588,15 @@ abc = (function() {
           init_node.data.label = start_node.csl_mode;
           init_node.data.number = start_node.name;
           init_node.data.activation = start_node.activation;
+          init_node.data.positions = start_node.positions;
+          init_node.data.world_angles = start_node.world_angles;
         }
         source_node = parent.graph.getNode(n0);
         parent.graph.current_node = current_node = parent.graph.getNode(n1);
         current_node.data.label = target_node.csl_mode;
         current_node.data.number = target_node.name;
+        current_node.data.positions = target_node.positions;
+        current_node.data.world_angles = target_node.world_angles;
         current_node.data.activation = target_node.activation;
         source_node.data.activation = start_node.activation;
         parent.graph.start(true);
@@ -602,25 +606,27 @@ abc = (function() {
     p = new posture(configuration, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x);
     found = this.searchSubarray(p, this.posture_graph.nodes, p.isCloseExplore);
     if (!found) {
-      console.log("found new pose/attractor: " + p.configuration);
+      console.log("found new posture: " + p.configuration);
       this.posture_graph.addNode(p);
     } else {
       f = found[0];
-      current_p = p;
+      new_p = p;
       p = this.posture_graph.getNode(f);
-      p.configuration[0] = (current_p.configuration[0] + p.configuration[0]) / 2;
-      p.configuration[1] = (current_p.configuration[1] + p.configuration[1]) / 2;
-      p.configuration[2] = (current_p.configuration[2] + p.configuration[2]) / 2;
+      p.configuration[0] = (new_p.configuration[0] + p.configuration[0]) / 2;
+      p.configuration[1] = (new_p.configuration[1] + p.configuration[1]) / 2;
+      p.configuration[2] = (new_p.configuration[2] + p.configuration[2]) / 2;
+      n = this.graph.getNode(p.name);
+      n.data.semni.remove();
+      n.data.semni = void 0;
+    }
+    p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()];
+    p.world_angles = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()];
+    p.body_x = body.GetWorldCenter().x;
+    p.timestamp = Date.now();
+    if (this.last_posture && this.posture_graph.length() > 1) {
+      addEdge(this.last_posture, p);
       this.graph.current_node = this.graph.getNode(p.name);
       this.graph.renderer.redraw();
-    }
-    if (this.last_posture && this.posture_graph.length() > 1) {
-      p.body_x = body.GetWorldCenter().x;
-      p.timestamp = Date.now();
-      addEdge(this.last_posture, p);
-      n = this.graph.getNode(p.name);
-      p.positions = n.data.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()];
-      n.data.configuration = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()];
     }
     this.previous_posture = this.last_posture;
     this.last_posture = p;
@@ -639,7 +645,10 @@ abc = (function() {
   };
 
   abc.prototype.newCSLMode = function() {
-    var back_dir, back_dir_offset, current_mode, dir_index, dir_index_for_dir_and_joint, dir_index_for_modes, direction, e, found_index, go_this_edge, joint_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, _i, _len, _ref, _ref1;
+    /* helpers
+    */
+
+    var current_mode, dir_index_for_dir_and_joint, dir_index_for_modes, direction, e, found_index, go_this_edge, joint_from_dir_index, joint_index, next_dir_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, _i, _len, _ref;
     set_random_mode = function(curent_mode) {
       var mode, which;
       which = Math.floor(Math.random() * 2);
@@ -730,6 +739,12 @@ abc = (function() {
       }
       return dir_index + joint_index;
     };
+    joint_from_dir_index = function(index) {
+      return Math.ceil((index + 1) / 2) - 1;
+    };
+    /* end helpers
+    */
+
     current_mode = this.last_posture.csl_mode;
     if (this.previous_posture) {
       previous_mode = this.previous_posture.csl_mode;
@@ -740,52 +755,54 @@ abc = (function() {
       this.last_posture.exit_directions[dir_index_for_dir_and_joint(this.last_dir, this.last_joint_index)] = -1;
     }
     if (this.mode_strategy === "unseen") {
-      if (this.last_dir && ((_ref = this.last_joint_index) === 0 || _ref === 1)) {
-        back_dir = this.last_dir === "+" ? "-" : "+";
-        back_dir_offset = this.last_dir === "+" ? 0 : 1;
-        dir_index = this.last_joint_index + back_dir_offset;
-        if (this.last_posture.exit_directions[dir_index] === 0) {
-          next_mode = next_mode_for_direction(current_mode[this.last_joint_index], back_dir);
-          direction = back_dir;
-          joint_index = this.last_joint_index;
-        } else {
-          dir_index = void 0;
-        }
-      }
+      /*
+            if @last_dir and @last_joint_index in [0, 1]
+              back_dir = if @last_dir is "+" then "-" else "+"         #reverse direction
+              back_dir_offset = if @last_dir is "+" then 0 else 1      #offset for index
+              next_dir_index = @last_joint_index+back_dir_offset            #get index for reverse direction
+              if @last_posture.exit_directions[next_dir_index] is 0         #if we have not gone this direction from here, we go back
+                next_mode = next_mode_for_direction current_mode[@last_joint_index], back_dir
+                direction = back_dir
+                joint_index = @last_joint_index
+              else
+                next_dir_index = undefined
+      */
+
       if (!next_mode) {
         if (__indexOf.call(this.last_posture.exit_directions, 0) >= 0) {
-          dir_index = this.last_posture.exit_directions.indexOf(0);
-          found_index = 0;
+          next_dir_index = this.last_posture.exit_directions.indexOf(0);
+          found_index = next_dir_index;
           while (found_index > -1) {
-            joint_index = Math.ceil((found_index + 1) / 2) - 1;
-            if (joint_index !== this.last_joint_index) {
-              dir_index = found_index;
-              break;
+            if (joint_from_dir_index(found_index) !== this.last_joint_index) {
+              next_dir_index = found_index;
+              if (Math.floor(Math.random() / 0.5)) {
+                break;
+              }
             }
             found_index = this.last_posture.exit_directions.indexOf(0, found_index + 1);
           }
         } else {
-          while (!(dir_index != null) || this.last_posture.exit_directions[dir_index] === -1) {
+          while (!(next_dir_index != null) || this.last_posture.exit_directions[next_dir_index] === -1) {
             go_this_edge = this.last_posture.edges_out[0];
-            _ref1 = this.last_posture.edges_out;
-            for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-              e = _ref1[_i];
+            _ref = this.last_posture.edges_out;
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              e = _ref[_i];
               if (e.target_node.activation > go_this_edge.target_node.activation) {
                 go_this_edge = e;
               }
             }
-            dir_index = dir_index_for_modes(this.last_posture.csl_mode, e.target_node.csl_mode);
+            next_dir_index = dir_index_for_modes(this.last_posture.csl_mode, e.target_node.csl_mode);
           }
         }
-        joint_index = Math.ceil((dir_index + 1) / 2) - 1;
-        if (dir_index % 2) {
+        joint_index = joint_from_dir_index(next_dir_index);
+        if (next_dir_index % 2) {
           direction = "-";
         } else {
           direction = "+";
         }
         next_mode = next_mode_for_direction(current_mode[joint_index], direction);
       }
-      this.last_posture.exit_directions[dir_index] += 1;
+      this.last_posture.exit_directions[next_dir_index] += 1;
       if (joint_index === 0) {
         ui.set_csl_mode_upper(next_mode);
       } else {

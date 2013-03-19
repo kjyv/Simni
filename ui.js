@@ -60,18 +60,26 @@ ui = (function() {
   ui.prototype.update = function() {
     if (this.draw_graphics && this.halftime) {
       this.physics.world.DrawDebugData();
-      /*
-              @drawSemniOutlineSVG(
-                @physics.body.GetPosition(),
-                @physics.body2.GetPosition(),
-                @physics.body3.GetPosition(),
-                @physics.body.GetAngle(),
-                @physics.body2.GetAngle(),
-                @physics.body3.GetAngle()
-              )
-      */
-
     }
+    /*
+          #draw semni as svg
+          container = "#semni_svg"
+          $(container).html("")
+          @svg = d3.select(container).append("svg:svg")
+                  .attr("width", 300)
+                  .attr("height", 300)
+                  .attr("xmlns", "http://www.w3.org/2000/svg")
+          @semni = @getSemniOutlineSVG(
+            @physics.body.GetPosition(),
+            @physics.body2.GetPosition(),
+            @physics.body3.GetPosition(),
+            @physics.body.GetAngle(),
+            @physics.body2.GetAngle(),
+            @physics.body3.GetAngle(),
+            @svg
+          )
+    */
+
     return this.halftime = !this.halftime;
   };
 

@@ -311,8 +311,8 @@ Neurorobotics Research Laboratory, Berlin
             </div>
             <div id="graph_controls" class="box">
                 <h1>Graph properties</h1>
-                <label for="graph_repulsion">Repulsion:</label><input id="graph_repulsion" type="range" min="100" max="2000" value="500" step="1" onchange="p.abc.graph.parameters({'repulsion': parseInt(this.value)})" /></br>
-                <label for="graph_stiffness">Stiffness:</label><input id="graph_stiffness" type="range" min="10" max="200" value="20" step="1" onchange="p.abc.graph.parameters({'stiffness': parseInt(this.value)})" /><br/>
+                <label for="graph_repulsion">Repulsion:</label><input id="graph_repulsion" type="range" min="100" max="2000" value="1000" step="1" onchange="p.abc.graph.parameters({'repulsion': parseInt(this.value)})" /></br>
+                <label for="graph_stiffness">Stiffness:</label><input id="graph_stiffness" type="range" min="10" max="200" value="100" step="1" onchange="p.abc.graph.parameters({'stiffness': parseInt(this.value)})" /><br/>
 
                 <label for="graph_activation">Show node activation (exected new postures)</label>
                 <input type="checkbox" id="graph_activation" value="yes" onchange="ui.set_activation(this.checked)"/></br>
@@ -320,6 +320,7 @@ Neurorobotics Research Laboratory, Berlin
                 <label for="graph_color_activation">Show node activation colors</label>
                 <input type="checkbox" id="graph_color_activation" value="yes" checked onchange="ui.set_color_activation(this.checked)"/></br>
             </div>
+            <!--<div id="semni_svg" style="width: 300px; height: 300px; float: left;"></div>-->
             <div id="posture_graph">
                 <canvas width="1400" height="900" id="viewport"></canvas>
                 <canvas width="300" height="300" id="tempimage" style="display:none;"></canvas>
@@ -425,7 +426,7 @@ Neurorobotics Research Laboratory, Berlin
             JXG.Options.axis.withLabel = false
 
             brd = JXG.JSXGraph.initBoard('phase_space_plot', {boundingbox:[-1.2,2,1.2,-2], axis:true})
-                            
+
             $("#clear_phase").click(function(){
                 lastx = xdata.pop()
                 lasty = ydata.pop()
@@ -436,11 +437,11 @@ Neurorobotics Research Laboratory, Berlin
             $("#phase_space_enabled").on('click', function(){
                 phase_space_enabled = !phase_space_enabled
             })
-            
+
             $("#motor_torque_enabled").on('click', function(){
                 motor_torque_enabled= !motor_torque_enabled
             })
-            
+
             $("#phase_space_2_enabled").on('click', function(){
                 phase_space_2_enabled = !phase_space_2_enabled
             })
@@ -448,7 +449,7 @@ Neurorobotics Research Laboratory, Berlin
             var line = d3.svg.line()
                 .x(function(d, i) { return scalex(d.U); })
                 .y(function(d, i) { return scaley(d.phidot); });
- 
+
             var path = svg.append("g")
                 .append("path")
                 .data([zdata], function(d) { if (d) return d.U })
@@ -470,7 +471,7 @@ Neurorobotics Research Laboratory, Berlin
                         ydata.push(0)
                         //brd.setBoundingBox([-2,2,2,-2])
                     }
-                    
+
                     if (!g) {                   // If the curve does not exist yet, create it.
                         g = brd.create('curve', [xdata,ydata], {strokeWidth:1, strokeColor:'red'}); 
                     }

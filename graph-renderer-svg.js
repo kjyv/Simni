@@ -11,7 +11,7 @@ RendererSVG = (function() {
 
     var MAX_UNIX_TIME, arrowLength, arrowWidth;
     this.width = 1400;
-    this.height = 900;
+    this.height = 850;
     this.svg = d3.select(container).append("svg:svg").attr("width", this.width).attr("height", this.height).attr("xmlns", "http://www.w3.org/2000/svg");
     this.svg_nodes = {};
     this.svg_edges = {};
@@ -83,12 +83,12 @@ RendererSVG = (function() {
     graph = this.graph;
     parent.abc.posture_graph.diffuseLearnProgress();
     this.particleSystem.eachNode(function(node, pt) {
-      var a, activation, c, configuration, crect, image, label, number, positions, strokeStyle, w, w2;
+      var a, activation, c, crect, image, label, number, positions, strokeStyle, w, w2, world_angles;
       label = node.data.label;
       number = node.data.number;
       image = node.data.imageData;
       positions = node.data.positions;
-      configuration = node.data.configuration;
+      world_angles = node.data.world_angles;
       activation = node.data.activation;
       if (label) {
         w = 26;
@@ -97,8 +97,8 @@ RendererSVG = (function() {
         w = 8;
         w2 = 4;
       }
-      if (positions && positions.length && configuration && !node.data.semni) {
-        node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], configuration[0], configuration[1], configuration[2], parent.svg);
+      if (positions && positions.length && world_angles && !node.data.semni) {
+        node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], world_angles[0], world_angles[1], world_angles[2], parent.svg);
       }
       if (node.data.semni) {
         crect = node.data.semni[0][0].getBBox();
