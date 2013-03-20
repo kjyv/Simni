@@ -82,7 +82,6 @@ RendererSVG = (function() {
     var graph, parent;
     parent = this;
     graph = this.graph;
-    parent.abc.posture_graph.diffuseLearnProgress();
     this.particleSystem.eachNode(function(node, pt) {
       var a, activation, c, crect, image, label, number, positions, strokeStyle, w, w2, world_angles;
       label = node.data.label;
@@ -148,8 +147,8 @@ RendererSVG = (function() {
         }
         node.data.label_svg.attr("x", pt.x).attr("y", pt.y - 3);
         node.data.label_svg2.attr("x", pt.x).attr("y", pt.y + 4);
-        node.data.label_svg3.attr("x", pt.x).attr("y", pt.y + 11);
         if (parent.draw_activation) {
+          node.data.label_svg3.attr("x", pt.x).attr("y", pt.y + 11);
           node.data.label_svg3[0][0].textContent = "a:" + a;
         } else {
           node.data.label_svg3[0][0].textContent = "";

@@ -269,20 +269,28 @@ class postureGraph
   diffuseLearnProgress: =>
     #for each node, get activation through all incoming edges and sum up
     #loop over nodes twice to properly deal with recurrent loops
-    #TODO: for s modes, divide self activation by proper amount of possible edges,
-    #e.g. s+,r+ only has 3 possible outgoing edges, s-,s- only has two
     unless @nodes.length > 1
       return
     for node in @nodes
+      #divide self activation by proper amount of possible edges,
+      #e.g. s+,r+ only has 3 possible outgoing edges, s-,s- only has two, otherwise we have 4
+      if "s" in node.csl_mode[0] and "s" in node.csl_mode[1]
+        divisor = 0.5
+      else if "s" in node.csl_mode[0] or "s" in node.csl_mode[1]
+        divisor = 1/3
+      else
+        divisor = 0.25
+
       activation_in = 0
-      node.activation_self = 0.25 * node.exit_directions.reduce ((x, y) -> if y is 0 then x+1 else x), 0
+      node.activation_self = divisor * node.exit_directions.reduce ((x, y) -> if y is 0 then x+1 else x), 0
       if node.edges_out.length
         activation_in += e.target_node.activation for e in node.edges_out
         activation_in /= node.edges_out.length
-      node.activation_tmp = node.activation_self * 0.9 + activation_in * 0.1
+      node.activation_tmp = node.activation_self * 0.7 + activation_in * 0.3
     for node in @nodes
       node.activation = node.activation_tmp
       @arborGraph.getNode(node.name).data.activation = node.activation
+    @arborGraph.renderer.redraw()
 
 class abc
   constructor: ->
@@ -471,6 +479,7 @@ class abc
     @previous_posture = @last_posture
     @last_posture = p
     @newCSLMode()
+    @posture_graph.diffuseLearnProgress()
 
   compareModes: (a, b) =>
     if not a or not b
@@ -561,6 +570,8 @@ class abc
       previous_mode = undefined
 
     #prevent further going in the last direction if we now are in stall
+    #TODO: check if this is right
+    #also, this should be done immediately when stall is detected and set
     if @last_joint_index? and "s" in current_mode[@last_joint_index]
       @last_posture.exit_directions[dir_index_for_dir_and_joint @last_dir, @last_joint_index] = -1
 
@@ -608,8 +619,12 @@ class abc
             for e in @last_posture.edges_out
               if e.target_node.activation > go_this_edge.target_node.activation
                 go_this_edge = e
-            next_dir_index = dir_index_for_modes @last_posture.csl_mode, go_this_edge.target_node.csl_mode
-            console.log("followed the edge "+go_this_edge.start_node.name+"->"+go_this_edge.target_node.name+" because of largest activation.")
+
+            if not go_this_edge
+              next_dir_index = dir for dir in @last_posture.exit_directions when dir > -1
+            else
+              next_dir_index = dir_index_for_modes @last_posture.csl_mode, go_this_edge.target_node.csl_mode
+              console.log("followed the edge "+go_this_edge.start_node.name+"->"+go_this_edge.target_node.name+" because of largest activation.")
 
         joint_index = joint_from_dir_index next_dir_index
         if next_dir_index % 2

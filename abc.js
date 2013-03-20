@@ -411,15 +411,22 @@ postureGraph = (function() {
   };
 
   postureGraph.prototype.diffuseLearnProgress = function() {
-    var activation_in, e, node, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
+    var activation_in, divisor, e, node, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
     if (!(this.nodes.length > 1)) {
       return;
     }
     _ref = this.nodes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       node = _ref[_i];
+      if (__indexOf.call(node.csl_mode[0], "s") >= 0 && __indexOf.call(node.csl_mode[1], "s") >= 0) {
+        divisor = 0.5;
+      } else if (__indexOf.call(node.csl_mode[0], "s") >= 0 || __indexOf.call(node.csl_mode[1], "s") >= 0) {
+        divisor = 1 / 3;
+      } else {
+        divisor = 0.25;
+      }
       activation_in = 0;
-      node.activation_self = 0.25 * node.exit_directions.reduce((function(x, y) {
+      node.activation_self = divisor * node.exit_directions.reduce((function(x, y) {
         if (y === 0) {
           return x + 1;
         } else {
@@ -434,16 +441,15 @@ postureGraph = (function() {
         }
         activation_in /= node.edges_out.length;
       }
-      node.activation_tmp = node.activation_self * 0.9 + activation_in * 0.1;
+      node.activation_tmp = node.activation_self * 0.7 + activation_in * 0.3;
     }
     _ref2 = this.nodes;
-    _results = [];
     for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
       node = _ref2[_k];
       node.activation = node.activation_tmp;
-      _results.push(this.arborGraph.getNode(node.name).data.activation = node.activation);
+      this.arborGraph.getNode(node.name).data.activation = node.activation;
     }
-    return _results;
+    return this.arborGraph.renderer.redraw();
   };
 
   return postureGraph;
@@ -653,7 +659,8 @@ abc = (function() {
     }
     this.previous_posture = this.last_posture;
     this.last_posture = p;
-    return this.newCSLMode();
+    this.newCSLMode();
+    return this.posture_graph.diffuseLearnProgress();
   };
 
   abc.prototype.compareModes = function(a, b) {
@@ -671,7 +678,7 @@ abc = (function() {
     /* helpers
     */
 
-    var current_mode, dir_index_for_dir_and_joint, dir_index_for_modes, direction, e, found_index, go_this_edge, joint_from_dir_index, joint_index, next_dir_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, _i, _len, _ref;
+    var current_mode, dir, dir_index_for_dir_and_joint, dir_index_for_modes, direction, e, found_index, go_this_edge, joint_from_dir_index, joint_index, next_dir_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, _i, _j, _len, _len1, _ref, _ref1;
     set_random_mode = function(curent_mode) {
       var mode, which;
       which = Math.floor(Math.random() * 2);
@@ -817,8 +824,18 @@ abc = (function() {
                 go_this_edge = e;
               }
             }
-            next_dir_index = dir_index_for_modes(this.last_posture.csl_mode, go_this_edge.target_node.csl_mode);
-            console.log("followed the edge " + go_this_edge.start_node.name + "->" + go_this_edge.target_node.name + " because of largest activation.");
+            if (!go_this_edge) {
+              _ref1 = this.last_posture.exit_directions;
+              for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+                dir = _ref1[_j];
+                if (dir > -1) {
+                  next_dir_index = dir;
+                }
+              }
+            } else {
+              next_dir_index = dir_index_for_modes(this.last_posture.csl_mode, go_this_edge.target_node.csl_mode);
+              console.log("followed the edge " + go_this_edge.start_node.name + "->" + go_this_edge.target_node.name + " because of largest activation.");
+            }
           }
         }
         joint_index = joint_from_dir_index(next_dir_index);

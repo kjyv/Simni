@@ -335,7 +335,7 @@ ui = (function() {
     }
     release_bias_hip = 0.5;
     release_gf = 0;
-    contract_gf_hip = 1.0030;
+    contract_gf_hip = 1.002;
     gi = 25;
     stall_gb = 1;
     hold_gf = 1;
@@ -381,7 +381,7 @@ ui = (function() {
       change_select = true;
     }
     release_bias_knee = 0.5;
-    contract_gf_knee = 1.003;
+    contract_gf_knee = 1.002;
     release_gf = 0;
     gi = 25;
     stall_gb = 3;

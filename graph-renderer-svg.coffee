@@ -99,7 +99,7 @@ class RendererSVG
     parent = this
     graph = @graph
 
-    parent.abc.posture_graph.diffuseLearnProgress()
+    #parent.abc.posture_graph.diffuseLearnProgress()
 
     @particleSystem.eachNode (node, pt) ->
       # node: {mass:#, p:{x,y}, name:"", data:{}}
@@ -187,8 +187,8 @@ class RendererSVG
         node.data.label_svg.attr("x",pt.x).attr("y",pt.y-3)
         node.data.label_svg2.attr("x",pt.x).attr("y",pt.y+4)
 
-        node.data.label_svg3.attr("x",pt.x).attr("y",pt.y+11)
         if parent.draw_activation
+          node.data.label_svg3.attr("x",pt.x).attr("y",pt.y+11)
           node.data.label_svg3[0][0].textContent = "a:"+a
         else
           node.data.label_svg3[0][0].textContent = ""

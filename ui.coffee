@@ -333,7 +333,7 @@ class ui
     #set ABC learning modes for exploration
     release_bias_hip = 0.5
     release_gf = 0
-    contract_gf_hip = 1.0030 #1.0025 #1.006
+    contract_gf_hip = 1.002 #1.003 #1.0025 #1.006
     gi = 25 #30 #27 #50
     stall_gb = 1 #15
     hold_gf = 1
@@ -379,7 +379,7 @@ class ui
 
   set_csl_mode_lower: (kneeCSL, change_select=true) =>
     release_bias_knee = 0.5
-    contract_gf_knee = 1.003 #1.002 #1.0015 #1.006
+    contract_gf_knee = 1.002 #1.003 #1.0015 #1.006
     release_gf = 0
     gi = 25 #20 #35 #26 #50
     stall_gb = 3 #15
