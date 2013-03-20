@@ -17,6 +17,7 @@ class posture   #i.e. node
     @csl_mode = csl_mode  # [upper, lower]
     @configuration = configuration  # [body angle, hip joint angle, knee joint angle]
     @positions = []  #positions of the body part for svg drawing
+    @world_angles = []  #body world angles for svg drawing
     @body_x = x_pos
     @timestamp = timestamp
     @edges_out = []
@@ -32,7 +33,7 @@ class posture   #i.e. node
         new_edges.push e.target_node.name
       new_edges
 
-    JSON.stringify {"name": @name, "csl_mode":@csl_mode, "configuration":@configuration, "positions":@positions, "body_x": @body_x, "timestamp": @timestamp, "exit_directions": @exit_directions, "activation": @activation, "edges_out": replacer(@edges_out)}, null, 4
+    JSON.stringify {"name": @name, "csl_mode":@csl_mode, "configuration":@configuration, "positions":@positions, "world_angles":@world_angles, "body_x": @body_x, "timestamp": @timestamp, "exit_directions": @exit_directions, "activation": @activation, "edges_out": replacer(@edges_out)}, null, 4
 
   getEdgeTo: (target) =>
     for edge in @edges_out
@@ -110,6 +111,7 @@ class postureGraph
       nn.activation = n.activation
       nn.exit_directions = n.exit_directions
       nn.positions = n.positions
+      nn.world_angles = n.world_angles
       @nodes.push nn
 
     #put in edges
@@ -144,6 +146,7 @@ class postureGraph
           activation: n.activation
           configuration: n.configuration
           positions: n.positions
+          world_angles: n.world_angles
 
         target_node.data =
           label: nn.csl_mode
@@ -151,6 +154,7 @@ class postureGraph
           activation: nn.activation
           configuration: nn.configuration
           positions: nn.positions
+          world_angles: nn.world_angles
 
   loadGraphFromFile: (files) =>
     readFile = (file, callback) ->
@@ -445,8 +449,9 @@ class abc
       #make renderer draw updated semni posture
       n = @graph.getNode p.name
 
-      n.data.semni.remove()
-      n.data.semni = undefined
+      if n.data.semni
+        n.data.semni.remove()
+        n.data.semni = undefined
 
     #body positions for svg drawing
     p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]

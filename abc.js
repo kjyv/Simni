@@ -50,6 +50,7 @@ posture = (function() {
     this.csl_mode = csl_mode;
     this.configuration = configuration;
     this.positions = [];
+    this.world_angles = [];
     this.body_x = x_pos;
     this.timestamp = timestamp;
     this.edges_out = [];
@@ -75,6 +76,7 @@ posture = (function() {
       "csl_mode": this.csl_mode,
       "configuration": this.configuration,
       "positions": this.positions,
+      "world_angles": this.world_angles,
       "body_x": this.body_x,
       "timestamp": this.timestamp,
       "exit_directions": this.exit_directions,
@@ -229,6 +231,7 @@ postureGraph = (function() {
       nn.activation = n.activation;
       nn.exit_directions = n.exit_directions;
       nn.positions = n.positions;
+      nn.world_angles = n.world_angles;
       this.nodes.push(nn);
     }
     _ref1 = t.nodes;
@@ -268,14 +271,16 @@ postureGraph = (function() {
             number: n.name,
             activation: n.activation,
             configuration: n.configuration,
-            positions: n.positions
+            positions: n.positions,
+            world_angles: n.world_angles
           };
           _results1.push(target_node.data = {
             label: nn.csl_mode,
             number: nn.name,
             activation: nn.activation,
             configuration: nn.configuration,
-            positions: nn.positions
+            positions: nn.positions,
+            world_angles: nn.world_angles
           });
         }
         return _results1;
@@ -632,8 +637,10 @@ abc = (function() {
       p.configuration[1] = (new_p.configuration[1] + p.configuration[1]) / 2;
       p.configuration[2] = (new_p.configuration[2] + p.configuration[2]) / 2;
       n = this.graph.getNode(p.name);
-      n.data.semni.remove();
-      n.data.semni = void 0;
+      if (n.data.semni) {
+        n.data.semni.remove();
+        n.data.semni = void 0;
+      }
     }
     p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()];
     p.world_angles = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()];

@@ -18,6 +18,7 @@ class RendererSVG
     $("canvas#viewport").hide()
     @draw_color_activation = true
     @draw_activation = false
+    @draw_semni = true
 
     arrowLength = 6 + 1
     arrowWidth = 2 + 1
@@ -121,6 +122,10 @@ class RendererSVG
       if positions and positions.length and world_angles and not node.data.semni
         #put new svg elements with nodes posture if not existent
         node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], world_angles[0], world_angles[1], world_angles[2], parent.svg)
+
+      if not parent.draw_semni and node.data.semni
+        node.data.semni.remove()
+        node.data.semni = undefined
 
       if node.data.semni
         #move to current nodes position

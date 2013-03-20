@@ -5,6 +5,8 @@ var ui,
 ui = (function() {
 
   function ui(physics) {
+    this.set_draw_semni = __bind(this.set_draw_semni, this);
+
     this.set_activation = __bind(this.set_activation, this);
 
     this.set_color_activation = __bind(this.set_color_activation, this);
@@ -544,6 +546,11 @@ ui = (function() {
 
   ui.prototype.set_activation = function(value) {
     p.abc.graph.renderer.draw_activation = value;
+    return p.abc.graph.renderer.redraw();
+  };
+
+  ui.prototype.set_draw_semni = function(value) {
+    p.abc.graph.renderer.draw_semni = value;
     return p.abc.graph.renderer.redraw();
   };
 

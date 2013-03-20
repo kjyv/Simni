@@ -24,6 +24,7 @@ RendererSVG = (function() {
     $("canvas#viewport").hide();
     this.draw_color_activation = true;
     this.draw_activation = false;
+    this.draw_semni = true;
     arrowLength = 6 + 1;
     arrowWidth = 2 + 1;
     this.svg.append("svg:defs").append("svg:marker").attr("id", "arrowtip").attr("viewBox", "-10 -5 10 10").attr("refX", 0).attr("refY", 0).attr("markerWidth", 10).attr("markerHeight", 10).attr("orient", "auto").append("svg:path").attr("d", "M-7,3L0,0L-7,-3L-5.6,0");
@@ -99,6 +100,10 @@ RendererSVG = (function() {
       }
       if (positions && positions.length && world_angles && !node.data.semni) {
         node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], world_angles[0], world_angles[1], world_angles[2], parent.svg);
+      }
+      if (!parent.draw_semni && node.data.semni) {
+        node.data.semni.remove();
+        node.data.semni = void 0;
       }
       if (node.data.semni) {
         crect = node.data.semni[0][0].getBBox();

@@ -533,6 +533,10 @@ class ui
     p.abc.graph.renderer.draw_activation = value
     p.abc.graph.renderer.redraw()
 
+  set_draw_semni: (value) =>
+    p.abc.graph.renderer.draw_semni = value
+    p.abc.graph.renderer.redraw()
+
 #set up 60 fps animation loop (triggers physics)
 window.requestAnimFrame = (->
   window.oRequestAnimationFrame or
