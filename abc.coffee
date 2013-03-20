@@ -530,8 +530,9 @@ class abc
         b = t_h
         i = 0
 
-      #TODO: handle s modes (discard as c)
       d = 0
+      if a in ["s+","s-"]
+        a = "c"
       if a == "r+" and b == "c" then d = 0
       if a == "r-" and b == "r+" then d = 0
       if a == "r+" and b == "r-" then d = 1
@@ -603,7 +604,7 @@ class abc
               if e.target_node.activation > go_this_edge.target_node.activation
                 go_this_edge = e
             next_dir_index = dir_index_for_modes @last_posture.csl_mode, go_this_edge.target_node.csl_mode
-            console.log("followed the edge "+go_this_edge+" because of largest activation.")
+            console.log("followed the edge "+go_this_edge.start_node.name+"->"+go_this_edge.target_node.name+" because of largest activation.")
 
         joint_index = joint_from_dir_index next_dir_index
         if next_dir_index % 2

@@ -729,6 +729,9 @@ abc = (function() {
         i = 0;
       }
       d = 0;
+      if (a === "s+" || a === "s-") {
+        a = "c";
+      }
       if (a === "r+" && b === "c") {
         d = 0;
       }
@@ -808,7 +811,7 @@ abc = (function() {
               }
             }
             next_dir_index = dir_index_for_modes(this.last_posture.csl_mode, go_this_edge.target_node.csl_mode);
-            console.log("followed the edge " + go_this_edge + " because of largest activation.");
+            console.log("followed the edge " + go_this_edge.start_node.name + "->" + go_this_edge.target_node.name + " because of largest activation.");
           }
         }
         joint_index = joint_from_dir_index(next_dir_index);
