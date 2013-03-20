@@ -407,6 +407,9 @@ postureGraph = (function() {
 
   postureGraph.prototype.diffuseLearnProgress = function() {
     var activation_in, e, node, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
+    if (!(this.nodes.length > 1)) {
+      return;
+    }
     _ref = this.nodes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       node = _ref[_i];
@@ -557,7 +560,7 @@ abc = (function() {
     var addEdge, f, found, n, new_p, p, parent;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
-      var current_node, distance, edge, init_node, n0, n1, source_node, timedelta;
+      var current_node, distance, edge, init_node, n0, n1, offset, offset_x, offset_y, source_node, timedelta;
       if (edge_list == null) {
         edge_list = start_node.edges_out;
       }
@@ -574,9 +577,22 @@ abc = (function() {
         n1 = target_node.name;
         if (parent.posture_graph.length() > 2) {
           source_node = parent.graph.getNode(n0);
+          offset = 0.3;
+          offset_x = Math.floor(Math.random() / 0.5);
+          if (offset_x) {
+            offset_x = offset;
+          } else {
+            offset_x = -offset;
+          }
+          offset_y = Math.floor(Math.random() / 0.5);
+          if (offset_y) {
+            offset_y = offset;
+          } else {
+            offset_y = -offset;
+          }
           parent.graph.getNode(n1) || parent.graph.addNode(n1, {
-            'x': source_node.p.x + 0.3,
-            'y': source_node.p.y + 0.3
+            'x': source_node.p.x + offset_x,
+            'y': source_node.p.y + offset_y
           });
         }
         parent.graph.addEdge(n0, n1, {
@@ -791,7 +807,8 @@ abc = (function() {
                 go_this_edge = e;
               }
             }
-            next_dir_index = dir_index_for_modes(this.last_posture.csl_mode, e.target_node.csl_mode);
+            next_dir_index = dir_index_for_modes(this.last_posture.csl_mode, go_this_edge.target_node.csl_mode);
+            console.log("followed the edge " + go_this_edge + " because of largest activation.");
           }
         }
         joint_index = joint_from_dir_index(next_dir_index);

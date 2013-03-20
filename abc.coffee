@@ -267,6 +267,8 @@ class postureGraph
     #loop over nodes twice to properly deal with recurrent loops
     #TODO: for s modes, divide self activation by proper amount of possible edges,
     #e.g. s+,r+ only has 3 possible outgoing edges, s-,s- only has two
+    unless @nodes.length > 1
+      return
     for node in @nodes
       activation_in = 0
       node.activation_self = 0.25 * node.exit_directions.reduce ((x, y) -> if y is 0 then x+1 else x), 0
@@ -389,7 +391,13 @@ class abc
         #position new node close to previous one (if there is one)
         if parent.posture_graph.length() > 2
           source_node = parent.graph.getNode n0
-          parent.graph.getNode(n1) or parent.graph.addNode n1, {'x': source_node.p.x + 0.3, 'y': source_node.p.y + 0.3}
+
+          offset = 0.3
+          offset_x = Math.floor(Math.random() / 0.5)
+          if offset_x then offset_x = offset else offset_x = -offset
+          offset_y = Math.floor(Math.random() / 0.5)
+          if offset_y then offset_y = offset else offset_y = -offset
+          parent.graph.getNode(n1) or parent.graph.addNode n1, {'x': source_node.p.x + offset_x, 'y': source_node.p.y + offset_y}
 
         parent.graph.addEdge n0, n1,
           distance: distance.toFixed(3)
@@ -594,7 +602,8 @@ class abc
             for e in @last_posture.edges_out
               if e.target_node.activation > go_this_edge.target_node.activation
                 go_this_edge = e
-            next_dir_index = dir_index_for_modes @last_posture.csl_mode, e.target_node.csl_mode
+            next_dir_index = dir_index_for_modes @last_posture.csl_mode, go_this_edge.target_node.csl_mode
+            console.log("followed the edge "+go_this_edge+" because of largest activation.")
 
         joint_index = joint_from_dir_index next_dir_index
         if next_dir_index % 2
