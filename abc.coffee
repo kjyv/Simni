@@ -165,7 +165,7 @@ class postureGraph
 
     if files.length > 0
       readFile files[0], (file, evt) ->
-        p.abc.posture_graph.populateGraphFromJSON evt.target.result
+        physics.abc.posture_graph.populateGraphFromJSON evt.target.result
 
 
   findElementaryCircles: =>
@@ -252,7 +252,7 @@ class postureGraph
         @best_circle.length = 0
         @best_circle = undefined
       else
-        p.abc.explore_active = false
+        physics.abc.explore_active = false
 
         @best_circle = @circles.slice(-1)[0]  #last circle is the one with largest distance
 
@@ -264,7 +264,7 @@ class postureGraph
 
         #start with first transition
         @best_circle[0].active = true
-        p.abc.graph.renderer.redraw()
+        physics.abc.graph.renderer.redraw()
 
   diffuseLearnProgress: =>
     #for each node, get activation through all incoming edges and sum up
@@ -311,6 +311,7 @@ class abc
     @previous_posture = null         # the posture that was visited before
     @explore_active = false
     @trajectory = []   #last n state points
+    @save_periodically = false
 
   toggleExplore: =>
     if not physics.upper_joint.csl_active
@@ -376,10 +377,6 @@ class abc
         @trajectory = []
 
       time = Date.now()
-
-    if (Date.now() - @graph.renderer.click_time) > 5000
-      @graph.renderer.click_time = Date.now()
-      @graph.stop()
 
   savePosture: (configuration, body, upper_csl, lower_csl) =>
     parent = this
@@ -479,7 +476,17 @@ class abc
     @previous_posture = @last_posture
     @last_posture = p
     @newCSLMode()
+
+    #TODO: check how often this is best to be calculated (not every timestep, that would be too much)
     @posture_graph.diffuseLearnProgress()
+    @posture_graph.diffuseLearnProgress()
+
+    if @save_periodically
+      #save svg
+      ui.getPostureGraphAsFile()
+
+      #save json
+      saveGaphToFile()
 
   compareModes: (a, b) =>
     if not a or not b
@@ -547,17 +554,26 @@ class abc
       d = 0
       if a in ["s+","s-"]
         a = "c"
-      if a == "r+" and b == "c" then d = 0
-      if a == "r-" and b == "r+" then d = 0
-      if a == "r+" and b == "r-" then d = 1
-      if a == "c" and b == "r-" then d = 1
-      if a == "c" and b == "r+" then d = 0
+      if b in ["s+","s-"]
+        b = "c"
+      if      a == "r+" and b == "c" then d = 0
+      else if a == "r+" and b == "r-" then d = 1
+      else if a == "r-" and b == "r+" then d = 0
+      else if a == "r-" and b == "c" then d = 1
+      else if a == "c" and b == "r-" then d = 1
+      else if a == "c" and b == "r+" then d = 0
       return i+d
 
     dir_index_for_dir_and_joint = (dir, joint_index) ->
       if dir is "-" then dir_index = 1 else dir_index = 0
-      dir_index + joint_index
+      dir_index + 2*joint_index
 
+    stall_index_for_mode = (mode, joint_index) ->
+      #return 0 or 1 depending on what direction (+ or -) is stalling for the given mode
+      if mode is "s+"
+        0+joint_index*2
+      else if mode is "s-"
+        1+joint_index*2
 
     joint_from_dir_index = (index) ->
       Math.ceil((index+1) / 2) - 1
@@ -569,11 +585,11 @@ class abc
     else
       previous_mode = undefined
 
+    #we just added a new posture; if it has a stall mode set (from limitCSL()),
     #prevent further going in the last direction if we now are in stall
-    #TODO: check if this is right
-    #also, this should be done immediately when stall is detected and set
-    if @last_joint_index? and "s" in current_mode[@last_joint_index]
-      @last_posture.exit_directions[dir_index_for_dir_and_joint @last_dir, @last_joint_index] = -1
+    for joint in [0,1]
+      if "s" in current_mode[joint]
+        @last_posture.exit_directions[stall_index_for_mode current_mode[joint], joint] = -1
 
     if @mode_strategy is "unseen"
       #use list of +/- possibilities for each joint: -1 stall, 0 not visited, >0 visited count
@@ -612,15 +628,19 @@ class abc
                 break
             found_index = @last_posture.exit_directions.indexOf 0, found_index+1
         else
+          console.log("following the activation")
           #we went all directions already, take one with largest activation
-          while not next_dir_index? or @last_posture.exit_directions[next_dir_index] is -1
+          if not next_dir_index? or @last_posture.exit_directions[next_dir_index] is -1
             #next_dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four by # of joints - 0.01
+            #get edge with largest activation at target
             go_this_edge = @last_posture.edges_out[0]
             for e in @last_posture.edges_out
               if e.target_node.activation > go_this_edge.target_node.activation
                 go_this_edge = e
 
             if not go_this_edge
+              #if we didn't find an edge (i.e. there are no outgoing edges),
+              #get first one that isn't stalling
               next_dir_index = dir for dir in @last_posture.exit_directions when dir > -1
             else
               next_dir_index = dir_index_for_modes @last_posture.csl_mode, go_this_edge.target_node.csl_mode
@@ -654,19 +674,17 @@ class abc
     limit = 15
     if upper_joint.csl_active and upper_joint.csl_mode is "c"
       mc = upper_joint.motor_control
-      if Math.abs(mc) > limit
-        if mc > limit
-          ui.set_csl_mode_upper "s+"
-        else if mc < -limit
-          ui.set_csl_mode_upper "s-"
+      if mc > limit
+        ui.set_csl_mode_upper "s+"
+      else if mc < -limit
+        ui.set_csl_mode_upper "s-"
 
     if lower_joint.csl_active and lower_joint.csl_mode is "c"
       mc = lower_joint.motor_control
-      if Math.abs(mc) > limit
-        if mc > limit
-          ui.set_csl_mode_lower "s+"
-        else if mc < -limit
-          ui.set_csl_mode_lower "s-"
+      if mc > limit
+        ui.set_csl_mode_lower "s+"
+      else if mc < -limit
+        ui.set_csl_mode_lower "s-"
 
 
   update: (body, upper_joint, lower_joint) =>

@@ -313,7 +313,7 @@ class ui
     @physics.beta = beta
 
   set_posture: (bodyAngle, hipAngle, kneeAngle, hipCsl, kneeCsl) =>
-    #TODO, hm, how to properly set joint angles? sum angles going up from body
+    #TODO, hm, how to properly set joint angles without recreating? sum angles going up from body
     #body.SetTransform could help
     p = @physics
 
@@ -374,9 +374,6 @@ class ui
     @physics.upper_joint.gb = gb
     @physics.upper_joint.csl_mode = hipCSL
 
-    if physics.abc.mode_strategy is "manual"
-      physics.abc.trajectory = []
-
   set_csl_mode_lower: (kneeCSL, change_select=true) =>
     release_bias_knee = 0.5
     contract_gf_knee = 1.002 #1.003 #1.0015 #1.006
@@ -422,7 +419,7 @@ class ui
 
     if physics.abc.mode_strategy is "manual"
       physics.abc.trajectory = []
-
+ 
   toggleRecorder: =>
     @physics.startLog = true
     @physics.recordPhase = !@physics.recordPhase
@@ -526,16 +523,22 @@ class ui
     @hsvToRgb h,s,b
 
   set_color_activation: (value) =>
-    p.abc.graph.renderer.draw_color_activation = value
-    p.abc.graph.renderer.redraw()
+    physics.abc.graph.renderer.draw_color_activation = value
+    physics.abc.graph.renderer.redraw()
 
   set_activation: (value) =>
-    p.abc.graph.renderer.draw_activation = value
-    p.abc.graph.renderer.redraw()
+    physics.abc.graph.renderer.draw_activation = value
+    physics.abc.graph.renderer.redraw()
 
   set_draw_semni: (value) =>
-    p.abc.graph.renderer.draw_semni = value
-    p.abc.graph.renderer.redraw()
+    physics.abc.graph.renderer.draw_semni = value
+    physics.abc.graph.renderer.redraw()
+
+  set_pause_drawing: (value) =>
+    physics.abc.graph.renderer.pause_drawing = value
+
+  set_save_periodically: (value) =>
+    physics.abc.save_periodically = value
 
 #set up 60 fps animation loop (triggers physics)
 window.requestAnimFrame = (->

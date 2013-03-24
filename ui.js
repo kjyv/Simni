@@ -5,6 +5,10 @@ var ui,
 ui = (function() {
 
   function ui(physics) {
+    this.set_save_periodically = __bind(this.set_save_periodically, this);
+
+    this.set_pause_drawing = __bind(this.set_pause_drawing, this);
+
     this.set_draw_semni = __bind(this.set_draw_semni, this);
 
     this.set_activation = __bind(this.set_activation, this);
@@ -369,10 +373,7 @@ ui = (function() {
     this.physics.upper_joint.gf = gf;
     $("#gb_param_upper").val(gb);
     this.physics.upper_joint.gb = gb;
-    this.physics.upper_joint.csl_mode = hipCSL;
-    if (physics.abc.mode_strategy === "manual") {
-      return physics.abc.trajectory = [];
-    }
+    return this.physics.upper_joint.csl_mode = hipCSL;
   };
 
   ui.prototype.set_csl_mode_lower = function(kneeCSL, change_select) {
@@ -540,18 +541,26 @@ ui = (function() {
   };
 
   ui.prototype.set_color_activation = function(value) {
-    p.abc.graph.renderer.draw_color_activation = value;
-    return p.abc.graph.renderer.redraw();
+    physics.abc.graph.renderer.draw_color_activation = value;
+    return physics.abc.graph.renderer.redraw();
   };
 
   ui.prototype.set_activation = function(value) {
-    p.abc.graph.renderer.draw_activation = value;
-    return p.abc.graph.renderer.redraw();
+    physics.abc.graph.renderer.draw_activation = value;
+    return physics.abc.graph.renderer.redraw();
   };
 
   ui.prototype.set_draw_semni = function(value) {
-    p.abc.graph.renderer.draw_semni = value;
-    return p.abc.graph.renderer.redraw();
+    physics.abc.graph.renderer.draw_semni = value;
+    return physics.abc.graph.renderer.redraw();
+  };
+
+  ui.prototype.set_pause_drawing = function(value) {
+    return physics.abc.graph.renderer.pause_drawing = value;
+  };
+
+  ui.prototype.set_save_periodically = function(value) {
+    return physics.abc.save_periodically = value;
   };
 
   return ui;

@@ -19,6 +19,7 @@ class RendererSVG
     @draw_color_activation = true
     @draw_activation = false
     @draw_semni = true
+    @pause_drawing = true
 
     arrowLength = 6 + 1
     arrowWidth = 2 + 1
@@ -99,8 +100,6 @@ class RendererSVG
     parent = this
     graph = @graph
 
-    #parent.abc.posture_graph.diffuseLearnProgress()
-
     @particleSystem.eachNode (node, pt) ->
       # node: {mass:#, p:{x,y}, name:"", data:{}}
       # pt:   {x:#, y:#}  node position in screen coords
@@ -166,7 +165,7 @@ class RendererSVG
           a = activation.toFixed(1)
 
           if parent.draw_color_activation
-            c = p.ui.powerColor a
+            c = physics.ui.powerColor a
             parent.svg_nodes[number].style("fill","rgb("+c[0]+","+c[1]+","+c[2]+")")
           else
             parent.svg_nodes[number].style("fill", "none")
@@ -209,7 +208,7 @@ class RendererSVG
 
       #ctx.strokeStyle = ctx.fillStyle = if color then color else "rgba(0,0,0, .333)"
 
-      if pt1.x == pt2.x and pt1.y == pt2.y
+      if pt1.x is pt2.x and pt1.y is pt2.y
         #loop edge, draw a circle line
         #corner = parent.nodeBoxes[edge.source.name]
         #ctx.beginPath()
@@ -259,6 +258,10 @@ class RendererSVG
         #if distance and Math.abs(distance) > 0.05
         #draw distance label
 
+    #timeout for drawing graph
+    if @pause_drawing and (Date.now() - @click_time) > 5000
+      @click_time = Date.now()
+      @graph.stop()
 
   initMouseHandling: =>
     # no-nonsense drag and drop (thanks springy.js)

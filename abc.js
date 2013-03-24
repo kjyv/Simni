@@ -303,7 +303,7 @@ postureGraph = (function() {
     };
     if (files.length > 0) {
       return readFile(files[0], function(file, evt) {
-        return p.abc.posture_graph.populateGraphFromJSON(evt.target.result);
+        return physics.abc.posture_graph.populateGraphFromJSON(evt.target.result);
       });
     }
   };
@@ -401,11 +401,11 @@ postureGraph = (function() {
         this.best_circle.length = 0;
         return this.best_circle = void 0;
       } else {
-        p.abc.explore_active = false;
+        physics.abc.explore_active = false;
         this.best_circle = this.circles.slice(-1)[0];
         this.walk_circle_active = true;
         this.best_circle[0].active = true;
-        return p.abc.graph.renderer.redraw();
+        return physics.abc.graph.renderer.redraw();
       }
     }
   };
@@ -493,6 +493,7 @@ abc = (function() {
     this.previous_posture = null;
     this.explore_active = false;
     this.trajectory = [];
+    this.save_periodically = false;
   }
 
   abc.prototype.toggleExplore = function() {
@@ -559,11 +560,7 @@ abc = (function() {
         action(configuration, this);
         this.trajectory = [];
       }
-      time = Date.now();
-    }
-    if ((Date.now() - this.graph.renderer.click_time) > 5000) {
-      this.graph.renderer.click_time = Date.now();
-      return this.graph.stop();
+      return time = Date.now();
     }
   };
 
@@ -660,7 +657,12 @@ abc = (function() {
     this.previous_posture = this.last_posture;
     this.last_posture = p;
     this.newCSLMode();
-    return this.posture_graph.diffuseLearnProgress();
+    this.posture_graph.diffuseLearnProgress();
+    this.posture_graph.diffuseLearnProgress();
+    if (this.save_periodically) {
+      ui.getPostureGraphAsFile();
+      return saveGaphToFile();
+    }
   };
 
   abc.prototype.compareModes = function(a, b) {
@@ -678,7 +680,7 @@ abc = (function() {
     /* helpers
     */
 
-    var current_mode, dir, dir_index_for_dir_and_joint, dir_index_for_modes, direction, e, found_index, go_this_edge, joint_from_dir_index, joint_index, next_dir_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, _i, _j, _len, _len1, _ref, _ref1;
+    var current_mode, dir, dir_index_for_dir_and_joint, dir_index_for_modes, direction, e, found_index, go_this_edge, joint, joint_from_dir_index, joint_index, next_dir_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, stall_index_for_mode, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
     set_random_mode = function(curent_mode) {
       var mode, which;
       which = Math.floor(Math.random() * 2);
@@ -746,19 +748,20 @@ abc = (function() {
       if (a === "s+" || a === "s-") {
         a = "c";
       }
+      if (b === "s+" || b === "s-") {
+        b = "c";
+      }
       if (a === "r+" && b === "c") {
         d = 0;
-      }
-      if (a === "r-" && b === "r+") {
+      } else if (a === "r+" && b === "r-") {
+        d = 1;
+      } else if (a === "r-" && b === "r+") {
         d = 0;
-      }
-      if (a === "r+" && b === "r-") {
+      } else if (a === "r-" && b === "c") {
         d = 1;
-      }
-      if (a === "c" && b === "r-") {
+      } else if (a === "c" && b === "r-") {
         d = 1;
-      }
-      if (a === "c" && b === "r+") {
+      } else if (a === "c" && b === "r+") {
         d = 0;
       }
       return i + d;
@@ -770,7 +773,14 @@ abc = (function() {
       } else {
         dir_index = 0;
       }
-      return dir_index + joint_index;
+      return dir_index + 2 * joint_index;
+    };
+    stall_index_for_mode = function(mode, joint_index) {
+      if (mode === "s+") {
+        return 0 + joint_index * 2;
+      } else if (mode === "s-") {
+        return 1 + joint_index * 2;
+      }
     };
     joint_from_dir_index = function(index) {
       return Math.ceil((index + 1) / 2) - 1;
@@ -784,8 +794,12 @@ abc = (function() {
     } else {
       previous_mode = void 0;
     }
-    if ((this.last_joint_index != null) && __indexOf.call(current_mode[this.last_joint_index], "s") >= 0) {
-      this.last_posture.exit_directions[dir_index_for_dir_and_joint(this.last_dir, this.last_joint_index)] = -1;
+    _ref = [0, 1];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      joint = _ref[_i];
+      if (__indexOf.call(current_mode[joint], "s") >= 0) {
+        this.last_posture.exit_directions[stall_index_for_mode(current_mode[joint], joint)] = -1;
+      }
     }
     if (this.mode_strategy === "unseen") {
       /*
@@ -815,19 +829,20 @@ abc = (function() {
             found_index = this.last_posture.exit_directions.indexOf(0, found_index + 1);
           }
         } else {
-          while (!(next_dir_index != null) || this.last_posture.exit_directions[next_dir_index] === -1) {
+          console.log("following the activation");
+          if (!(next_dir_index != null) || this.last_posture.exit_directions[next_dir_index] === -1) {
             go_this_edge = this.last_posture.edges_out[0];
-            _ref = this.last_posture.edges_out;
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              e = _ref[_i];
+            _ref1 = this.last_posture.edges_out;
+            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+              e = _ref1[_j];
               if (e.target_node.activation > go_this_edge.target_node.activation) {
                 go_this_edge = e;
               }
             }
             if (!go_this_edge) {
-              _ref1 = this.last_posture.exit_directions;
-              for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-                dir = _ref1[_j];
+              _ref2 = this.last_posture.exit_directions;
+              for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+                dir = _ref2[_k];
                 if (dir > -1) {
                   next_dir_index = dir;
                 }
@@ -866,22 +881,18 @@ abc = (function() {
     limit = 15;
     if (upper_joint.csl_active && upper_joint.csl_mode === "c") {
       mc = upper_joint.motor_control;
-      if (Math.abs(mc) > limit) {
-        if (mc > limit) {
-          ui.set_csl_mode_upper("s+");
-        } else if (mc < -limit) {
-          ui.set_csl_mode_upper("s-");
-        }
+      if (mc > limit) {
+        ui.set_csl_mode_upper("s+");
+      } else if (mc < -limit) {
+        ui.set_csl_mode_upper("s-");
       }
     }
     if (lower_joint.csl_active && lower_joint.csl_mode === "c") {
       mc = lower_joint.motor_control;
-      if (Math.abs(mc) > limit) {
-        if (mc > limit) {
-          return ui.set_csl_mode_lower("s+");
-        } else if (mc < -limit) {
-          return ui.set_csl_mode_lower("s-");
-        }
+      if (mc > limit) {
+        return ui.set_csl_mode_lower("s+");
+      } else if (mc < -limit) {
+        return ui.set_csl_mode_lower("s-");
       }
     }
   };

@@ -25,6 +25,7 @@ RendererSVG = (function() {
     this.draw_color_activation = true;
     this.draw_activation = false;
     this.draw_semni = true;
+    this.pause_drawing = true;
     arrowLength = 6 + 1;
     arrowWidth = 2 + 1;
     this.svg.append("svg:defs").append("svg:marker").attr("id", "arrowtip").attr("viewBox", "-10 -5 10 10").attr("refX", 0).attr("refY", 0).attr("markerWidth", 10).attr("markerHeight", 10).attr("orient", "auto").append("svg:path").attr("d", "M-7,3L0,0L-7,-3L-5.6,0");
@@ -130,7 +131,7 @@ RendererSVG = (function() {
         if (activation != null) {
           a = activation.toFixed(1);
           if (parent.draw_color_activation) {
-            c = p.ui.powerColor(a);
+            c = physics.ui.powerColor(a);
             parent.svg_nodes[number].style("fill", "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")");
           } else {
             parent.svg_nodes[number].style("fill", "none");
@@ -156,7 +157,7 @@ RendererSVG = (function() {
       }
       return parent.nodeBoxes[node.name] = [pt.x - w2, pt.y - w2, w, w];
     });
-    return this.particleSystem.eachEdge(function(edge, pt1, pt2) {
+    this.particleSystem.eachEdge(function(edge, pt1, pt2) {
       var angle, color, distance, head, label, mid, offset, tail;
       color = edge.data.color;
       distance = edge.data.distance;
@@ -198,6 +199,10 @@ RendererSVG = (function() {
         }
       }
     });
+    if (this.pause_drawing && (Date.now() - this.click_time) > 5000) {
+      this.click_time = Date.now();
+      return this.graph.stop();
+    }
   };
 
   RendererSVG.prototype.initMouseHandling = function() {

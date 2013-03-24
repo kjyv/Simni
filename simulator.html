@@ -40,8 +40,6 @@ Neurorobotics Research Laboratory, Berlin
         <script src="ui.js"></script>
         <link rel="stylesheet" type="text/css" href="libs/jsxgraph.css" />
         <link rel="stylesheet" type="text/css" href="simulator.css" />
-        <script type="text/coffeescript">
-        </script>
     </head>
     <body>
         <div id="top-panel">
@@ -151,7 +149,7 @@ Neurorobotics Research Laboratory, Berlin
 
                 </script>
                 <button id="toggle_pause" class="toggle-button" onClick="physics.run = !physics.run">pause/run simulation [p]</button> 
-                <button id="next_step" onClick="physics.step = true">next step(s) [n]</button><br/>            
+                <button id="next_step" onClick="physics.step = true">next step(s) [n]</button><br/>
                 <button id="toggle_csl" class="toggle-button">toggle CSL [t]</button>
                 <button id="toggle_bounce" class="toggle-button">toggle bounce controller [b]</button>
                 <script type="text/coffeescript">
@@ -212,7 +210,7 @@ Neurorobotics Research Laboratory, Berlin
                         })
                     })
                 </script>
-                
+
                 <label for="mode_param_lower">csl mode knee</label> <input id="mode_param_lower" type="range" min="-2" max="3" value="1.01" step="0.005" onchange="ui.map_mode(physics.lower_joint)" />
                 <span id="mode_val_lower"></span> <span id="csl_mode_name_lower">contraction</span><br/>
             </div>
@@ -300,19 +298,19 @@ Neurorobotics Research Laboratory, Berlin
                     <option value="unseen" selected="selected">unseen</option>
                 </select><br/>
                 <br/>
-                <button id="find_circles" onclick="physics.abc.posture_graph.findElementaryCircles(); console.log(p.abc.posture_graph.circles);">Find circles</button>
+                <button id="find_circles" onclick="physics.abc.posture_graph.findElementaryCircles(); console.log(physics.abc.posture_graph.circles);">Find circles</button>
                 <button id="walk_best_circle" class="toggle-button" onclick="physics.abc.posture_graph.walkCircle()">Walk best circle</button>
                 <br/>
                 <button id="save_graph_svg" onclick="physics.ui.getPostureGraphAsFile()">Save graph as SVG</button><br/>
-                <button id="save_graph_json" onclick="p.abc.posture_graph.saveGaphToFile()">Save graph as JSON</button><br/>
+                <button id="save_graph_json" onclick="physics.abc.posture_graph.saveGaphToFile()">Save graph as JSON</button><br/>
                 <button id="set_graph_json" onclick="$('#set_graph_json_file').click()">Load graph from JSON</button><br/>
-                <input type="file" id="set_graph_json_file" style="display:none" onchange="p.abc.posture_graph.loadGraphFromFile(this.files)">
+                <input type="file" id="set_graph_json_file" style="display:none" onchange="physics.abc.posture_graph.loadGraphFromFile(this.files)">
 
             </div>
             <div id="graph_controls" class="box">
                 <h1>Graph properties</h1>
-                <label for="graph_repulsion">Repulsion:</label><input id="graph_repulsion" type="range" min="100" max="2000" value="1000" step="1" onchange="p.abc.graph.parameters({'repulsion': parseInt(this.value)})" /></br>
-                <label for="graph_stiffness">Stiffness:</label><input id="graph_stiffness" type="range" min="10" max="200" value="100" step="1" onchange="p.abc.graph.parameters({'stiffness': parseInt(this.value)})" /><br/>
+                <label for="graph_repulsion">Repulsion:</label><input id="graph_repulsion" type="range" min="100" max="2000" value="1000" step="1" onchange="physics.abc.graph.parameters({'repulsion': parseInt(this.value)})" /></br>
+                <label for="graph_stiffness">Stiffness:</label><input id="graph_stiffness" type="range" min="10" max="200" value="100" step="1" onchange="physics.abc.graph.parameters({'stiffness': parseInt(this.value)})" /><br/>
 
                 <label for="graph_activation">Show node activation (discovery possibilities)</label>
                 <input type="checkbox" id="graph_activation" value="yes" onchange="ui.set_activation(this.checked)"/></br>
@@ -321,6 +319,10 @@ Neurorobotics Research Laboratory, Berlin
                 <input type="checkbox" id="graph_color_activation" value="yes" checked onchange="ui.set_color_activation(this.checked)"/></br>
                 <label for="graph_draw_semnis">Show semni postures</label>
                 <input type="checkbox" id="graph_draw_semnis" value="yes" checked onchange="ui.set_draw_semni(this.checked)"/></br>
+                <label for="graph_pause_drawing">Pause graph updating between new poses</label>
+                <input type="checkbox" id="graph_pause_drawing" value="yes" checked onchange="ui.set_pause_drawing(this.checked)"/></br>
+                <label for="graph_save_periodically">Save graph with every new posture</label>
+                <input type="checkbox" id="graph_save_periodically" value="no" onchange="ui.set_save_periodically(this.checked)"/></br>
             </div>
             <!--<div id="semni_svg" style="width: 300px; height: 300px; float: left;"></div>-->
             <div id="posture_graph">
@@ -483,7 +485,7 @@ Neurorobotics Research Laboratory, Berlin
                         brd.update()
                     }
                 }
-                
+
                 if(phase_space_2_enabled) {
                     if (zdata.length==200) {
                         zdata.shift()
@@ -491,7 +493,7 @@ Neurorobotics Research Laboratory, Berlin
                     angle_speed = physics.lower_joint.angle_diff_csl
                     if (!angle_speed)
                         angle_speed=0
-                    
+
                     if (physics.upper_joint.motor_torque)
                         Uval = physics.upper_joint.motor_torque
                     else
@@ -519,32 +521,32 @@ Neurorobotics Research Laboratory, Berlin
             }
             brd2 = JXG.JSXGraph.initBoard('motor_torque_plot', {boundingbox:[0,2,5,-2], axis:true})
             function draw_motor_torque(){
-                if (ydata2.length==1000) {
-                    ydata2.shift()
-                    ydata3.shift()
-                }
-
-                p = physics
-                if (p.pend_style == 3 || p.pend_style == 2) {
-                    //semni or double pendulum
-                    if (p.upper_joint.motor_torque)
-                        ydata2.push(p.upper_joint.motor_torque)
-                    else
-                        ydata2.push(0)
-                        
-                    if (p.lower_joint.motor_torque)
-                        ydata3.push(p.lower_joint.motor_torque)
-                    else
-                        ydata3.push(0)
-                } else {
-                    //single pendulum
-                    if (p.lower_joint.motor_torque)
-                        ydata2.push(p.lower_joint.motor_torque)
-                    else
-                        ydata2.push(0)
-                } 
-
                 if(motor_torque_enabled){
+                    if (ydata2.length==1000) {
+                        ydata2.shift()
+                        ydata3.shift()
+                    }
+
+                    p = physics
+                    if (physics.pend_style == 3 || physics.pend_style == 2) {
+                        //semni or double pendulum
+                        if (physics.upper_joint.motor_torque)
+                            ydata2.push(physics.upper_joint.motor_torque)
+                        else
+                            ydata2.push(0)
+
+                        if (physics.lower_joint.motor_torque)
+                            ydata3.push(physics.lower_joint.motor_torque)
+                        else
+                            ydata3.push(0)
+                    } else {
+                        //single pendulum
+                        if (physics.lower_joint.motor_torque)
+                            ydata2.push(physics.lower_joint.motor_torque)
+                        else
+                            ydata2.push(0)
+                    }
+
                     if (!g3) {                   // If the curve does not exist yet, create it.
                         g3 = brd2.create('curve', [xdata2,ydata2], {strokeWidth:1, strokeColor:'green'}); 
                     } 
@@ -554,7 +556,7 @@ Neurorobotics Research Laboratory, Berlin
 
                     //don't draw every frame
                     if (update_skip_2 == 0) {
-                        brd2.update(); 
+                        brd2.update();
                         update_skip_2 = update_skip_initial
                     } else {
                         update_skip_2--
@@ -591,7 +593,7 @@ Neurorobotics Research Laboratory, Berlin
                     if(event.keyCode == 13){
                         $(this).nextAll('button').first().click()
                     }
-                }     
+                }
                 $("#gi_param_lower").keyup(handle_enter)
                 $("#gf_param_lower").keyup(handle_enter)
                 $("#gb_param_lower").keyup(handle_enter)
@@ -621,7 +623,7 @@ Neurorobotics Research Laboratory, Berlin
                 $(document).bind('keydown', 'n', function (evt){
                    $('#next_step').click(); return false;
                 })
-                
+
                 $(document).bind('keydown', 'm', function (evt){
                     checkbox = $('#map_state_to_mode')
                     checkbox.click();
