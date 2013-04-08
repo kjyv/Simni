@@ -118,7 +118,7 @@ class RendererSVG
         w2 = 4
 
       #draw semni contour and posture
-      if positions and positions.length and world_angles and not node.data.semni
+      if not node.data.semni and positions and positions.length and world_angles
         #put new svg elements with nodes posture if not existent
         node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], world_angles[0], world_angles[1], world_angles[2], parent.svg)
 
@@ -135,21 +135,22 @@ class RendererSVG
       if parent.svg_nodes[number] == undefined
         parent.svg_nodes[number] = parent.svg.append("svg:rect")
 
+      #draw last node highlit
+      if graph.current_node is node
+        strokeStyle = "red"
+        strokeWidth = "2px"
+      else
+        strokeStyle = "black"
+        strokeWidth = "1px"
+
       parent.svg_nodes[number]
              .attr("x", pt.x - w2)
              .attr("y", pt.y - w2)
              .attr("width", w)
              .attr("height", w)
-             .style("stroke-width", 1)
              .style("fill", "none")
-
-      #draw last node highlit
-      if graph.current_node is node
-        strokeStyle = "red"
-      else
-        strokeStyle = "black"
-
-      parent.svg_nodes[number].style("stroke", strokeStyle)
+             .style("stroke", strokeStyle)
+             .style("stroke-width", strokeWidth)
 
       ###
         if parent.abc.posture_graph.best_circle

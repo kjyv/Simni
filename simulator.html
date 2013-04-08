@@ -73,7 +73,7 @@ Neurorobotics Research Laboratory, Berlin
             </div>
 
             <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;<sub>hip</sub>/&phi;<sub>knee</sub><button id="clear_phase">clear</button></div>
-            <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled">motor torque upper (green) and lower (blue)</div>
+            <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled">motor torque hip (green) and knee (blue)</div>
             <div id="state_to_mode_mapping" style="display:none;"><input type="checkbox" id="phase_space_2_enabled">phase space U/&phi;'<br/></div>
         </div>
         <div id="bottom-panel">
@@ -298,9 +298,10 @@ Neurorobotics Research Laboratory, Berlin
                     <option value="unseen" selected="selected">unseen</option>
                 </select><br/>
                 <br/>
+                <!--
                 <button id="find_circles" onclick="physics.abc.posture_graph.findElementaryCircles(); console.log(physics.abc.posture_graph.circles);">Find circles</button>
                 <button id="walk_best_circle" class="toggle-button" onclick="physics.abc.posture_graph.walkCircle()">Walk best circle</button>
-                <br/>
+                <br/>-->
                 <button id="save_graph_svg" onclick="physics.ui.getPostureGraphAsFile()">Save graph as SVG</button><br/>
                 <button id="save_graph_json" onclick="physics.abc.posture_graph.saveGaphToFile()">Save graph as JSON</button><br/>
                 <button id="set_graph_json" onclick="$('#set_graph_json_file').click()">Load graph from JSON</button><br/>

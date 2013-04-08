@@ -84,7 +84,7 @@ RendererSVG = (function() {
     parent = this;
     graph = this.graph;
     this.particleSystem.eachNode(function(node, pt) {
-      var a, activation, c, crect, image, label, number, positions, strokeStyle, w, w2, world_angles;
+      var a, activation, c, crect, image, label, number, positions, strokeStyle, strokeWidth, w, w2, world_angles;
       label = node.data.label;
       number = node.data.number;
       image = node.data.imageData;
@@ -98,7 +98,7 @@ RendererSVG = (function() {
         w = 8;
         w2 = 4;
       }
-      if (positions && positions.length && world_angles && !node.data.semni) {
+      if (!node.data.semni && positions && positions.length && world_angles) {
         node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], world_angles[0], world_angles[1], world_angles[2], parent.svg);
       }
       if (!parent.draw_semni && node.data.semni) {
@@ -112,13 +112,14 @@ RendererSVG = (function() {
       if (parent.svg_nodes[number] === void 0) {
         parent.svg_nodes[number] = parent.svg.append("svg:rect");
       }
-      parent.svg_nodes[number].attr("x", pt.x - w2).attr("y", pt.y - w2).attr("width", w).attr("height", w).style("stroke-width", 1).style("fill", "none");
       if (graph.current_node === node) {
         strokeStyle = "red";
+        strokeWidth = "2px";
       } else {
         strokeStyle = "black";
+        strokeWidth = "1px";
       }
-      parent.svg_nodes[number].style("stroke", strokeStyle);
+      parent.svg_nodes[number].attr("x", pt.x - w2).attr("y", pt.y - w2).attr("width", w).attr("height", w).style("fill", "none").style("stroke", strokeStyle).style("stroke-width", strokeWidth);
       /*
               if parent.abc.posture_graph.best_circle
                 for transition in parent.abc.posture_graph.best_circle.slice(0,-3)   #leave out the extra data in each circle array

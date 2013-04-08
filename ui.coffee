@@ -331,12 +331,12 @@ class ui
 
   set_csl_mode_upper: (hipCSL, change_select=true) =>
     #set ABC learning modes for exploration
-    release_bias_hip = 0.5
+    release_bias_hip = 0.4
     release_gf = 0
     contract_gf_hip = 1.002 #1.003 #1.0025 #1.006
     gi = 25 #30 #27 #50
-    stall_gb = 1 #15
-    hold_gf = 1
+    stall_gb = 5
+    stall_gf = 0.8
 
     if hipCSL is "r+"
       gf = release_gf
@@ -352,11 +352,11 @@ class ui
       #prefill integrator to pre-determine direction
       @physics.upper_joint.last_integrated = @physics.upper_joint.csl_prefill
     else if hipCSL is "s+"
-      gf = hold_gf
+      gf = stall_gf
       gb = stall_gb
       @physics.upper_joint.last_integrated = 0
     else if hipCSL is "s-"
-      gf = hold_gf
+      gf = stall_gf
       gb = -stall_gb
       @physics.upper_joint.last_integrated = 0
 
@@ -375,12 +375,12 @@ class ui
     @physics.upper_joint.csl_mode = hipCSL
 
   set_csl_mode_lower: (kneeCSL, change_select=true) =>
-    release_bias_knee = 0.5
+    release_bias_knee = 0.4
     contract_gf_knee = 1.002 #1.003 #1.0015 #1.006
     release_gf = 0
     gi = 25 #20 #35 #26 #50
-    stall_gb = 3 #15
-    hold_gf = 1
+    stall_gb = 5
+    stall_gf = 0.8
 
     if kneeCSL is "r+"
       gf = release_gf
@@ -395,11 +395,11 @@ class ui
       gb = 0
       @physics.lower_joint.last_integrated = @physics.lower_joint.csl_prefill
     else if kneeCSL is "s+"
-      gf = hold_gf
+      gf = stall_gf
       gb = stall_gb
       @physics.lower_joint.last_integrated = 0
     else if kneeCSL is "s-"
-      gf = hold_gf
+      gf = stall_gf
       gb = -stall_gb
       @physics.lower_joint.last_integrated = 0
 

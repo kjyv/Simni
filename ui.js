@@ -333,16 +333,16 @@ ui = (function() {
   };
 
   ui.prototype.set_csl_mode_upper = function(hipCSL, change_select) {
-    var contract_gf_hip, gb, gf, gi, hold_gf, release_bias_hip, release_gf, stall_gb;
+    var contract_gf_hip, gb, gf, gi, release_bias_hip, release_gf, stall_gb, stall_gf;
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_hip = 0.5;
+    release_bias_hip = 0.4;
     release_gf = 0;
     contract_gf_hip = 1.002;
     gi = 25;
-    stall_gb = 1;
-    hold_gf = 1;
+    stall_gb = 5;
+    stall_gf = 0.8;
     if (hipCSL === "r+") {
       gf = release_gf;
       gb = release_bias_hip;
@@ -356,11 +356,11 @@ ui = (function() {
       gb = 0;
       this.physics.upper_joint.last_integrated = this.physics.upper_joint.csl_prefill;
     } else if (hipCSL === "s+") {
-      gf = hold_gf;
+      gf = stall_gf;
       gb = stall_gb;
       this.physics.upper_joint.last_integrated = 0;
     } else if (hipCSL === "s-") {
-      gf = hold_gf;
+      gf = stall_gf;
       gb = -stall_gb;
       this.physics.upper_joint.last_integrated = 0;
     }
@@ -377,16 +377,16 @@ ui = (function() {
   };
 
   ui.prototype.set_csl_mode_lower = function(kneeCSL, change_select) {
-    var contract_gf_knee, gb, gf, gi, hold_gf, release_bias_knee, release_gf, stall_gb;
+    var contract_gf_knee, gb, gf, gi, release_bias_knee, release_gf, stall_gb, stall_gf;
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_knee = 0.5;
+    release_bias_knee = 0.4;
     contract_gf_knee = 1.002;
     release_gf = 0;
     gi = 25;
-    stall_gb = 3;
-    hold_gf = 1;
+    stall_gb = 5;
+    stall_gf = 0.8;
     if (kneeCSL === "r+") {
       gf = release_gf;
       gb = release_bias_knee;
@@ -400,11 +400,11 @@ ui = (function() {
       gb = 0;
       this.physics.lower_joint.last_integrated = this.physics.lower_joint.csl_prefill;
     } else if (kneeCSL === "s+") {
-      gf = hold_gf;
+      gf = stall_gf;
       gb = stall_gb;
       this.physics.lower_joint.last_integrated = 0;
     } else if (kneeCSL === "s-") {
-      gf = hold_gf;
+      gf = stall_gf;
       gb = -stall_gb;
       this.physics.lower_joint.last_integrated = 0;
     }

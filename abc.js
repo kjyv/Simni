@@ -139,15 +139,29 @@ transition = (function() {
   function transition(start_node, target_node) {
     this.isInList = __bind(this.isInList, this);
 
+    this.asJSON = __bind(this.asJSON, this);
+
     this.toString = __bind(this.toString, this);
     this.start_node = start_node;
     this.target_node = target_node;
     this.distance = 0;
     this.timedelta = 0;
+    this.csl_mode = [];
   }
 
   transition.prototype.toString = function() {
-    return this.start_node + "->" + this.target_node;
+    return this.start_node.name + "->" + this.target_node.name;
+  };
+
+  transition.prototype.asJSON = function() {
+    return JSON.stringify({
+      "name": this.toString(),
+      "csl_mode": this.csl_mode,
+      "start_node": this.start_node.name,
+      "target_node": this.target_node.name,
+      "distance": this.distance,
+      "timedelta": this.timedelta
+    }, null, 4);
   };
 
   transition.prototype.isInList = function(list) {
@@ -204,19 +218,31 @@ postureGraph = (function() {
   };
 
   postureGraph.prototype.saveGaphToFile = function() {
-    var graph_as_string, n, _i, _len, _ref;
+    var e, edges, edges_as_string, graph_as_string, n, _i, _j, _k, _len, _len1, _len2, _ref, _ref1;
     graph_as_string = "";
+    edges = [];
     _ref = this.nodes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       n = _ref[_i];
       graph_as_string += "\n" + n.asJSON() + ",";
+      _ref1 = n.edges_out;
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        e = _ref1[_j];
+        edges.push(e);
+      }
+    }
+    edges_as_string = "";
+    for (_k = 0, _len2 = edges.length; _k < _len2; _k++) {
+      e = edges[_k];
+      edges_as_string += "\n" + e.asJSON() + ",";
     }
     graph_as_string = graph_as_string.substring(0, graph_as_string.length - 1);
-    return location.href = 'data:text;charset=utf-8,' + encodeURI("{\n" + "\"nodes\": [" + graph_as_string + "]\n" + "}");
+    edges_as_string = edges_as_string.substring(0, edges_as_string.length - 1);
+    return location.href = 'data:text;charset=utf-8,' + encodeURI("{\n" + "\"nodes\": [" + graph_as_string + "],\n" + "\"edges\": [" + edges_as_string + "]" + "\n}");
   };
 
   postureGraph.prototype.populateGraphFromJSON = function(tj) {
-    var ag, e, n, nn, source_node, t, target_node, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _ref2, _ref3, _results;
+    var ag, e, ee, n, nn, source_node, t, target_node, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
     if (tj == null) {
       tj = null;
     }
@@ -234,15 +260,16 @@ postureGraph = (function() {
       nn.world_angles = n.world_angles;
       this.nodes.push(nn);
     }
-    _ref1 = t.nodes;
+    _ref1 = t.edges;
     for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-      n = _ref1[_j];
-      nn = this.getNode(n.name);
-      _ref2 = n.edges_out;
-      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-        e = _ref2[_k];
-        nn.edges_out.push(new transition(nn, this.getNode(e)));
-      }
+      e = _ref1[_j];
+      n = this.getNode(e.start_node);
+      nn = this.getNode(e.target_node);
+      ee = new transition(n, nn);
+      ee.csl_mode = e.csl_mode;
+      ee.distance = e.distance;
+      ee.timedelta = e.timedelta;
+      n.edges_out.push(ee);
     }
     ag = this.arborGraph;
     this.arborGraph.prune();
@@ -252,18 +279,22 @@ postureGraph = (function() {
     $("#viewport_svg svg rect").remove();
     $("#viewport_svg svg text").remove();
     $("#viewport_svg svg line").remove();
-    _ref3 = this.nodes;
+    _ref2 = this.nodes;
     _results = [];
-    for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
-      n = _ref3[_l];
+    for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+      n = _ref2[_k];
       _results.push((function() {
-        var _len4, _m, _ref4, _results1;
-        _ref4 = n.edges_out;
+        var _l, _len3, _ref3, _results1;
+        _ref3 = n.edges_out;
         _results1 = [];
-        for (_m = 0, _len4 = _ref4.length; _m < _len4; _m++) {
-          e = _ref4[_m];
+        for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
+          e = _ref3[_l];
           nn = e.target_node;
-          ag.addEdge(n.name, nn.name);
+          ag.addEdge(n.name, nn.name, {
+            "label": e.csl_mode,
+            "distance": e.distance,
+            "timedelta": e.timedelta
+          });
           source_node = ag.getNode(n.name);
           target_node = ag.getNode(nn.name);
           source_node.data = {
@@ -302,10 +333,15 @@ postureGraph = (function() {
       return reader.readAsBinaryString(file);
     };
     if (files.length > 0) {
-      return readFile(files[0], function(file, evt) {
+      readFile(files[0], function(file, evt) {
         return physics.abc.posture_graph.populateGraphFromJSON(evt.target.result);
       });
     }
+    this.arborGraph.renderer.pause_drawing = false;
+    $("#graph_pause_drawing").attr('checked', false);
+    this.arborGraph.start(true);
+    this.arborGraph.renderer.click_time = Date.now();
+    return this.arborGraph.renderer.redraw();
   };
 
   postureGraph.prototype.findElementaryCircles = function() {
@@ -579,6 +615,7 @@ abc = (function() {
         edge.distance = distance;
         timedelta = target_node.timestamp - start_node.timestamp;
         edge.timedelta = timedelta;
+        edge.csl_mode = target_node.csl_mode;
         edge_list.push(edge);
         target_node.edges_in.push(edge);
         n0 = start_node.name;
@@ -605,7 +642,8 @@ abc = (function() {
         }
         parent.graph.addEdge(n0, n1, {
           distance: distance.toFixed(3),
-          timedelta: timedelta
+          timedelta: timedelta,
+          label: parent.transition_mode
         });
         if (n0 === 0 && n1 === 1) {
           init_node = parent.graph.getNode(n0);
@@ -660,8 +698,7 @@ abc = (function() {
     this.posture_graph.diffuseLearnProgress();
     this.posture_graph.diffuseLearnProgress();
     if (this.save_periodically) {
-      ui.getPostureGraphAsFile();
-      return saveGaphToFile();
+      return this.posture_graph.saveGaphToFile();
     }
   };
 
@@ -681,7 +718,7 @@ abc = (function() {
     */
 
     var current_mode, dir, dir_index_for_dir_and_joint, dir_index_for_modes, direction, e, found_index, go_this_edge, joint, joint_from_dir_index, joint_index, next_dir_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, stall_index_for_mode, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
-    set_random_mode = function(curent_mode) {
+    set_random_mode = function(current_mode) {
       var mode, which;
       which = Math.floor(Math.random() * 2);
       if (which) {
@@ -695,7 +732,7 @@ abc = (function() {
       } else {
         while (true) {
           mode = ["r+", "r-", "c"][Math.floor(Math.random() * 2.99)];
-          if (curent_mode[1] !== mode) {
+          if (current_mode[1] !== mode) {
             break;
           }
         }
@@ -868,7 +905,9 @@ abc = (function() {
         ui.set_csl_mode_lower(next_mode);
       }
       this.last_dir = direction;
-      return this.last_joint_index = joint_index;
+      this.last_joint_index = joint_index;
+      this.transition_mode = current_mode.clone();
+      return this.transition_mode[joint_index] = next_mode;
     } else if (this.mode_strategy === "random") {
       return set_random_mode(current_mode);
     } else if (this.mode_strategy === "manual") {

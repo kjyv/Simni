@@ -27,6 +27,7 @@ class posture   #i.e. node
     @activation = 1
 
   asJSON: =>
+    #prevent circular references
     replacer = (edges)->
       new_edges = []
       for e in edges
@@ -62,8 +63,13 @@ class transition  #i.e. edge
     @distance = 0 # distance the body traveled
     @timedelta = 0 # time the transition took
 
+    @csl_mode = []
+
   toString: =>
-    @start_node + "->" + @target_node
+    @start_node.name + "->" + @target_node.name
+
+  asJSON: =>
+    JSON.stringify {"name": @toString(), "csl_mode":@csl_mode, "start_node": @start_node.name, "target_node": @target_node.name, "distance": @distance, "timedelta": @timedelta}, null, 4
 
   isInList: (list) =>
     for t in list
@@ -88,12 +94,20 @@ class postureGraph
 
   saveGaphToFile: =>
     graph_as_string = ""
+    edges = []
     for n in @nodes
       graph_as_string += "\n"+n.asJSON()+","
+      for e in n.edges_out
+        edges.push e
+
+    edges_as_string = ""
+    for e in edges
+      edges_as_string += "\n"+e.asJSON()+","
 
     #remove last comma
     graph_as_string = graph_as_string.substring(0, graph_as_string.length - 1)
-    location.href = 'data:text;charset=utf-8,'+encodeURI "{\n"+"\"nodes\": ["+graph_as_string+"]\n"+"}"
+    edges_as_string = edges_as_string.substring(0, edges_as_string.length - 1)
+    location.href = 'data:text;charset=utf-8,'+encodeURI "{\n"+"\"nodes\": ["+graph_as_string+"],\n"+"\"edges\": ["+edges_as_string+"]"+"\n}"
 
 
   populateGraphFromJSON: (tj=null) =>
@@ -115,11 +129,14 @@ class postureGraph
       @nodes.push nn
 
     #put in edges
-    #TODO: save edges with unique id separately in JSON file and get all associated data as well
-    for n in t.nodes
-      nn = @getNode n.name
-      for e in n.edges_out
-        nn.edges_out.push(new transition(nn, @getNode(e)))
+    for e in t.edges
+      n = @getNode e.start_node
+      nn = @getNode e.target_node
+      ee = new transition(n, nn)
+      ee.csl_mode = e.csl_mode
+      ee.distance = e.distance
+      ee.timedelta = e.timedelta
+      n.edges_out.push(ee)
 
     #refresh display graph
     ag = @arborGraph
@@ -136,7 +153,7 @@ class postureGraph
     for n in @nodes
       for e in n.edges_out
         nn = e.target_node
-        ag.addEdge(n.name, nn.name)
+        ag.addEdge(n.name, nn.name, {"label": e.csl_mode, "distance": e.distance, "timedelta": e.timedelta})
         source_node = ag.getNode(n.name)
         target_node = ag.getNode(nn.name)
 
@@ -166,6 +183,12 @@ class postureGraph
     if files.length > 0
       readFile files[0], (file, evt) ->
         physics.abc.posture_graph.populateGraphFromJSON evt.target.result
+
+    @arborGraph.renderer.pause_drawing = false
+    $("#graph_pause_drawing").attr('checked', false)
+    @arborGraph.start(true)
+    @arborGraph.renderer.click_time = Date.now()
+    @arborGraph.renderer.redraw()
 
 
   findElementaryCircles: =>
@@ -345,7 +368,7 @@ class abc
   MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
   time = MAX_UNIX_TIME
   detectAttractor: (body, upper_joint, lower_joint, action) =>
-    #detect if current csl mode found a posture
+    #detect if current csl mode found a posture (fixpoint or periodic attractor)
     if not physics.run
       return
 
@@ -390,6 +413,7 @@ class abc
         edge.distance = distance
         timedelta = target_node.timestamp - start_node.timestamp
         edge.timedelta = timedelta
+        edge.csl_mode = target_node.csl_mode
         edge_list.push edge
         target_node.edges_in.push edge
 
@@ -411,6 +435,7 @@ class abc
         parent.graph.addEdge n0, n1,
           distance: distance.toFixed(3)
           timedelta: timedelta
+          label: parent.transition_mode
 
         #if we're here for the first time, n0 is not yet initialized (this time addEdge adds two nodes)
         if n0 == 0 and n1 == 1
@@ -483,10 +508,13 @@ class abc
 
     if @save_periodically
       #save svg
-      ui.getPostureGraphAsFile()
-
+      #ui.getPostureGraphAsFile()
+      #somehow it does not donwload both of the files, do we need a sleep here??
+      #sleep = (ms) ->
+      #  ms += new Date().getTime()
+      #  continue  while new Date() < ms
       #save json
-      saveGaphToFile()
+      @posture_graph.saveGaphToFile()
 
   compareModes: (a, b) =>
     if not a or not b
@@ -500,13 +528,14 @@ class abc
     #random: randomly select next mode + different mode than the current one
     #unseen: try new mode that is not in neighbors of the current one, prefer previous mode. if all are seen,
     #        use direction of largest expected learn progress
+    #manual: detect postures and add nodes but don't set new modes automatically
 
     #TODO: try more strategies
-    #- change csl mode of the joint that was not changed from the node before
     #- alternate between c and r modes
+    #- only save contraction modes for a start, derive r modes between those
 
     ### helpers ###
-    set_random_mode = (curent_mode) ->
+    set_random_mode = (current_mode) ->
       which = Math.floor(Math.random()*2)    #just change one joint at a time
       if which
         loop    #try as long as we dont have a new mode to prevent same mode again
@@ -516,7 +545,7 @@ class abc
       else
         loop
           mode = ["r+", "r-", "c"][Math.floor(Math.random()*2.99)]
-          break if curent_mode[1] isnt mode
+          break if current_mode[1] isnt mode
         ui.set_csl_mode_lower mode
 
     next_mode_for_direction = (old_mode, direction) ->
@@ -661,6 +690,10 @@ class abc
 
       @last_dir = direction
       @last_joint_index = joint_index
+
+      #save the next mode that was set to save in edge
+      @transition_mode = current_mode.clone()
+      @transition_mode[joint_index] = next_mode
 
     else if @mode_strategy is "random"
       set_random_mode current_mode
