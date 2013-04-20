@@ -16,7 +16,10 @@ class RendererSVG
     @graph = parent
     @abc = abc
     $("canvas#viewport").hide()
+
+    @draw_graph = true
     @draw_color_activation = true
+    @draw_edge_labels = true
     @draw_activation = false
     @draw_semni = true
     @pause_drawing = true
@@ -103,6 +106,10 @@ class RendererSVG
     @particleSystem.eachNode (node, pt) ->
       # node: {mass:#, p:{x,y}, name:"", data:{}}
       # pt:   {x:#, y:#}  node position in screen coords
+
+      if not parent.draw_graph
+        return
+
       label = node.data.label
       number = node.data.number
       image = node.data.imageData
@@ -203,6 +210,9 @@ class RendererSVG
       # pt1:  {x:#, y:#}  source position in screen coords
       # pt2:  {x:#, y:#}  target position in screen coords
 
+      if not parent.draw_graph
+        return
+
       color = edge.data.color
       distance = edge.data.distance
       label = edge.data.label
@@ -244,7 +254,7 @@ class RendererSVG
                                         .attr("marker-end", "url(#arrowtip)")
 
         #draw a label
-        if label != undefined
+        if label? and parent.draw_edge_labels
           if not edge.data.label_svg
             edge.data.label_svg = parent.svg.append("svg:text")
             edge.data.label_svg[0][0].textContent = (label or "")
@@ -255,6 +265,10 @@ class RendererSVG
           angle = Math.atan2(pt2.y - pt1.y, pt2.x - pt1.x)
           if angle > Math.PI then offset = 2 else offset = -2
           edge.data.label_svg.attr("x",mid.x).attr("y",mid.y+offset).attr("transform", "rotate(" +angle/Math.PI*180+ "," +mid.x+ "," +(mid.y)+ ")")
+        else
+          if edge.data.label_svg
+            edge.data.label_svg.remove()
+            edge.data.label_svg = undefined
 
         #if distance and Math.abs(distance) > 0.05
         #draw distance label

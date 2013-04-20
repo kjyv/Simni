@@ -1,5 +1,7 @@
 # vim: set expandtab ts=2 sw=2:
 
+"use strict"
+
 dt = 1/960  #update frequency in hz
 #if we want a ~960hz simulation but only have <= 60 fps from the browser
 #we need to call step 16 times with 60*16 = 960 updates/s
@@ -588,7 +590,7 @@ class physics
     #w1 = 10 #-0.2 angle_speed
     #w2 = -0.2   #-1 bias
     #mode = @w0 * Math.abs(@angle) + @w1 * @angle_speed + @w2
-  
+
     mode = @calcMode(bodyJoint.motor_torque, bodyJoint.angle_diff_csl)
     #mode = @clip(mode, 1.3)
     mode = @clip(mode, 3)
@@ -644,6 +646,9 @@ class physics
   ##### update simulation and display loop #####
   was_static = false
   update: =>
+    if not @run and not @step
+      return
+
     ## update physics and display stuff (~60 Hz loop, depends on refresh rate)
     window.stats.begin()
 
@@ -731,6 +736,6 @@ class physics
       draw_motor_torque()
 
     window.stats.end()
-    requestAnimFrame @update
 
+    requestAnimFrame @update
 

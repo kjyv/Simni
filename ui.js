@@ -5,6 +5,8 @@ var ui,
 ui = (function() {
 
   function ui(physics) {
+    this.set_draw_edge_labels = __bind(this.set_draw_edge_labels, this);
+
     this.set_save_periodically = __bind(this.set_save_periodically, this);
 
     this.set_pause_drawing = __bind(this.set_pause_drawing, this);
@@ -14,6 +16,8 @@ ui = (function() {
     this.set_activation = __bind(this.set_activation, this);
 
     this.set_color_activation = __bind(this.set_color_activation, this);
+
+    this.set_draw_graph = __bind(this.set_draw_graph, this);
 
     this.powerColor = __bind(this.powerColor, this);
 
@@ -540,6 +544,11 @@ ui = (function() {
     return this.hsvToRgb(h, s, b);
   };
 
+  ui.prototype.set_draw_graph = function(value) {
+    physics.abc.graph.renderer.draw_graph = value;
+    return physics.abc.graph.renderer.redraw();
+  };
+
   ui.prototype.set_color_activation = function(value) {
     physics.abc.graph.renderer.draw_color_activation = value;
     return physics.abc.graph.renderer.redraw();
@@ -561,6 +570,11 @@ ui = (function() {
 
   ui.prototype.set_save_periodically = function(value) {
     return physics.abc.save_periodically = value;
+  };
+
+  ui.prototype.set_draw_edge_labels = function(value) {
+    physics.abc.graph.renderer.draw_edge_labels = value;
+    return physics.abc.graph.renderer.redraw();
   };
 
   return ui;

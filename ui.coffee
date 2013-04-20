@@ -522,6 +522,10 @@ class ui
 
     @hsvToRgb h,s,b
 
+  set_draw_graph: (value) =>
+    physics.abc.graph.renderer.draw_graph = value
+    physics.abc.graph.renderer.redraw()
+
   set_color_activation: (value) =>
     physics.abc.graph.renderer.draw_color_activation = value
     physics.abc.graph.renderer.redraw()
@@ -539,6 +543,10 @@ class ui
 
   set_save_periodically: (value) =>
     physics.abc.save_periodically = value
+
+  set_draw_edge_labels: (value) =>
+    physics.abc.graph.renderer.draw_edge_labels = value
+    physics.abc.graph.renderer.redraw()
 
 #set up 60 fps animation loop (triggers physics)
 window.requestAnimFrame = (->

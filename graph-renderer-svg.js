@@ -22,7 +22,9 @@ RendererSVG = (function() {
     this.graph = parent;
     this.abc = abc;
     $("canvas#viewport").hide();
+    this.draw_graph = true;
     this.draw_color_activation = true;
+    this.draw_edge_labels = true;
     this.draw_activation = false;
     this.draw_semni = true;
     this.pause_drawing = true;
@@ -85,6 +87,9 @@ RendererSVG = (function() {
     graph = this.graph;
     this.particleSystem.eachNode(function(node, pt) {
       var a, activation, c, crect, image, label, number, positions, strokeStyle, strokeWidth, w, w2, world_angles;
+      if (!parent.draw_graph) {
+        return;
+      }
       label = node.data.label;
       number = node.data.number;
       image = node.data.imageData;
@@ -160,6 +165,9 @@ RendererSVG = (function() {
     });
     this.particleSystem.eachEdge(function(edge, pt1, pt2) {
       var angle, color, distance, head, label, mid, offset, tail;
+      if (!parent.draw_graph) {
+        return;
+      }
       color = edge.data.color;
       distance = edge.data.distance;
       label = edge.data.label;
@@ -181,7 +189,7 @@ RendererSVG = (function() {
           parent.svg_edges[edge.data.name] = parent.svg.append("svg:line");
         }
         parent.svg_edges[edge.data.name].attr("x1", tail.x).attr("y1", tail.y).attr("x2", head.x).attr("y2", head.y).attr("marker-end", "url(#arrowtip)");
-        if (label !== void 0) {
+        if ((label != null) && parent.draw_edge_labels) {
           if (!edge.data.label_svg) {
             edge.data.label_svg = parent.svg.append("svg:text");
             edge.data.label_svg[0][0].textContent = label || "";
@@ -197,6 +205,11 @@ RendererSVG = (function() {
             offset = -2;
           }
           return edge.data.label_svg.attr("x", mid.x).attr("y", mid.y + offset).attr("transform", "rotate(" + angle / Math.PI * 180 + "," + mid.x + "," + mid.y + ")");
+        } else {
+          if (edge.data.label_svg) {
+            edge.data.label_svg.remove();
+            return edge.data.label_svg = void 0;
+          }
         }
       }
     });
