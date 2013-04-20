@@ -13,7 +13,7 @@ if (typeof String::startsWith != 'function')
 
 class posture   #i.e. node
   constructor: (configuration, csl_mode=[], x_pos=0, timestamp=Date.now()) ->
-    @name = -1
+    @name = -99
     @csl_mode = csl_mode  # [upper, lower]
     @configuration = configuration  # [body angle, hip joint angle, knee joint angle]
     @positions = []  #positions of the body part for svg drawing
@@ -22,7 +22,7 @@ class posture   #i.e. node
     @timestamp = timestamp
     @edges_out = []
     @edges_in = []
-    @exit_directions = [0,0,0,0]   #h+,h-,k+,k- : list of how often each direction of each joint this posture has been travelled from
+    @exit_directions = [0,0,0,0]   #h+,h-,k+,k- : list of the target nodes for each direction of each joint
     @length = 1  #quirk for searchSubarray
     @activation = 1
 
@@ -77,14 +77,18 @@ class transition  #i.e. edge
     return false
 
 class postureGraph
+  #class holding the abc learning graph structure
+  #because arbor (library for drawing graphs) has it's own internal structure, there are two graphs in memory,
+  #one for drawing and one that also holds the additional data and methods
   constructor: (arborGraph) ->
     @nodes = []  #list of the posture nodes
     @walk_circle_active = false
     @arborGraph = arborGraph
 
   addNode: (node) =>
-    node.name = @nodes.length
+    node.name = @nodes.length+1
     @nodes.push node
+    return node.name
 
   getNode: (index) =>
     @nodes[index]
@@ -323,17 +327,16 @@ class abc
       stiffness: 100 #20
       friction: .5
       gravity: true
-#      timeout: 5
-#      fps: 10
 
     @graph.renderer = new RendererSVG("#viewport_svg", @graph, @)
-    @mode_strategy = "unseen"
-
     @posture_graph = new postureGraph(@graph)   # posture graph, logical representation
-    @last_posture = null             # the posture that was visited/created last
-    @previous_posture = null         # the posture that was visited before
+    @last_posture = null                        # the posture that was visited/created last (i.e. the "current" posture)
+    @previous_posture = null                    # the posture that was visited before
+    @trajectory = []                            #last n state points
+
+    #defaults
+    @mode_strategy = "unseen"
     @explore_active = false
-    @trajectory = []   #last n state points
     @save_periodically = false
 
   toggleExplore: =>
@@ -365,19 +368,16 @@ class abc
     return angle - twoPi * Math.floor( angle / twoPi )
     #return Math.acos(Math.cos(angle))
 
+  ##detect if we are currently in a fixpoint or periodic attractor -> posture
   MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
   time = MAX_UNIX_TIME
   detectAttractor: (body, upper_joint, lower_joint, action) =>
-    #detect if current csl mode found a posture (fixpoint or periodic attractor)
-    if not physics.run
-      return
-
     p_body = @wrapAngle body.GetAngle()     #p = φ
     p_hip = upper_joint.GetJointAngle()
     p_knee = lower_joint.GetJointAngle()
 
     #find attractors, take a sample of trajectory and try to find it multiple times in the
-    #past trajectory (with epsilon), hence (quasi)periodic behaviour
+    #past trajectory (with threshold), hence (quasi)periodic behaviour
     if @trajectory.length==10000   #corresponds to max periode duration that can be detected
       @trajectory.shift()
 
@@ -404,6 +404,7 @@ class abc
   savePosture: (configuration, body, upper_csl, lower_csl) =>
     parent = this
     addEdge = (start_node, target_node, edge_list=start_node.edges_out) ->
+      #add an edge between two nodes, may add one or two new nodes to drawing graph
       edge = new transition start_node, target_node
       if not edge.isInList(edge_list) and parent.posture_graph.length() > 1 and not start_node.isEqualTo target_node
         console.log("adding edge from posture " + start_node.name + " to posture: " + target_node.name)
@@ -438,7 +439,7 @@ class abc
           label: parent.transition_mode
 
         #if we're here for the first time, n0 is not yet initialized (this time addEdge adds two nodes)
-        if n0 == 0 and n1 == 1
+        if n0 == 1 and n1 == 2
           init_node = parent.graph.getNode n0
           init_node.data.label = start_node.csl_mode
           init_node.data.number = start_node.name
@@ -459,12 +460,21 @@ class abc
         parent.graph.start(true)
         parent.graph.renderer.click_time = Date.now()
 
+    #create temporary posture object
     p = new posture(configuration, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x)
-    found = @searchSubarray p, @posture_graph.nodes, p.isCloseExplore
+    #search for this posture in all the nodes that we already have (using a threshold)
+    found = @searchSubarray(p, @posture_graph.nodes, p.isCloseExplore)
     if not found
+      #TODO: check if there is a posture that we would have expected from last posture and direction
+      if @previous_posture and @previous_posture.exit_directions[@last_dir_index]
+        1
+
       #we dont have something close to this posture yet, add it
       console.log("found new posture: " + p.configuration)
-      @posture_graph.addNode p
+      node_id = @posture_graph.addNode p
+
+      if @last_posture
+        @last_posture.exit_directions[@last_dir_index] = node_id
     else
       #we have this posture already, update it
       f = found[0]
@@ -682,13 +692,13 @@ class abc
           direction = "+"
         next_mode = next_mode_for_direction current_mode[joint_index], direction
 
-      @last_posture.exit_directions[next_dir_index] += 1   #count number of times we went this way
       if joint_index is 0
         ui.set_csl_mode_upper next_mode
       else
         ui.set_csl_mode_lower next_mode
 
       @last_dir = direction
+      @last_dir_index = next_dir_index
       @last_joint_index = joint_index
 
       #save the next mode that was set to save in edge
@@ -724,7 +734,7 @@ class abc
     @limitCSL upper_joint, lower_joint
     if @explore_active
       @detectAttractor body, upper_joint, lower_joint, (configuration, parent) ->
-        #save posture
+        #when a new attractor is found, save posture
         parent.savePosture configuration, body, upper_joint, lower_joint
 
     if @posture_graph.walk_circle_active

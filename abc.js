@@ -46,7 +46,7 @@ posture = (function() {
 
     this.asJSON = __bind(this.asJSON, this);
 
-    this.name = -1;
+    this.name = -99;
     this.csl_mode = csl_mode;
     this.configuration = configuration;
     this.positions = [];
@@ -205,8 +205,9 @@ postureGraph = (function() {
   }
 
   postureGraph.prototype.addNode = function(node) {
-    node.name = this.nodes.length;
-    return this.nodes.push(node);
+    node.name = this.nodes.length + 1;
+    this.nodes.push(node);
+    return node.name;
   };
 
   postureGraph.prototype.getNode = function(index) {
@@ -523,12 +524,12 @@ abc = (function() {
       gravity: true
     });
     this.graph.renderer = new RendererSVG("#viewport_svg", this.graph, this);
-    this.mode_strategy = "unseen";
     this.posture_graph = new postureGraph(this.graph);
     this.last_posture = null;
     this.previous_posture = null;
-    this.explore_active = false;
     this.trajectory = [];
+    this.mode_strategy = "unseen";
+    this.explore_active = false;
     this.save_periodically = false;
   }
 
@@ -575,9 +576,6 @@ abc = (function() {
 
   abc.prototype.detectAttractor = function(body, upper_joint, lower_joint, action) {
     var configuration, d, eps, last, p_body, p_hip, p_knee;
-    if (!physics.run) {
-      return;
-    }
     p_body = this.wrapAngle(body.GetAngle());
     p_hip = upper_joint.GetJointAngle();
     p_knee = lower_joint.GetJointAngle();
@@ -601,7 +599,7 @@ abc = (function() {
   };
 
   abc.prototype.savePosture = function(configuration, body, upper_csl, lower_csl) {
-    var addEdge, f, found, n, new_p, p, parent;
+    var addEdge, f, found, n, new_p, node_id, p, parent;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
       var current_node, distance, edge, init_node, n0, n1, offset, offset_x, offset_y, source_node, timedelta;
@@ -645,7 +643,7 @@ abc = (function() {
           timedelta: timedelta,
           label: parent.transition_mode
         });
-        if (n0 === 0 && n1 === 1) {
+        if (n0 === 1 && n1 === 2) {
           init_node = parent.graph.getNode(n0);
           init_node.data.label = start_node.csl_mode;
           init_node.data.number = start_node.name;
@@ -668,8 +666,15 @@ abc = (function() {
     p = new posture(configuration, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x);
     found = this.searchSubarray(p, this.posture_graph.nodes, p.isCloseExplore);
     if (!found) {
+      if (this.previous_posture && this.previous_posture.exit_directions[this.last_dir_index]) {
+        1;
+
+      }
       console.log("found new posture: " + p.configuration);
-      this.posture_graph.addNode(p);
+      node_id = this.posture_graph.addNode(p);
+      if (this.last_posture) {
+        this.last_posture.exit_directions[this.last_dir_index] = node_id;
+      }
     } else {
       f = found[0];
       new_p = p;
@@ -898,13 +903,13 @@ abc = (function() {
         }
         next_mode = next_mode_for_direction(current_mode[joint_index], direction);
       }
-      this.last_posture.exit_directions[next_dir_index] += 1;
       if (joint_index === 0) {
         ui.set_csl_mode_upper(next_mode);
       } else {
         ui.set_csl_mode_lower(next_mode);
       }
       this.last_dir = direction;
+      this.last_dir_index = next_dir_index;
       this.last_joint_index = joint_index;
       this.transition_mode = current_mode.clone();
       return this.transition_mode[joint_index] = next_mode;
