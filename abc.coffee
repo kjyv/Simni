@@ -90,8 +90,14 @@ class postureGraph
     @nodes.push node
     return node.name
 
-  getNode: (index) =>
+  getNodeByIndex: (index) =>
     @nodes[index]
+
+  getNodeByName: (name) =>
+    if name>0
+      @nodes[name-1]
+    else
+      console.log("warning: tried to get node with index <= 0!")
 
   length: =>
     @nodes.length
@@ -134,8 +140,8 @@ class postureGraph
 
     #put in edges
     for e in t.edges
-      n = @getNode e.start_node
-      nn = @getNode e.target_node
+      n = @getNodeByName e.start_node
+      nn = @getNodeByName e.target_node
       ee = new transition(n, nn)
       ee.csl_mode = e.csl_mode
       ee.distance = e.distance
@@ -313,7 +319,7 @@ class postureGraph
       if node.edges_out.length
         activation_in += e.target_node.activation for e in node.edges_out
         activation_in /= node.edges_out.length
-      node.activation_tmp = node.activation_self * 0.7 + activation_in * 0.3
+      node.activation_tmp = node.activation_self * 0.8 + activation_in * 0.2
     for node in @nodes
       node.activation = node.activation_tmp
       @arborGraph.getNode(node.name).data.activation = node.activation
@@ -467,19 +473,19 @@ class abc
     if not found
       #TODO: check if there is a posture that we would have expected from last posture and direction
       if @previous_posture and @previous_posture.exit_directions[@last_dir_index]
-        1
+        @posture_graph.getNodeByName(@previous_posture.exit_directions[@last_dir_index])
 
       #we dont have something close to this posture yet, add it
       console.log("found new posture: " + p.configuration)
-      node_id = @posture_graph.addNode p
+      node_name = @posture_graph.addNode p
 
       if @last_posture
-        @last_posture.exit_directions[@last_dir_index] = node_id
+        @last_posture.exit_directions[@last_dir_index] = node_name
     else
       #we have this posture already, update it
       f = found[0]
       new_p = p
-      p = @posture_graph.getNode f
+      p = @posture_graph.getNodeByIndex f
 
       #update to mean of old and current configurations
       p.configuration[0] = (new_p.configuration[0] + p.configuration[0]) / 2
@@ -513,18 +519,15 @@ class abc
     @newCSLMode()
 
     #TODO: check how often this is best to be calculated (not every timestep, that would be too much)
+    #for now doing it twice for every new posture seems ok
     @posture_graph.diffuseLearnProgress()
     @posture_graph.diffuseLearnProgress()
 
     if @save_periodically
-      #save svg
-      #ui.getPostureGraphAsFile()
-      #somehow it does not donwload both of the files, do we need a sleep here??
-      #sleep = (ms) ->
-      #  ms += new Date().getTime()
-      #  continue  while new Date() < ms
-      #save json
+      #save svg and json
       @posture_graph.saveGaphToFile()
+      graph_func = -> ui.getPostureGraphAsFile()
+      setTimeout graph_func, 1000
 
   compareModes: (a, b) =>
     if not a or not b

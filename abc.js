@@ -196,7 +196,9 @@ postureGraph = (function() {
 
     this.length = __bind(this.length, this);
 
-    this.getNode = __bind(this.getNode, this);
+    this.getNodeByName = __bind(this.getNodeByName, this);
+
+    this.getNodeByIndex = __bind(this.getNodeByIndex, this);
 
     this.addNode = __bind(this.addNode, this);
     this.nodes = [];
@@ -210,8 +212,16 @@ postureGraph = (function() {
     return node.name;
   };
 
-  postureGraph.prototype.getNode = function(index) {
+  postureGraph.prototype.getNodeByIndex = function(index) {
     return this.nodes[index];
+  };
+
+  postureGraph.prototype.getNodeByName = function(name) {
+    if (name > 0) {
+      return this.nodes[name - 1];
+    } else {
+      return console.log("warning: tried to get node with index <= 0!");
+    }
   };
 
   postureGraph.prototype.length = function() {
@@ -264,8 +274,8 @@ postureGraph = (function() {
     _ref1 = t.edges;
     for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
       e = _ref1[_j];
-      n = this.getNode(e.start_node);
-      nn = this.getNode(e.target_node);
+      n = this.getNodeByName(e.start_node);
+      nn = this.getNodeByName(e.target_node);
       ee = new transition(n, nn);
       ee.csl_mode = e.csl_mode;
       ee.distance = e.distance;
@@ -478,7 +488,7 @@ postureGraph = (function() {
         }
         activation_in /= node.edges_out.length;
       }
-      node.activation_tmp = node.activation_self * 0.7 + activation_in * 0.3;
+      node.activation_tmp = node.activation_self * 0.8 + activation_in * 0.2;
     }
     _ref2 = this.nodes;
     for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
@@ -599,7 +609,7 @@ abc = (function() {
   };
 
   abc.prototype.savePosture = function(configuration, body, upper_csl, lower_csl) {
-    var addEdge, f, found, n, new_p, node_id, p, parent;
+    var addEdge, f, found, graph_func, n, new_p, node_name, p, parent;
     parent = this;
     addEdge = function(start_node, target_node, edge_list) {
       var current_node, distance, edge, init_node, n0, n1, offset, offset_x, offset_y, source_node, timedelta;
@@ -667,18 +677,17 @@ abc = (function() {
     found = this.searchSubarray(p, this.posture_graph.nodes, p.isCloseExplore);
     if (!found) {
       if (this.previous_posture && this.previous_posture.exit_directions[this.last_dir_index]) {
-        1;
-
+        this.posture_graph.getNodeByName(this.previous_posture.exit_directions[this.last_dir_index]);
       }
       console.log("found new posture: " + p.configuration);
-      node_id = this.posture_graph.addNode(p);
+      node_name = this.posture_graph.addNode(p);
       if (this.last_posture) {
-        this.last_posture.exit_directions[this.last_dir_index] = node_id;
+        this.last_posture.exit_directions[this.last_dir_index] = node_name;
       }
     } else {
       f = found[0];
       new_p = p;
-      p = this.posture_graph.getNode(f);
+      p = this.posture_graph.getNodeByIndex(f);
       p.configuration[0] = (new_p.configuration[0] + p.configuration[0]) / 2;
       p.configuration[1] = (new_p.configuration[1] + p.configuration[1]) / 2;
       p.configuration[2] = (new_p.configuration[2] + p.configuration[2]) / 2;
@@ -703,7 +712,11 @@ abc = (function() {
     this.posture_graph.diffuseLearnProgress();
     this.posture_graph.diffuseLearnProgress();
     if (this.save_periodically) {
-      return this.posture_graph.saveGaphToFile();
+      this.posture_graph.saveGaphToFile();
+      graph_func = function() {
+        return ui.getPostureGraphAsFile();
+      };
+      return setTimeout(graph_func, 1000);
     }
   };
 
