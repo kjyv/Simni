@@ -419,7 +419,7 @@ class ui
 
     if physics.abc.mode_strategy is "manual"
       physics.abc.trajectory = []
- 
+
   toggleRecorder: =>
     @physics.startLog = true
     @physics.recordPhase = !@physics.recordPhase
@@ -516,7 +516,7 @@ class ui
 
   powerColor: (value) =>
     #for a value from 0..1 return color from green to red
-    h = (1-value) * 0.4   #hue, 0.4 = green
+    h = (0.9-value) * 0.4   #hue, 0.4 = green
     s = 0.9           #saturation
     b = 0.9           #brightness
 

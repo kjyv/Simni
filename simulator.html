@@ -19,7 +19,8 @@ Neurorobotics Research Laboratory, Berlin
         <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
         <script src="libs/b2Separator.js"></script>
-        <!--<script src="libs/arbor.js"></script> -->
+        <script src="libs/arbor.js"></script>
+        <!--
         <script src="libs/arbor-start-stop-fixed/src/etc.js"></script>
         <script src="libs/arbor-start-stop-fixed/src/kernel.js"></script>
         <script src="libs/arbor-start-stop-fixed/src/graphics/colors.js"></script>
@@ -32,7 +33,7 @@ Neurorobotics Research Laboratory, Berlin
         <script src="libs/arbor-start-stop-fixed/src/physics/physics.js"></script>
         <script src="libs/arbor-start-stop-fixed/src/physics/system.js"></script>
         <script src="libs/arbor-start-stop-fixed/src/dev.js"></script>
-
+        -->
         <script src="graph-renderer-svg.js"></script>
         <script src="semni.data.js"></script>
         <script src="abc.js"></script>
@@ -136,6 +137,10 @@ Neurorobotics Research Laboratory, Berlin
                                 physics.createSemni()
                                 $("#state_to_mode_presets").fadeOut "fast"
                                 $("#state_to_mode_mapping").fadeOut "fast"
+                                $("#mode_param_upper").fadeOut "fast"
+                                $("#csl_mode_name_upper").fadeOut "fast"
+                                $("#mode_param_lower").fadeOut "fast"
+                                $("#csl_mode_name_lower").fadeOut "fast"
                                 $("#map_state_to_mode_panel").fadeOut "fast", ->
                                     $("#semni_posture_controls").fadeIn "fast"
 
@@ -213,6 +218,13 @@ Neurorobotics Research Laboratory, Berlin
 
                 <label for="mode_param_lower">csl mode knee</label> <input id="mode_param_lower" type="range" min="-2" max="3" value="1.01" step="0.005" onchange="ui.map_mode(physics.lower_joint)" />
                 <span id="mode_val_lower"></span> <span id="csl_mode_name_lower">contraction</span><br/>
+                <br/>
+                <span id="help">
+                    <a href="documentation/documentation.pdf" target="_blank">Documentation</a><br/>
+                    <span id="help-hover" title="Text in [] are short keys.">
+                        Hover here for some hints
+                    </span>
+                </span>
             </div>
 
             <div id="map_state_to_mode_panel" style="display:none;" class="box">
@@ -313,8 +325,11 @@ Neurorobotics Research Laboratory, Berlin
                 <label for="graph_repulsion">Repulsion:</label><input id="graph_repulsion" type="range" min="100" max="2000" value="1000" step="1" onchange="physics.abc.graph.parameters({'repulsion': parseInt(this.value)})" /></br>
                 <label for="graph_stiffness">Stiffness:</label><input id="graph_stiffness" type="range" min="10" max="200" value="100" step="1" onchange="physics.abc.graph.parameters({'stiffness': parseInt(this.value)})" /><br/>
 
-                <label for="graph_draw">Draw graph</label>
+                <label for="graph_draw">Animate graph (slow) [a]</label>
                 <input type="checkbox" id="graph_draw" value="yes" checked onchange="ui.set_draw_graph(this.checked)"/></br>
+
+                <label for="graph_pause_drawing">Pause graph updating between new poses</label>
+                <input type="checkbox" id="graph_pause_drawing" value="yes" checked onchange="ui.set_pause_drawing(this.checked)"/></br>
 
                 <label for="graph_activation">Show node activation (discovery possibilities)</label>
                 <input type="checkbox" id="graph_activation" value="yes" onchange="ui.set_activation(this.checked)"/></br>
@@ -327,9 +342,6 @@ Neurorobotics Research Laboratory, Berlin
 
                 <label for="graph_draw_edge_labels">Show transition labels</label>
                 <input type="checkbox" id="graph_draw_edge_labels" value="yes" checked onchange="ui.set_draw_edge_labels(this.checked)"/></br>
-
-                <label for="graph_pause_drawing">Pause graph updating between new poses</label>
-                <input type="checkbox" id="graph_pause_drawing" value="yes" checked onchange="ui.set_pause_drawing(this.checked)"/></br>
 
                 <label for="graph_save_periodically">Save graph with every new posture</label>
                 <input type="checkbox" id="graph_save_periodically" value="no" onchange="ui.set_save_periodically(this.checked)"/></br>
@@ -500,7 +512,7 @@ Neurorobotics Research Laboratory, Berlin
                     if (zdata.length==200) {
                         zdata.shift()
                     }
-                    angle_speed = physics.lower_joint.angle_diff_csl
+                    angle_speed = physics.lower_joint.angle_diff
                     if (!angle_speed)
                         angle_speed=0
 
@@ -637,9 +649,13 @@ Neurorobotics Research Laboratory, Berlin
                 $(document).bind('keydown', 'm', function (evt){
                     checkbox = $('#map_state_to_mode')
                     checkbox.click();
-                    checkbox.attr('checked', !checkbox.is(':checked'));    
+                    checkbox.attr('checked', !checkbox.is(':checked'));
                     return false;
                 })
+
+                $(document).bind('keydown', 'a', function (evt){
+                    $('#graph_draw').click(); return false;
+                });
             })
         </script>
     </body>

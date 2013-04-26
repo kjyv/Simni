@@ -43,7 +43,7 @@ b2RevoluteJointDef = Box2D.Dynamics.Joints.b2RevoluteJointDef;
 b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
 
 physics = (function() {
-  var R, R_inv, U_in, fg, kb, km, v, was_static;
+  var R, R_inv, U_in, angle, fg, kb, km, pos_i, pos_p, v, was_static;
 
   function physics() {
     this.update = __bind(this.update, this);
@@ -60,6 +60,8 @@ physics = (function() {
 
     this.updateController = __bind(this.updateController, this);
 
+    this.Position = __bind(this.Position, this);
+
     this.Bounce = __bind(this.Bounce, this);
 
     this.CSL = __bind(this.CSL, this);
@@ -69,6 +71,8 @@ physics = (function() {
     this.myon_precision = __bind(this.myon_precision, this);
 
     this.getNoisyAngle = __bind(this.getNoisyAngle, this);
+
+    this.togglePositionController = __bind(this.togglePositionController, this);
 
     this.toggleBounce = __bind(this.toggleBounce, this);
 
@@ -92,10 +96,10 @@ physics = (function() {
     fixDef.restitution = 0.1;
     this.fixDef = fixDef;
     this.ground_height = 0.03;
-    this.ground_width = 10;
+    this.ground_width = 50;
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_staticBody;
-    bodyDef.position.x = -5;
+    bodyDef.position.x = 0;
     bodyDef.position.y = 1.1;
     bodyDef.linearDamping = 50;
     fixDef.shape = new b2PolygonShape;
@@ -183,6 +187,7 @@ physics = (function() {
     this.lower_joint.angle_speed = 0;
     this.lower_joint.csl_active = false;
     this.lower_joint.bounce_active = false;
+    this.lower_joint.position_controller_active = false;
     this.lower_joint.joint_name = 'lower';
     this.lower_joint.csl_sign = 1;
     this.lower_joint.gain = 1;
@@ -215,6 +220,7 @@ physics = (function() {
     this.lower_joint.angle_speed = 0;
     this.lower_joint.csl_active = false;
     this.lower_joint.bounce_active = false;
+    this.lower_joint.position_controller_active = false;
     this.lower_joint.joint_name = 'lower';
     this.lower_joint.csl_sign = 1;
     this.lower_joint.gain = 1;
@@ -245,6 +251,7 @@ physics = (function() {
     this.upper_joint.gb = 0;
     this.upper_joint.motor_torque = 0;
     this.upper_joint.bounce_active = false;
+    this.upper_joint.position_controller_active = false;
     this.fixDef.shape = new b2CircleShape(mass_size);
     this.fixDef.shape.m_p = pend_vertices[1];
     return mass = this.body2.CreateFixture(this.fixDef);
@@ -363,6 +370,7 @@ physics = (function() {
     this.upper_joint.bounce_active = false;
     this.upper_joint.bounce_sign = 1;
     this.upper_joint.bounce_vel = 0.0003;
+    this.upper_joint.position_controller_active = false;
     bodyDef3 = new b2BodyDef;
     bodyDef3.type = b2Body.b2_dynamicBody;
     this.body3 = this.world.CreateBody(bodyDef3);
@@ -416,12 +424,16 @@ physics = (function() {
     this.lower_joint.motor_torque = 0;
     this.lower_joint.bounce_active = false;
     this.lower_joint.bounce_vel = 0.00047;
-    return this.lower_joint.bounce_sign = 1;
+    this.lower_joint.bounce_sign = 1;
+    return this.lower_joint.position_controller_active = false;
   };
 
   physics.prototype.toggleCSL = function(bodyJoint) {
     if (bodyJoint.bounce_active) {
       $("#toggle_bounce").click();
+    }
+    if (bodyJoint.position_controller_active) {
+      bodyJoint.position_controller_active = false;
     }
     bodyJoint.csl_active = !bodyJoint.csl_active;
     if (this.lower_joint) {
@@ -441,7 +453,20 @@ physics = (function() {
     if (bodyJoint.csl_active) {
       $("#toggle_csl").click();
     }
+    if (bodyJoint.position_controller_active) {
+      bodyJoint.position_controller_active = false;
+    }
     bodyJoint.bounce_active = !bodyJoint.bounce_active;
+    bodyJoint.motor_control = 0;
+    return bodyJoint.last_integrated = 0;
+  };
+
+  physics.prototype.togglePositionController = function(bodyJoint) {
+    if (bodyJoint.position_controller_active) {
+      bodyJoint.position_controller_active = false;
+    } else {
+      bodyJoint.position_controller_active = true;
+    }
     bodyJoint.motor_control = 0;
     return bodyJoint.last_integrated = 0;
   };
@@ -472,9 +497,6 @@ physics = (function() {
     if (gain == null) {
       gain = 1;
     }
-    if (bodyJoint.last_integrated == null) {
-      bodyJoint.last_integrated = 0;
-    }
     vel = gi * angle_diff;
     sum = vel + bodyJoint.last_integrated;
     bodyJoint.last_integrated = gf * sum;
@@ -483,20 +505,39 @@ physics = (function() {
 
   physics.prototype.Bounce = function(vs, angle_diff, bodyJoint) {
     if (Math.abs(bodyJoint.motor_torque) > 0.9) {
-      bodyJoint.bounce_sign = bodyJoint.bounce_sign * -1;
+      bodyJoint.bounce_sign = -bodyJoint.bounce_sign;
       bodyJoint.last_integrated = 0;
     }
     bodyJoint.last_integrated += 35 * (angle_diff - (vs * bodyJoint.bounce_sign));
     return bodyJoint.last_integrated;
   };
 
+  pos_p = 7;
+
+  pos_i = 0.005;
+
+  physics.prototype.Position = function(set_position, bodyJoint) {
+    var offset;
+    offset = bodyJoint.GetJointAngle() - set_position;
+    bodyJoint.last_integrated += offset * pos_i;
+    return offset * pos_p + bodyJoint.last_integrated;
+  };
+
+  angle = 0;
+
   physics.prototype.updateController = function(bodyJoint) {
-    bodyJoint.angle_diff_csl = this.getNoisyAngle(bodyJoint) - bodyJoint.last_angle;
-    bodyJoint.last_angle = this.getNoisyAngle(bodyJoint);
+    angle = this.getNoisyAngle(bodyJoint);
+    bodyJoint.angle_diff = angle - bodyJoint.last_angle;
+    bodyJoint.last_angle = angle;
+    if (bodyJoint.last_integrated == null) {
+      bodyJoint.last_integrated = 0;
+    }
     if (bodyJoint.csl_active) {
-      return bodyJoint.motor_control = this.CSL(bodyJoint.gi, bodyJoint.gf, bodyJoint.gb, bodyJoint.angle_diff_csl, bodyJoint.gain, bodyJoint);
+      return bodyJoint.motor_control = this.CSL(bodyJoint.gi, bodyJoint.gf, bodyJoint.gb, bodyJoint.angle_diff, bodyJoint.gain, bodyJoint);
     } else if (bodyJoint.bounce_active) {
-      return bodyJoint.motor_control = this.Bounce(bodyJoint.bounce_vel, bodyJoint.angle_diff_csl, bodyJoint);
+      return bodyJoint.motor_control = this.Bounce(bodyJoint.bounce_vel, bodyJoint.angle_diff, bodyJoint);
+    } else if (bodyJoint.position_controller_active) {
+      return bodyJoint.motor_control = this.Position(bodyJoint.set_position, bodyJoint);
     }
   };
 
@@ -562,7 +603,7 @@ physics = (function() {
           j++
           deltaPassed = 100
   
-        #set shadow semni to positions of next trace frame        
+        #set shadow semni to positions of next trace frame
         f = @body.GetFixtureList()
         while f
           bodyA = Math.PI+Math.atan2(Treal[j][7], Treal[j][6])

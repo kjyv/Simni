@@ -40,10 +40,10 @@ class physics
 
     #create ground
     @ground_height = 0.03
-    @ground_width = 10
+    @ground_width = 50
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_staticBody
-    bodyDef.position.x = -5
+    bodyDef.position.x = 0
     bodyDef.position.y = 1.1
     bodyDef.linearDamping = 50
 
@@ -154,6 +154,7 @@ class physics
     @lower_joint.angle_speed = 0
     @lower_joint.csl_active = false
     @lower_joint.bounce_active = false
+    @lower_joint.position_controller_active = false
     @lower_joint.joint_name = 'lower'
     @lower_joint.csl_sign = 1
     @lower_joint.gain = 1
@@ -196,6 +197,7 @@ class physics
     @lower_joint.angle_speed = 0
     @lower_joint.csl_active = false
     @lower_joint.bounce_active = false
+    @lower_joint.position_controller_active = false
     @lower_joint.joint_name = 'lower'
     @lower_joint.csl_sign = 1
     @lower_joint.gain = 1
@@ -238,6 +240,7 @@ class physics
     @upper_joint.gb = 0
     @upper_joint.motor_torque = 0
     @upper_joint.bounce_active = false
+    @upper_joint.position_controller_active = false
 
     #create upper mass circle
     @fixDef.shape = new b2CircleShape(mass_size)
@@ -395,6 +398,7 @@ class physics
     @upper_joint.bounce_active = false
     @upper_joint.bounce_sign = 1
     @upper_joint.bounce_vel = 0.0003
+    @upper_joint.position_controller_active = false
 
     #####
 
@@ -471,12 +475,15 @@ class physics
     @lower_joint.bounce_active = false
     @lower_joint.bounce_vel = 0.00047
     @lower_joint.bounce_sign = 1
+    @lower_joint.position_controller_active = false
 
   ##### stuff #####
 
   toggleCSL: (bodyJoint) =>
     if bodyJoint.bounce_active
       $("#toggle_bounce").click()
+    if bodyJoint.position_controller_active
+      bodyJoint.position_controller_active = false
     bodyJoint.csl_active = not bodyJoint.csl_active
     if @lower_joint
       $("#set_csl_params_lower").trigger('click')
@@ -490,7 +497,17 @@ class physics
   toggleBounce: (bodyJoint) =>
     if bodyJoint.csl_active
       $("#toggle_csl").click()
+    if bodyJoint.position_controller_active
+      bodyJoint.position_controller_active = false
     bodyJoint.bounce_active = not bodyJoint.bounce_active
+    bodyJoint.motor_control = 0
+    bodyJoint.last_integrated = 0
+
+  togglePositionController: (bodyJoint) =>
+    if bodyJoint.position_controller_active
+      bodyJoint.position_controller_active = false
+    else
+      bodyJoint.position_controller_active = true
     bodyJoint.motor_control = 0
     bodyJoint.last_integrated = 0
 
@@ -514,8 +531,6 @@ class physics
   ##### controllers #####
 
   CSL: (gi, gf, gb, angle_diff, gain=1, bodyJoint) =>
-    unless bodyJoint.last_integrated?
-      bodyJoint.last_integrated = 0
     #csl controller
     vel = gi * angle_diff
     sum = vel + bodyJoint.last_integrated
@@ -523,27 +538,43 @@ class physics
     return (sum * gain) + gb
 
   Bounce: (vs, angle_diff, bodyJoint) =>
+    #constant velocity controller that moves until angle limit is hit
     #turn around on stall
     if Math.abs(bodyJoint.motor_torque) > 0.9
-      bodyJoint.bounce_sign = bodyJoint.bounce_sign * -1
+      bodyJoint.bounce_sign = -bodyJoint.bounce_sign
       bodyJoint.last_integrated = 0
 
     bodyJoint.last_integrated += 35*(angle_diff-(vs*bodyJoint.bounce_sign))
     return bodyJoint.last_integrated
 
+  pos_p = 7
+  pos_i = 0.005
+  Position: (set_position, bodyJoint) =>
+    offset = bodyJoint.GetJointAngle()-set_position
+    bodyJoint.last_integrated += offset * pos_i
+    return offset*pos_p + bodyJoint.last_integrated
+
+  angle = 0
   updateController: (bodyJoint) =>
-    bodyJoint.angle_diff_csl = @getNoisyAngle(bodyJoint) - bodyJoint.last_angle
-    bodyJoint.last_angle = @getNoisyAngle bodyJoint
+    angle = @getNoisyAngle(bodyJoint)
+    bodyJoint.angle_diff = angle - bodyJoint.last_angle
+    bodyJoint.last_angle = angle
+
+    #initialize integrator
+    unless bodyJoint.last_integrated?
+      bodyJoint.last_integrated = 0
 
     if bodyJoint.csl_active
       bodyJoint.motor_control = @CSL(
         bodyJoint.gi, bodyJoint.gf, bodyJoint.gb,
-        bodyJoint.angle_diff_csl,
+        bodyJoint.angle_diff,
         bodyJoint.gain,
         bodyJoint
       )
     else if bodyJoint.bounce_active
-      bodyJoint.motor_control = @Bounce(bodyJoint.bounce_vel, bodyJoint.angle_diff_csl, bodyJoint)
+      bodyJoint.motor_control = @Bounce(bodyJoint.bounce_vel, bodyJoint.angle_diff, bodyJoint)
+    else if bodyJoint.position_controller_active
+      bodyJoint.motor_control = @Position(bodyJoint.set_position, bodyJoint)
 
   ##### motor calculation #####
 
@@ -562,7 +593,7 @@ class physics
     return
 
   ##### friction calculation #####
-  
+
   clip: (value, cap=1) => Math.max(-cap, Math.min(cap, value))
   #sgn: (value) => if value > 0 then 1 else if value < 0 then -1 else 0
   v = fg = 0
@@ -612,7 +643,7 @@ class physics
         j++
         deltaPassed = 100
 
-      #set shadow semni to positions of next trace frame        
+      #set shadow semni to positions of next trace frame
       f = @body.GetFixtureList()
       while f
         bodyA = Math.PI+Math.atan2(Treal[j][7], Treal[j][6])

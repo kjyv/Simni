@@ -281,6 +281,9 @@ postureGraph = (function() {
       ee.distance = e.distance;
       ee.timedelta = e.timedelta;
       n.edges_out.push(ee);
+      if (n.edges_out.length > 4) {
+        console.log("warning: more than 4 outgoing edges in " + n.name);
+      }
     }
     ag = this.arborGraph;
     this.arborGraph.prune();
@@ -488,7 +491,7 @@ postureGraph = (function() {
         }
         activation_in /= node.edges_out.length;
       }
-      node.activation_tmp = node.activation_self * 0.8 + activation_in * 0.2;
+      node.activation_tmp = node.activation_self * 0.7 + activation_in * 0.3;
     }
     _ref2 = this.nodes;
     for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
@@ -518,6 +521,8 @@ abc = (function() {
     this.compareModes = __bind(this.compareModes, this);
 
     this.savePosture = __bind(this.savePosture, this);
+
+    this.addEdge = __bind(this.addEdge, this);
 
     this.detectAttractor = __bind(this.detectAttractor, this);
 
@@ -608,101 +613,142 @@ abc = (function() {
     }
   };
 
-  abc.prototype.savePosture = function(configuration, body, upper_csl, lower_csl) {
-    var addEdge, f, found, graph_func, n, new_p, node_name, p, parent;
-    parent = this;
-    addEdge = function(start_node, target_node, edge_list) {
-      var current_node, distance, edge, init_node, n0, n1, offset, offset_x, offset_y, source_node, timedelta;
-      if (edge_list == null) {
-        edge_list = start_node.edges_out;
+  abc.prototype.addEdge = function(start_node, target_node, edge_list) {
+    var current_node, distance, edge, init_node, n0, n1, offset, offset_x, offset_y, source_node, timedelta;
+    if (edge_list == null) {
+      edge_list = start_node.edges_out;
+    }
+    edge = new transition(start_node, target_node);
+    if (!edge.isInList(edge_list) && this.posture_graph.length() > 1 && !start_node.isEqualTo(target_node)) {
+      console.log("adding edge from posture " + start_node.name + " to posture: " + target_node.name);
+      distance = target_node.body_x - start_node.body_x;
+      edge.distance = distance;
+      timedelta = target_node.timestamp - start_node.timestamp;
+      edge.timedelta = timedelta;
+      edge.csl_mode = target_node.csl_mode;
+      edge_list.push(edge);
+      if (edge_list.length > 4) {
+        console.log("warning: now more than 4 outgoing edges in " + start_node.name);
       }
-      edge = new transition(start_node, target_node);
-      if (!edge.isInList(edge_list) && parent.posture_graph.length() > 1 && !start_node.isEqualTo(target_node)) {
-        console.log("adding edge from posture " + start_node.name + " to posture: " + target_node.name);
-        distance = target_node.body_x - start_node.body_x;
-        edge.distance = distance;
-        timedelta = target_node.timestamp - start_node.timestamp;
-        edge.timedelta = timedelta;
-        edge.csl_mode = target_node.csl_mode;
-        edge_list.push(edge);
-        target_node.edges_in.push(edge);
-        n0 = start_node.name;
-        n1 = target_node.name;
-        if (parent.posture_graph.length() > 2) {
-          source_node = parent.graph.getNode(n0);
-          offset = 0.3;
-          offset_x = Math.floor(Math.random() / 0.5);
-          if (offset_x) {
-            offset_x = offset;
-          } else {
-            offset_x = -offset;
-          }
-          offset_y = Math.floor(Math.random() / 0.5);
-          if (offset_y) {
-            offset_y = offset;
-          } else {
-            offset_y = -offset;
-          }
-          parent.graph.getNode(n1) || parent.graph.addNode(n1, {
-            'x': source_node.p.x + offset_x,
-            'y': source_node.p.y + offset_y
-          });
+      target_node.edges_in.push(edge);
+      n0 = start_node.name;
+      n1 = target_node.name;
+      if (this.posture_graph.length() > 2) {
+        source_node = this.graph.getNode(n0);
+        offset = 0.3;
+        offset_x = Math.floor(Math.random() / 0.5);
+        if (offset_x) {
+          offset_x = offset;
+        } else {
+          offset_x = -offset;
         }
-        parent.graph.addEdge(n0, n1, {
-          distance: distance.toFixed(3),
-          timedelta: timedelta,
-          label: parent.transition_mode
+        offset_y = Math.floor(Math.random() / 0.5);
+        if (offset_y) {
+          offset_y = offset;
+        } else {
+          offset_y = -offset;
+        }
+        this.graph.getNode(n1) || this.graph.addNode(n1, {
+          'x': source_node.p.x + offset_x,
+          'y': source_node.p.y + offset_y
         });
-        if (n0 === 1 && n1 === 2) {
-          init_node = parent.graph.getNode(n0);
-          init_node.data.label = start_node.csl_mode;
-          init_node.data.number = start_node.name;
-          init_node.data.activation = start_node.activation;
-          init_node.data.positions = start_node.positions;
-          init_node.data.world_angles = start_node.world_angles;
-        }
-        source_node = parent.graph.getNode(n0);
-        parent.graph.current_node = current_node = parent.graph.getNode(n1);
-        current_node.data.label = target_node.csl_mode;
-        current_node.data.number = target_node.name;
-        current_node.data.positions = target_node.positions;
-        current_node.data.world_angles = target_node.world_angles;
-        current_node.data.activation = target_node.activation;
-        source_node.data.activation = start_node.activation;
-        parent.graph.start(true);
-        return parent.graph.renderer.click_time = Date.now();
       }
-    };
+      this.graph.addEdge(n0, n1, {
+        distance: distance.toFixed(3),
+        timedelta: timedelta,
+        label: this.transition_mode
+      });
+      if (n0 === 1 && n1 === 2) {
+        init_node = this.graph.getNode(n0);
+        init_node.data.label = start_node.csl_mode;
+        init_node.data.number = start_node.name;
+        init_node.data.activation = start_node.activation;
+        init_node.data.positions = start_node.positions;
+        init_node.data.world_angles = start_node.world_angles;
+      }
+      source_node = this.graph.getNode(n0);
+      this.graph.current_node = current_node = this.graph.getNode(n1);
+      current_node.data.label = target_node.csl_mode;
+      current_node.data.number = target_node.name;
+      current_node.data.positions = target_node.positions;
+      current_node.data.world_angles = target_node.world_angles;
+      current_node.data.activation = target_node.activation;
+      source_node.data.activation = start_node.activation;
+      this.graph.start(true);
+      return this.graph.renderer.click_time = Date.now();
+    }
+  };
+
+  /* temp
+  for(i=1; i<physics.abc.posture_graph.length(); i++){if (physics.abc.posture_graph.nodes[i].edges_out.length>4){console.log(i)}}
+  */
+
+
+  abc.prototype.savePosture = function(configuration, body, upper_csl, lower_csl) {
+    var expected_node, f, found, graph_func, lj, n, new_p, node_name, p, p_expect, uj;
     p = new posture(configuration, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x);
+    if (physics.upper_joint.position_controller_active && physics.lower_joint.position_controller_active) {
+      p_expect = new posture(configuration, this.last_expected_node.csl_mode, body.GetWorldCenter().x);
+      if (this.last_expected_node && (this.last_expected_node.isClose(p) || this.last_expected_node.isClose(p_expect))) {
+        if (!this.last_expected_node.isClose(p) && this.last_expected_node.isClose(p_trans)) {
+          p = p_trans;
+        }
+        physics.togglePositionController(physics.upper_joint);
+        physics.togglePositionController(physics.lower_joint);
+        console.log("collected node " + this.last_expected_node.name + " with position controller, back to csl");
+        $("#toggle_csl").click();
+      } else {
+        console.log("warning, no idea what to do and now stuck.");
+        return;
+      }
+    }
     found = this.searchSubarray(p, this.posture_graph.nodes, p.isCloseExplore);
-    if (!found) {
-      if (this.previous_posture && this.previous_posture.exit_directions[this.last_dir_index]) {
-        this.posture_graph.getNodeByName(this.previous_posture.exit_directions[this.last_dir_index]);
+    expected_node = void 0;
+    if ((this.last_posture != null) && this.last_posture.exit_directions[this.last_dir_index] !== 0) {
+      expected_node = this.posture_graph.getNodeByName(this.last_posture.exit_directions[this.last_dir_index]);
+    }
+    if (!found || ((this.last_posture != null) && (expected_node != null) && this.posture_graph.getNodeByIndex(found[0]).name !== expected_node.name)) {
+      if (expected_node) {
+        console.log("we should have arrived in node " + expected_node.name + ", but thresholding didn't find it");
+        console.log("trying to collect with position controller");
+        $("#toggle_csl").click();
+        uj = physics.upper_joint;
+        lj = physics.lower_joint;
+        uj.set_position = expected_node.configuration[1];
+        lj.set_position = expected_node.configuration[2];
+        uj.position_controller_active = true;
+        lj.position_controller_active = true;
+        this.last_expected_node = expected_node;
+        return;
+      } else {
+        console.log("found new posture: " + p.configuration);
+        node_name = this.posture_graph.addNode(p);
       }
-      console.log("found new posture: " + p.configuration);
-      node_name = this.posture_graph.addNode(p);
-      if (this.last_posture) {
-        this.last_posture.exit_directions[this.last_dir_index] = node_name;
-      }
-    } else {
+    }
+    if (found.length) {
       f = found[0];
       new_p = p;
       p = this.posture_graph.getNodeByIndex(f);
+      console.log("re-visiting node " + p.name);
       p.configuration[0] = (new_p.configuration[0] + p.configuration[0]) / 2;
       p.configuration[1] = (new_p.configuration[1] + p.configuration[1]) / 2;
       p.configuration[2] = (new_p.configuration[2] + p.configuration[2]) / 2;
       n = this.graph.getNode(p.name);
+      node_name = p.name;
       if (n.data.semni) {
         n.data.semni.remove();
         n.data.semni = void 0;
       }
+    }
+    if (this.last_posture) {
+      this.last_posture.exit_directions[this.last_dir_index] = node_name;
     }
     p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()];
     p.world_angles = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()];
     p.body_x = body.GetWorldCenter().x;
     p.timestamp = Date.now();
     if (this.last_posture && this.posture_graph.length() > 1) {
-      addEdge(this.last_posture, p);
+      this.addEdge(this.last_posture, p);
       this.graph.current_node = this.graph.getNode(p.name);
       this.graph.renderer.redraw();
     }
@@ -884,7 +930,6 @@ abc = (function() {
             found_index = this.last_posture.exit_directions.indexOf(0, found_index + 1);
           }
         } else {
-          console.log("following the activation");
           if (!(next_dir_index != null) || this.last_posture.exit_directions[next_dir_index] === -1) {
             go_this_edge = this.last_posture.edges_out[0];
             _ref1 = this.last_posture.edges_out;
@@ -902,9 +947,10 @@ abc = (function() {
                   next_dir_index = dir;
                 }
               }
+              console.log("take first non stalling direction, this should probably not happen");
             } else {
               next_dir_index = dir_index_for_modes(this.last_posture.csl_mode, go_this_edge.target_node.csl_mode);
-              console.log("followed the edge " + go_this_edge.start_node.name + "->" + go_this_edge.target_node.name + " because of largest activation.");
+              console.log("following the edge " + go_this_edge.start_node.name + "->" + go_this_edge.target_node.name + " because of largest activation.");
             }
           }
         }
@@ -958,7 +1004,12 @@ abc = (function() {
     this.limitCSL(upper_joint, lower_joint);
     if (this.explore_active) {
       this.detectAttractor(body, upper_joint, lower_joint, function(configuration, parent) {
-        return parent.savePosture(configuration, body, upper_joint, lower_joint);
+        parent.savePosture(configuration, body, upper_joint, lower_joint);
+        if (!parent.graph.renderer.draw_graph) {
+          parent.graph.renderer.draw_graph = true;
+          parent.graph.renderer.redraw();
+          return parent.graph.renderer.draw_graph = false;
+        }
       });
     }
     if (this.posture_graph.walk_circle_active) {

@@ -538,7 +538,7 @@ ui = (function() {
 
   ui.prototype.powerColor = function(value) {
     var b, h, s;
-    h = (1 - value) * 0.4;
+    h = (0.9 - value) * 0.4;
     s = 0.9;
     b = 0.9;
     return this.hsvToRgb(h, s, b);

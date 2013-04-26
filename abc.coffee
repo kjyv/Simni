@@ -147,6 +147,8 @@ class postureGraph
       ee.distance = e.distance
       ee.timedelta = e.timedelta
       n.edges_out.push(ee)
+      if n.edges_out.length > 4
+        console.log("warning: more than 4 outgoing edges in " +n.name)
 
     #refresh display graph
     ag = @arborGraph
@@ -300,7 +302,7 @@ class postureGraph
         physics.abc.graph.renderer.redraw()
 
   diffuseLearnProgress: =>
-    #for each node, get activation through all incoming edges and sum up
+    #for each node, get activation through all outgoing edges and sum up
     #loop over nodes twice to properly deal with recurrent loops
     unless @nodes.length > 1
       return
@@ -319,7 +321,7 @@ class postureGraph
       if node.edges_out.length
         activation_in += e.target_node.activation for e in node.edges_out
         activation_in /= node.edges_out.length
-      node.activation_tmp = node.activation_self * 0.8 + activation_in * 0.2
+      node.activation_tmp = node.activation_self * 0.7 + activation_in * 0.3
     for node in @nodes
       node.activation = node.activation_tmp
       @arborGraph.getNode(node.name).data.activation = node.activation
@@ -407,85 +409,142 @@ class abc
 
       time = Date.now()
 
+
+  addEdge: (start_node, target_node, edge_list=start_node.edges_out) =>
+    #add an edge between two nodes in logical and drawing graphs, may add one or two new nodes to drawing graph
+    #(does some additional stuff over respective methods)
+    edge = new transition start_node, target_node
+    if not edge.isInList(edge_list) and @posture_graph.length() > 1 and not start_node.isEqualTo target_node
+      console.log("adding edge from posture " + start_node.name + " to posture: " + target_node.name)
+
+      #add new edge to logical graph
+      distance = target_node.body_x - start_node.body_x
+      edge.distance = distance
+      timedelta = target_node.timestamp - start_node.timestamp
+      edge.timedelta = timedelta
+      edge.csl_mode = target_node.csl_mode
+      edge_list.push edge
+      if edge_list.length > 4
+        console.log("warning: now more than 4 outgoing edges in " +start_node.name)
+      target_node.edges_in.push edge
+
+      ##create new edge in display graph
+      n0 = start_node.name
+      n1 = target_node.name
+
+      #position new node close to previous one (if there is one)
+      if @posture_graph.length() > 2
+        source_node = @graph.getNode n0
+
+        offset = 0.3
+        offset_x = Math.floor(Math.random() / 0.5)
+        if offset_x then offset_x = offset else offset_x = -offset
+        offset_y = Math.floor(Math.random() / 0.5)
+        if offset_y then offset_y = offset else offset_y = -offset
+        @graph.getNode(n1) or @graph.addNode n1, {'x': source_node.p.x + offset_x, 'y': source_node.p.y + offset_y}
+
+      @graph.addEdge n0, n1,
+        distance: distance.toFixed(3)
+        timedelta: timedelta
+        label: @transition_mode
+
+      #if we're here for the first time, n0 is not yet initialized (this time addEdge adds two nodes)
+      if n0 == 1 and n1 == 2
+        init_node = @graph.getNode n0
+        init_node.data.label = start_node.csl_mode
+        init_node.data.number = start_node.name
+        init_node.data.activation = start_node.activation
+        init_node.data.positions = start_node.positions
+        init_node.data.world_angles = start_node.world_angles
+
+      source_node = @graph.getNode n0
+      @graph.current_node = current_node = @graph.getNode(n1)
+      current_node.data.label = target_node.csl_mode
+      current_node.data.number = target_node.name
+      current_node.data.positions = target_node.positions
+      current_node.data.world_angles = target_node.world_angles
+      current_node.data.activation = target_node.activation
+      source_node.data.activation = start_node.activation
+
+      #re-enable suspended graph layouting for a bit to find new layout
+      @graph.start(true)
+      @graph.renderer.click_time = Date.now()
+
+  ### temp
+  for(i=1; i<physics.abc.posture_graph.length(); i++){if (physics.abc.posture_graph.nodes[i].edges_out.length>4){console.log(i)}}
+  ###
+
   savePosture: (configuration, body, upper_csl, lower_csl) =>
-    parent = this
-    addEdge = (start_node, target_node, edge_list=start_node.edges_out) ->
-      #add an edge between two nodes, may add one or two new nodes to drawing graph
-      edge = new transition start_node, target_node
-      if not edge.isInList(edge_list) and parent.posture_graph.length() > 1 and not start_node.isEqualTo target_node
-        console.log("adding edge from posture " + start_node.name + " to posture: " + target_node.name)
-
-        #add new edge to logical graph
-        distance = target_node.body_x - start_node.body_x
-        edge.distance = distance
-        timedelta = target_node.timestamp - start_node.timestamp
-        edge.timedelta = timedelta
-        edge.csl_mode = target_node.csl_mode
-        edge_list.push edge
-        target_node.edges_in.push edge
-
-        ##create new edge in display graph
-        n0 = start_node.name
-        n1 = target_node.name
-
-        #position new node close to previous one (if there is one)
-        if parent.posture_graph.length() > 2
-          source_node = parent.graph.getNode n0
-
-          offset = 0.3
-          offset_x = Math.floor(Math.random() / 0.5)
-          if offset_x then offset_x = offset else offset_x = -offset
-          offset_y = Math.floor(Math.random() / 0.5)
-          if offset_y then offset_y = offset else offset_y = -offset
-          parent.graph.getNode(n1) or parent.graph.addNode n1, {'x': source_node.p.x + offset_x, 'y': source_node.p.y + offset_y}
-
-        parent.graph.addEdge n0, n1,
-          distance: distance.toFixed(3)
-          timedelta: timedelta
-          label: parent.transition_mode
-
-        #if we're here for the first time, n0 is not yet initialized (this time addEdge adds two nodes)
-        if n0 == 1 and n1 == 2
-          init_node = parent.graph.getNode n0
-          init_node.data.label = start_node.csl_mode
-          init_node.data.number = start_node.name
-          init_node.data.activation = start_node.activation
-          init_node.data.positions = start_node.positions
-          init_node.data.world_angles = start_node.world_angles
-
-        source_node = parent.graph.getNode n0
-        parent.graph.current_node = current_node = parent.graph.getNode(n1)
-        current_node.data.label = target_node.csl_mode
-        current_node.data.number = target_node.name
-        current_node.data.positions = target_node.positions
-        current_node.data.world_angles = target_node.world_angles
-        current_node.data.activation = target_node.activation
-        source_node.data.activation = start_node.activation
-
-        #re-enable suspended graph layouting for a bit to find new layout
-        parent.graph.start(true)
-        parent.graph.renderer.click_time = Date.now()
-
     #create temporary posture object
     p = new posture(configuration, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x)
-    #search for this posture in all the nodes that we already have (using a threshold)
+
+    #if we have used the position controller to get to this posture, we now have to check if we're
+    #in the previously expected posture
+    if physics.upper_joint.position_controller_active and physics.lower_joint.position_controller_active
+      #quirk: expected node can have been saved with or without stall mode instead of contraction
+      #so we also compare with the expected mode (this gets into a lot of assuming...)
+      p_expect = new posture(configuration, @last_expected_node.csl_mode, body.GetWorldCenter().x)
+      if @last_expected_node and (@last_expected_node.isClose(p) or @last_expected_node.isClose(p_expect))
+        #we're now in the expected node and reached it via position controller (should still be same fixpoint since
+        #proper body angle resulted from arm angles)
+
+        #set posture with the mode that the expected posture has
+        if not @last_expected_node.isClose(p) and @last_expected_node.isClose(p_trans)
+          p = p_trans
+
+        #disable position controller
+        physics.togglePositionController(physics.upper_joint)
+        physics.togglePositionController(physics.lower_joint)
+        console.log("collected node "+ @last_expected_node.name+" with position controller, back to csl")
+
+        #enable csl again
+        #this will/should use the same mode that didn't reach this node
+        $("#toggle_csl").click()
+      else
+        #we need to go back to our previous node and do something else since there is indeed another position in the
+        #same direction. could also be another situation now
+        console.log("warning, no idea what to do and now stuck.")
+        return
+
+    #search for current posture in all the nodes that we already have (using threshold)
     found = @searchSubarray(p, @posture_graph.nodes, p.isCloseExplore)
-    if not found
-      #TODO: check if there is a posture that we would have expected from last posture and direction
-      if @previous_posture and @previous_posture.exit_directions[@last_dir_index]
-        @posture_graph.getNodeByName(@previous_posture.exit_directions[@last_dir_index])
 
-      #we dont have something close to this posture yet, add it
-      console.log("found new posture: " + p.configuration)
-      node_name = @posture_graph.addNode p
+    expected_node = undefined
+    if @last_posture? and @last_posture.exit_directions[@last_dir_index] isnt 0
+      #there is a posture that we would have expected from last posture and direction
+      expected_node = @posture_graph.getNodeByName(@last_posture.exit_directions[@last_dir_index])
 
-      if @last_posture
-        @last_posture.exit_directions[@last_dir_index] = node_name
-    else
+    #if we found no posture (that would create a new one) but expected one or the one we found is not the one we expected from
+    #the graph, we try to reach it
+    if not found or (@last_posture? and expected_node? and @posture_graph.getNodeByIndex(found[0]).name isnt expected_node.name)
+      if expected_node
+        console.log("we should have arrived in node "+ expected_node.name + ", but thresholding didn't find it")
+        console.log("trying to collect with position controller")
+
+        #try to go to this posture with pos controller and see if body angle matches (also with small energy consumption?)
+        #deactivate csl
+        $("#toggle_csl").click()
+        uj = physics.upper_joint
+        lj = physics.lower_joint
+        uj.set_position = expected_node.configuration[1]
+        lj.set_position = expected_node.configuration[2]
+        uj.position_controller_active = true
+        lj.position_controller_active = true
+
+        #found = [expected_node.name-1]
+        @last_expected_node = expected_node
+        return
+      else
+        #we dont have something close to this posture yet, add it
+        console.log("found new posture: " + p.configuration)
+        node_name = @posture_graph.addNode p
+
+    if found.length
       #we have this posture already, update it
       f = found[0]
       new_p = p
       p = @posture_graph.getNodeByIndex f
+      console.log("re-visiting node " + p.name)
 
       #update to mean of old and current configurations
       p.configuration[0] = (new_p.configuration[0] + p.configuration[0]) / 2
@@ -494,10 +553,14 @@ class abc
 
       #make renderer draw updated semni posture
       n = @graph.getNode p.name
+      node_name = p.name
 
       if n.data.semni
         n.data.semni.remove()
         n.data.semni = undefined
+
+    if @last_posture
+      @last_posture.exit_directions[@last_dir_index] = node_name
 
     #body positions for svg drawing
     p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]
@@ -508,7 +571,7 @@ class abc
     #put node and edges into drawing graph
     if @last_posture and @posture_graph.length() > 1
       #refresh target position to current x for distance calc
-      addEdge @last_posture, p
+      @addEdge @last_posture, p
 
       #update graph render stuff
       @graph.current_node = @graph.getNode p.name
@@ -670,7 +733,6 @@ class abc
                 break
             found_index = @last_posture.exit_directions.indexOf 0, found_index+1
         else
-          console.log("following the activation")
           #we went all directions already, take one with largest activation
           if not next_dir_index? or @last_posture.exit_directions[next_dir_index] is -1
             #next_dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four by # of joints - 0.01
@@ -684,9 +746,10 @@ class abc
               #if we didn't find an edge (i.e. there are no outgoing edges),
               #get first one that isn't stalling
               next_dir_index = dir for dir in @last_posture.exit_directions when dir > -1
+              console.log("take first non stalling direction, this should probably not happen")
             else
               next_dir_index = dir_index_for_modes @last_posture.csl_mode, go_this_edge.target_node.csl_mode
-              console.log("followed the edge "+go_this_edge.start_node.name+"->"+go_this_edge.target_node.name+" because of largest activation.")
+              console.log("following the edge "+go_this_edge.start_node.name+"->"+go_this_edge.target_node.name+" because of largest activation.")
 
         joint_index = joint_from_dir_index next_dir_index
         if next_dir_index % 2
@@ -739,6 +802,12 @@ class abc
       @detectAttractor body, upper_joint, lower_joint, (configuration, parent) ->
         #when a new attractor is found, save posture
         parent.savePosture configuration, body, upper_joint, lower_joint
+
+        #update once if we're not constantly updating so we can see what's going on
+        if not parent.graph.renderer.draw_graph
+          parent.graph.renderer.draw_graph = true
+          parent.graph.renderer.redraw()
+          parent.graph.renderer.draw_graph = false
 
     if @posture_graph.walk_circle_active
       @detectAttractor body, upper_joint, lower_joint, (configuration, parent) ->
