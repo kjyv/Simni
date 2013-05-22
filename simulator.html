@@ -3,7 +3,7 @@
 
 Simulate various actuated shapes with a simple motor model and a CSL implementation.
 
-Stefan Bethge, 2012
+Stefan Bethge, 2012-2013
 Neurorobotics Research Laboratory, Berlin
 
 -->
@@ -19,8 +19,9 @@ Neurorobotics Research Laboratory, Berlin
         <script src="libs/Box2dWeb-2.1.a.3.min.js"></script>
         <script src="libs/Box2dWeb-joint-torque-patch.js"></script>
         <script src="libs/b2Separator.js"></script>
-        <script src="libs/arbor.js"></script>
         <!--
+        <script src="libs/arbor.js"></script>
+        -->
         <script src="libs/arbor-start-stop-fixed/src/etc.js"></script>
         <script src="libs/arbor-start-stop-fixed/src/kernel.js"></script>
         <script src="libs/arbor-start-stop-fixed/src/graphics/colors.js"></script>
@@ -33,11 +34,10 @@ Neurorobotics Research Laboratory, Berlin
         <script src="libs/arbor-start-stop-fixed/src/physics/physics.js"></script>
         <script src="libs/arbor-start-stop-fixed/src/physics/system.js"></script>
         <script src="libs/arbor-start-stop-fixed/src/dev.js"></script>
-        -->
         <script src="graph-renderer-svg.js"></script>
         <script src="semni.data.js"></script>
-        <script src="abc.js"></script>
         <script src="physics.js"></script>
+        <script src="abc.js"></script>
         <script src="ui.js"></script>
         <link rel="stylesheet" type="text/css" href="libs/jsxgraph.css" />
         <link rel="stylesheet" type="text/css" href="simulator.css" />
@@ -221,9 +221,6 @@ Neurorobotics Research Laboratory, Berlin
                 <br/>
                 <span id="help">
                     <a href="documentation/documentation.pdf" target="_blank">Documentation</a><br/>
-                    <span id="help-hover" title="Text in [] are short keys.">
-                        Hover here for some hints
-                    </span>
                 </span>
             </div>
 
@@ -325,8 +322,8 @@ Neurorobotics Research Laboratory, Berlin
                 <label for="graph_repulsion">Repulsion:</label><input id="graph_repulsion" type="range" min="100" max="2000" value="1000" step="1" onchange="physics.abc.graph.parameters({'repulsion': parseInt(this.value)})" /></br>
                 <label for="graph_stiffness">Stiffness:</label><input id="graph_stiffness" type="range" min="10" max="200" value="100" step="1" onchange="physics.abc.graph.parameters({'stiffness': parseInt(this.value)})" /><br/>
 
-                <label for="graph_draw">Animate graph (slow) [a]</label>
-                <input type="checkbox" id="graph_draw" value="yes" checked onchange="ui.set_draw_graph(this.checked)"/></br>
+                <label for="graph_animated">Animate graph (slow) [a]</label>
+                <input type="checkbox" id="graph_animated" value="yes" checked onchange="ui.set_graph_animated(this.checked)"/></br>
 
                 <label for="graph_pause_drawing">Pause graph updating between new poses</label>
                 <input type="checkbox" id="graph_pause_drawing" value="yes" checked onchange="ui.set_pause_drawing(this.checked)"/></br>
@@ -341,13 +338,13 @@ Neurorobotics Research Laboratory, Berlin
                 <input type="checkbox" id="graph_draw_semnis" value="yes" checked onchange="ui.set_draw_semni(this.checked)"/></br>
 
                 <label for="graph_draw_edge_labels">Show transition labels</label>
-                <input type="checkbox" id="graph_draw_edge_labels" value="yes" checked onchange="ui.set_draw_edge_labels(this.checked)"/></br>
+                <input type="checkbox" id="graph_draw_edge_labels" value="no" checked onchange="ui.set_draw_edge_labels(this.checked)"/></br>
 
                 <label for="graph_save_periodically">Save graph with every new posture</label>
                 <input type="checkbox" id="graph_save_periodically" value="no" onchange="ui.set_save_periodically(this.checked)"/></br>
             </div>
             <!--<div id="semni_svg" style="width: 300px; height: 300px; float: left;"></div>-->
-            <div id="posture_graph">
+            <div id="posture-graph">
                 <canvas width="1400" height="900" id="viewport"></canvas>
                 <canvas width="300" height="300" id="tempimage" style="display:none;"></canvas>
                 <div id="viewport_svg"></div>
@@ -445,7 +442,7 @@ Neurorobotics Research Laboratory, Berlin
             var phase_space_enabled=false,motor_torque_enabled=false,phase_space_2_enabled=false,brd,brd2,g,g2,g3,g4,xdata=[],ydata=[],zdata=[{'U':0, 'phidot':0}],i,xdata2=[],ydata2=[],ydata3=[]
 
             //show every nth-frame
-            var update_skip=update_skip_2=update_skip_initial=15
+            var update_skip=update_skip_2=update_skip_initial=14
 
             JXG.Options.showCopyright = false
             JXG.Options.zoom.wheel = true
@@ -549,15 +546,16 @@ Neurorobotics Research Laboratory, Berlin
                         ydata3.shift()
                     }
 
-                    p = physics
                     if (physics.pend_style == 3 || physics.pend_style == 2) {
                         //semni or double pendulum
                         if (physics.upper_joint.motor_torque)
+                            //ydata2.push(physics.upper_joint.motor_control)
                             ydata2.push(physics.upper_joint.motor_torque)
                         else
                             ydata2.push(0)
 
                         if (physics.lower_joint.motor_torque)
+                            //ydata3.push(physics.upper_joint.I_t)
                             ydata3.push(physics.lower_joint.motor_torque)
                         else
                             ydata3.push(0)
@@ -654,7 +652,7 @@ Neurorobotics Research Laboratory, Berlin
                 })
 
                 $(document).bind('keydown', 'a', function (evt){
-                    $('#graph_draw').click(); return false;
+                    $('#graph_animated').click(); return false;
                 });
             })
         </script>

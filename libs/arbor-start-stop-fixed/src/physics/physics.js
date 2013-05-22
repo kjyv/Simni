@@ -221,6 +221,11 @@
       
       applyBarnesHutRepulsion:function(){
         if (!_bounds.topleft || !_bounds.bottomright) return
+        var nParticles = 0;
+         for (var particle in active.particles)
+            nParticles++;
+         if (nParticles < 2) return
+
         var bottomright = new Point(_bounds.bottomright)
         var topleft = new Point(_bounds.topleft)
 
@@ -264,7 +269,7 @@
           numParticles++
         });
 
-        if (numParticles==0) return
+        if (numParticles < 2) return
         
         var correction = centroid.divide(-numParticles)
         $.each(active.particles, function(id, point) {
@@ -307,14 +312,14 @@
           n++
         });
         _energy = {sum:sum, max:max, mean:sum/n, n:n}
-        
       },
 
       updatePosition:function(timestep){
         // translate velocity to a position delta
         var bottomright = null
         var topleft = null        
-        
+        var n = 0;
+
         $.each(active.particles, function(i, point) {
 
           // move the node to its new position
@@ -326,22 +331,25 @@
             var accel = point.f.multiply(0.5 * timestep * timestep).divide(point.m);
             point.p = point.p.add(point.v.multiply(timestep)).add(accel);
           }
-          
+
           if (!bottomright){
             bottomright = new Point(point.p.x, point.p.y)
             topleft = new Point(point.p.x, point.p.y)
             return
           }
-        
+
           var pt = point.p
           if (pt.x===null || pt.y===null) return
           if (pt.x > bottomright.x) bottomright.x = pt.x;
           if (pt.y > bottomright.y) bottomright.y = pt.y;          
           if (pt.x < topleft.x)     topleft.x = pt.x;
           if (pt.y < topleft.y)     topleft.y = pt.y;
+          n++;
         });
-        
-        _bounds = {topleft:topleft||new Point(-1,-1), bottomright:bottomright||new Point(1,1)}
+
+        if(n>1)
+            _bounds = {topleft:topleft||new Point(-1,-1), bottomright:bottomright||new Point(1,1)}
+
       },
 
       systemEnergy:function(timestep){
@@ -349,11 +357,10 @@
         return _energy
       }
 
-      
     }
     return that.init()
   }
-  
+
   var _nearParticle = function(center_pt, r){
       var r = r || .0
       var x = center_pt.x

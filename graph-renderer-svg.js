@@ -22,15 +22,16 @@ RendererSVG = (function() {
     this.graph = parent;
     this.abc = abc;
     $("canvas#viewport").hide();
-    this.draw_graph = true;
+    this.draw_graph_animated = true;
     this.draw_color_activation = true;
-    this.draw_edge_labels = true;
+    this.draw_edge_labels = false;
     this.draw_activation = false;
     this.draw_semni = true;
     this.pause_drawing = true;
+    this.previous_hover = null;
     arrowLength = 6 + 1;
     arrowWidth = 2 + 1;
-    this.svg.append("svg:defs").append("svg:marker").attr("id", "arrowtip").attr("viewBox", "-10 -5 10 10").attr("refX", 0).attr("refY", 0).attr("markerWidth", 10).attr("markerHeight", 10).attr("orient", "auto").append("svg:path").attr("d", "M-7,3L0,0L-7,-3L-5.6,0");
+    this.svg.append("svg:defs").append("svg:marker").attr("id", "arrowtip").attr("viewBox", "-10 -5 10 10").attr("refX", 0).attr("refY", 0).attr("markerWidth", 10).attr("markerHeight", 10).attr("orient", "auto").attr("stroke", "gray").append("svg:path").attr("d", "M-7,3L0,0L-7,-3L-5.6,0");
   }
 
   RendererSVG.prototype.init = function(system) {
@@ -81,21 +82,32 @@ RendererSVG = (function() {
     return this.intersect_line_line(p1, p2, tl, tr) || this.intersect_line_line(p1, p2, tr, br) || this.intersect_line_line(p1, p2, br, bl) || this.intersect_line_line(p1, p2, bl, tl) || false;
   };
 
+  RendererSVG.prototype.draw_once = function() {
+    if (this.draw_graph_animated) {
+      return this.redraw();
+    } else if (!this.draw_graph_animated) {
+      this.draw_graph_animated = true;
+      this.redraw();
+      return this.draw_graph_animated = false;
+    }
+  };
+
   RendererSVG.prototype.redraw = function() {
     var graph, parent;
+    if (!this.draw_graph_animated) {
+      return;
+    }
     parent = this;
     graph = this.graph;
     this.particleSystem.eachNode(function(node, pt) {
-      var a, activation, c, crect, image, label, number, positions, strokeStyle, strokeWidth, w, w2, world_angles;
-      if (!parent.draw_graph) {
-        return;
-      }
+      var a, activation, c, crect, hovered, image, label, number, positions, strokeStyle, strokeWidth, w, w2, world_angles;
       label = node.data.label;
       number = node.data.number;
       image = node.data.imageData;
       positions = node.data.positions;
       world_angles = node.data.world_angles;
       activation = node.data.activation;
+      hovered = node.data.hovered;
       if (label) {
         w = 26;
         w2 = 13;
@@ -113,12 +125,20 @@ RendererSVG = (function() {
       if (node.data.semni) {
         crect = node.data.semni[0][0].getBBox();
         node.data.semni.attr("transform", "translate(" + (pt.x - crect.width - crect.x + 20) + "," + (pt.y - crect.height - crect.y - 10) + ")");
+        if (hovered) {
+          node.data.semni.attr("stroke", "orange");
+        } else {
+          node.data.semni.attr("stroke", "gray");
+        }
       }
       if (parent.svg_nodes[number] === void 0) {
         parent.svg_nodes[number] = parent.svg.append("svg:rect");
       }
       if (graph.current_node === node) {
         strokeStyle = "red";
+        strokeWidth = "2px";
+      } else if (hovered) {
+        strokeStyle = "blue";
         strokeWidth = "2px";
       } else {
         strokeStyle = "black";
@@ -165,9 +185,6 @@ RendererSVG = (function() {
     });
     this.particleSystem.eachEdge(function(edge, pt1, pt2) {
       var angle, color, distance, head, label, mid, offset, tail;
-      if (!parent.draw_graph) {
-        return;
-      }
       color = edge.data.color;
       distance = edge.data.distance;
       label = edge.data.label;
@@ -189,6 +206,13 @@ RendererSVG = (function() {
           parent.svg_edges[edge.data.name] = parent.svg.append("svg:line");
         }
         parent.svg_edges[edge.data.name].attr("x1", tail.x).attr("y1", tail.y).attr("x2", head.x).attr("y2", head.y).attr("marker-end", "url(#arrowtip)");
+        if (edge.source.data.hovered) {
+          parent.svg_edges[edge.data.name].attr("stroke", "orange");
+        } else if (edge.target.data.hovered) {
+          parent.svg_edges[edge.data.name].attr("stroke", "blue");
+        } else {
+          parent.svg_edges[edge.data.name].attr("stroke", "gray");
+        }
         if ((label != null) && parent.draw_edge_labels) {
           if (!edge.data.label_svg) {
             edge.data.label_svg = parent.svg.append("svg:text");
@@ -270,12 +294,49 @@ RendererSVG = (function() {
         return false;
       };
 
+      Handler.hover = function(e) {
+        var hover, pos, redraw, _mouseP;
+        if (dragged) {
+          return;
+        }
+        pos = $(parent.svg[0][0]).offset();
+        _mouseP = arbor.Point(e.pageX - pos.left, e.pageY - pos.top);
+        hover = parent.particleSystem.nearest(_mouseP);
+        redraw = false;
+        if (hover && hover.distance < 25) {
+          hover.node.data.hovered = true;
+          if ((parent.previous_hover != null) && parent.previous_hover !== hover.node) {
+            parent.previous_hover.data.hovered = false;
+          }
+          parent.previous_hover = hover.node;
+          redraw = true;
+        } else {
+          if (parent.previous_hover && parent.previous_hover.data.hovered) {
+            parent.previous_hover.data.hovered = false;
+            redraw = true;
+          }
+          if (hover) {
+            hover.node.data.hovered = false;
+          }
+        }
+        if (redraw) {
+          return parent.draw_once();
+        }
+      };
+
       return Handler;
 
     })();
-    return $(this.svg[0][0]).mousedown(Handler.clicked);
+    $(this.svg[0][0]).mousedown(Handler.clicked);
+    return $(this.svg[0][0]).bind('mousemove', Handler.hover);
   };
 
   return RendererSVG;
 
 })();
+
+if (!(window.simni != null)) {
+  window.simni = {};
+}
+
+window.simni.RendererSVG = RendererSVG;

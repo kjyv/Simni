@@ -93,7 +93,7 @@ input[type="range"] {
     float: left;
 }
 
-#posture_graph {
+#posture-graph {
     float: left;
     width: 1100px;
 }
@@ -180,7 +180,6 @@ circle {
 /* svg */
 line {
     stroke-width: 1;
-    stroke: black;
     fill: none;
 }
 

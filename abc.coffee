@@ -11,11 +11,15 @@ if (typeof String::startsWith != 'function')
   String::startsWith = (input) ->
     this.substring(0, input.length) == input
 
+squared = (val) ->
+  val*val
+
 class posture   #i.e. node
   constructor: (configuration, csl_mode=[], x_pos=0, timestamp=Date.now()) ->
     @name = -99
     @csl_mode = csl_mode  # [upper, lower]
     @configuration = configuration  # [body angle, hip joint angle, knee joint angle]
+    @mean_n = 1   #count the amount of configurations we have merged into this one
     @positions = []  #positions of the body part for svg drawing
     @world_angles = []  #body world angles for svg drawing
     @body_x = x_pos
@@ -25,6 +29,7 @@ class posture   #i.e. node
     @exit_directions = [0,0,0,0]   #h+,h-,k+,k- : list of the target nodes for each direction of each joint
     @length = 1  #quirk for searchSubarray
     @activation = 1
+    @thresholdDistance = 0.2       #the euclidian distance that is considered to be small enough to say two postures are the same
 
   asJSON: =>
     #prevent circular references
@@ -34,7 +39,7 @@ class posture   #i.e. node
         new_edges.push e.target_node.name
       new_edges
 
-    JSON.stringify {"name": @name, "csl_mode":@csl_mode, "configuration":@configuration, "positions":@positions, "world_angles":@world_angles, "body_x": @body_x, "timestamp": @timestamp, "exit_directions": @exit_directions, "activation": @activation, "edges_out": replacer(@edges_out)}, null, 4
+    JSON.stringify {"name": @name, "csl_mode":@csl_mode, "configuration":@configuration, "mean_n":@mean_n, "positions":@positions, "world_angles":@world_angles, "body_x": @body_x, "timestamp": @timestamp, "exit_directions": @exit_directions, "activation": @activation, "edges_out": replacer(@edges_out)}, null, 4
 
   getEdgeTo: (target) =>
     for edge in @edges_out
@@ -47,13 +52,20 @@ class posture   #i.e. node
   isEqualTo: (node) =>
     @configuration[0] == node.configuration[0] and @configuration[1] == node.configuration[1] and @configuration[2] == node.configuration[2] and @csl_mode[0] == node.csl_mode[0] and @csl_mode[1] == node.csl_mode[1]
 
-  isClose: (a,b=this, eps=0.25) =>
-      Math.abs(a.configuration[0] - b.configuration[0]) < eps and Math.abs(a.configuration[1] - b.configuration[1]) < eps and Math.abs(a.configuration[2] - b.configuration[2]) < eps and a.csl_mode[0] == b.csl_mode[0] and a.csl_mode[1] == b.csl_mode[1]
+  #methods to determine if this posture is near another one
+  euclidDistance: (to) =>
+    squared(@configuration[0] - to.configuration[0]) +
+    squared(@configuration[1] - to.configuration[1]) +
+    squared(@configuration[2] - to.configuration[2])
 
-  #method to determine if this posture is near another one
-  e = 0.4  #0.6  #default possible posture distance
-  isCloseExplore: (a,i, b,j, eps=e) =>
-      Math.abs(a.configuration[0] - b[j].configuration[0]) < eps and Math.abs(a.configuration[1] - b[j].configuration[1]) < eps and Math.abs(a.configuration[2] - b[j].configuration[2]) < eps and a.csl_mode[0] == b[j].csl_mode[0] and a.csl_mode[1] == b[j].csl_mode[1]
+  #detect if postures are close enough to be possibly the same
+  isClose: (to, eps=@thresholdDistance) =>
+    @euclidDistance(to) < eps and @csl_mode[0] == to.csl_mode[0] and @.csl_mode[1] == to.csl_mode[1]
+
+  #comparator for exploring
+  isCloseExplore: (a,i, b,j) =>
+    #TODO: also consider e.g. r+,s+ and r+,c equal. test that properly, might produce weird results...
+    a.isClose(b[j], 0.65)
 
 class transition  #i.e. edge
   constructor: (start_node, target_node) ->
@@ -89,6 +101,21 @@ class postureGraph
     node.name = @nodes.length+1
     @nodes.push node
     return node.name
+
+  addPosture: (p) =>
+    node_name = @addNode p
+    console.log("found new posture: " + p.configuration + " (posture " + node_name + ")")
+
+    #add an arbor node as well (not connected yet)
+    data =
+      label: p.csl_mode
+      number: p.name
+      activation: p.activation
+      configuration: p.configuration
+      positions: p.positions
+      world_angles: p.world_angles
+    @arborGraph.addNode p.name, data
+    return node_name
 
   getNodeByIndex: (index) =>
     @nodes[index]
@@ -132,6 +159,7 @@ class postureGraph
     for n in t.nodes
       nn = new posture(n.configuration, n.csl_mode, n.body_x, n.timestamp)
       nn.name = n.name
+      nn.mean_n = n.mean_n
       nn.activation = n.activation
       nn.exit_directions = n.exit_directions
       nn.positions = n.positions
@@ -336,7 +364,7 @@ class abc
       friction: .5
       gravity: true
 
-    @graph.renderer = new RendererSVG("#viewport_svg", @graph, @)
+    @graph.renderer = new simni.RendererSVG("#viewport_svg", @graph, @)
     @posture_graph = new postureGraph(@graph)   # posture graph, logical representation
     @last_posture = null                        # the posture that was visited/created last (i.e. the "current" posture)
     @previous_posture = null                    # the posture that was visited before
@@ -394,12 +422,12 @@ class abc
     if @trajectory.length > 200 and (Date.now() - time) > 2000
       #take last 50 points
       last = @trajectory.slice(-50)
-      eps=0.025
+      eps=0.020
       d = @searchSubarray last, @trajectory, (a,i, b,j) ->
         Math.abs(a[i][0] - b[j][0]) < eps and Math.abs(a[i][1] - b[j][1]) < eps and Math.abs(a[i][2] - b[j][2]) < eps
       #console.log(d)
 
-      if d.length > 3    #need to find sample more than once to be periodic
+      if d.length > 3    #need to find sample a few times to be periodic
         #found a posture, call user method
         configuration = @trajectory.pop()
         action(configuration, @)
@@ -474,98 +502,31 @@ class abc
   for(i=1; i<physics.abc.posture_graph.length(); i++){if (physics.abc.posture_graph.nodes[i].edges_out.length>4){console.log(i)}}
   ###
 
-  savePosture: (configuration, body, upper_csl, lower_csl) =>
-    #create temporary posture object
-    p = new posture(configuration, [upper_csl.csl_mode, lower_csl.csl_mode], body.GetWorldCenter().x)
+  switch_to_random_release_after_position: (joint) =>
+    @last_posture = null
+    @previous_posture = null
+    @graph.current_node = null
 
-    #if we have used the position controller to get to this posture, we now have to check if we're
-    #in the previously expected posture
-    if physics.upper_joint.position_controller_active and physics.lower_joint.position_controller_active
-      #quirk: expected node can have been saved with or without stall mode instead of contraction
-      #so we also compare with the expected mode (this gets into a lot of assuming...)
-      p_expect = new posture(configuration, @last_expected_node.csl_mode, body.GetWorldCenter().x)
-      if @last_expected_node and (@last_expected_node.isClose(p) or @last_expected_node.isClose(p_expect))
-        #we're now in the expected node and reached it via position controller (should still be same fixpoint since
-        #proper body angle resulted from arm angles)
+    #set random release modes
+    which = Math.floor(Math.random()*2)
+    ui.set_csl_mode_upper(["r+", "r-"][which])
+    which = Math.floor(Math.random()*2)
+    ui.set_csl_mode_lower(["r+", "r-"][which])
 
-        #set posture with the mode that the expected posture has
-        if not @last_expected_node.isClose(p) and @last_expected_node.isClose(p_trans)
-          p = p_trans
+    #(assuming position controller is ON)
+    physics.togglePositionController(joint)
 
-        #disable position controller
-        physics.togglePositionController(physics.upper_joint)
-        physics.togglePositionController(physics.lower_joint)
-        console.log("collected node "+ @last_expected_node.name+" with position controller, back to csl")
+    #enable csl again
+    $("#toggle_csl").click()
 
-        #enable csl again
-        #this will/should use the same mode that didn't reach this node
-        $("#toggle_csl").click()
-      else
-        #we need to go back to our previous node and do something else since there is indeed another position in the
-        #same direction. could also be another situation now
-        console.log("warning, no idea what to do and now stuck.")
-        return
-
-    #search for current posture in all the nodes that we already have (using threshold)
-    found = @searchSubarray(p, @posture_graph.nodes, p.isCloseExplore)
-
-    expected_node = undefined
-    if @last_posture? and @last_posture.exit_directions[@last_dir_index] isnt 0
-      #there is a posture that we would have expected from last posture and direction
-      expected_node = @posture_graph.getNodeByName(@last_posture.exit_directions[@last_dir_index])
-
-    #if we found no posture (that would create a new one) but expected one or the one we found is not the one we expected from
-    #the graph, we try to reach it
-    if not found or (@last_posture? and expected_node? and @posture_graph.getNodeByIndex(found[0]).name isnt expected_node.name)
-      if expected_node
-        console.log("we should have arrived in node "+ expected_node.name + ", but thresholding didn't find it")
-        console.log("trying to collect with position controller")
-
-        #try to go to this posture with pos controller and see if body angle matches (also with small energy consumption?)
-        #deactivate csl
-        $("#toggle_csl").click()
-        uj = physics.upper_joint
-        lj = physics.lower_joint
-        uj.set_position = expected_node.configuration[1]
-        lj.set_position = expected_node.configuration[2]
-        uj.position_controller_active = true
-        lj.position_controller_active = true
-
-        #found = [expected_node.name-1]
-        @last_expected_node = expected_node
-        return
-      else
-        #we dont have something close to this posture yet, add it
-        console.log("found new posture: " + p.configuration)
-        node_name = @posture_graph.addNode p
-
-    if found.length
-      #we have this posture already, update it
-      f = found[0]
-      new_p = p
-      p = @posture_graph.getNodeByIndex f
-      console.log("re-visiting node " + p.name)
-
-      #update to mean of old and current configurations
-      p.configuration[0] = (new_p.configuration[0] + p.configuration[0]) / 2
-      p.configuration[1] = (new_p.configuration[1] + p.configuration[1]) / 2
-      p.configuration[2] = (new_p.configuration[2] + p.configuration[2]) / 2
-
-      #make renderer draw updated semni posture
-      n = @graph.getNode p.name
-      node_name = p.name
-
-      if n.data.semni
-        n.data.semni.remove()
-        n.data.semni = undefined
-
+  connectLastPosture: (p) =>
     if @last_posture
-      @last_posture.exit_directions[@last_dir_index] = node_name
+      @last_posture.exit_directions[@last_dir_index] = p.name
 
-    #body positions for svg drawing
+    #set/update body positions for svg drawing
     p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]
     p.world_angles = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()]
-    p.body_x = body.GetWorldCenter().x
+    p.body_x = physics.body.GetWorldCenter().x
     p.timestamp = Date.now()
 
     #put node and edges into drawing graph
@@ -575,16 +536,149 @@ class abc
 
       #update graph render stuff
       @graph.current_node = @graph.getNode p.name
-      @graph.renderer.redraw()
+      @graph.renderer.draw_once()
+
+  savePosture: (configuration, body, upper_csl, lower_csl) =>
+    #create temporary posture object
+    p = new posture(configuration, [upper_csl, lower_csl], body.GetWorldCenter().x)
+
+    uj = physics.upper_joint
+    lj = physics.lower_joint
+
+    #if we have used the position controller to get to this posture, we now have to check if we're
+    #in the previously expected posture
+    if physics.upper_joint.position_controller_active and physics.lower_joint.position_controller_active and @last_expected_node
+      #quirk: expected node can have been saved with or without stall mode instead of contraction
+      #so we also compare with the expected mode (this gets into a lot of assuming...)
+      p_expect = new posture(configuration, @last_expected_node.csl_mode, body.GetWorldCenter().x)
+      if @last_expected_node.isClose(p) or @last_expected_node.isClose(p_expect)
+        #we're now in the expected node and reached it via position controller (should still be same fixpoint since
+        #proper body angle resulted from arm angles)
+
+        #set posture with the mode that the expected posture has
+        if not @last_expected_node.isClose(p) and @last_expected_node.isClose(p_expect)
+          p = p_expect
+
+        #disable position controller
+        physics.togglePositionController(uj)
+        physics.togglePositionController(lj)
+        console.log("collected node "+ @last_expected_node.name+" with position controller, back to csl")
+
+        #enable csl again
+        #this will/should use the same mode that didn't reach this node
+        $("#toggle_csl").click()
+      else
+        #this could also mean there is indeed another position in the
+        #same direction. could also be another situation now
+        console.log("warning, could not collect node with position controller. either we fell off the manifold or the context changed. continuing somewhere else.")
+        #try random csl mode from here and set last_posture etc to null
+        #(so that way we simply go on and don't make a connection to the next node)
+        @switch_to_random_release_after_position uj
+        @switch_to_random_release_after_position lj
+        return
+
+      @last_expected_node = null
+
+    #if we're trying to reach the closest position that is already saved, we need to catch it here
+    #also, if we are not in the possible posture, we have to create a new node at the before detected one (it is indeed new)
+    else if physics.upper_joint.position_controller_active and physics.lower_joint.position_controller_active and @last_test_posture
+      if p.isClose(@last_test_posture)
+        console.log("found a posture that was too far away for thresholding but was reachable")
+        found = [@last_test_posture.name-1]
+        @last_test_posture = null
+      else
+        #create previous posture as new node
+        console.log("candidate was not a reachable posture, creating new posture for previously found one")
+        node_name = @posture_graph.addPosture @last_test_posture
+        @connectLastPosture(p)
+
+        #continue with csl whereever we landed instead
+        @switch_to_random_release_after_position uj
+        @switch_to_random_release_after_position lj
+        @last_test_posture = null
+        return
+
+    #search for current posture in all the nodes that we already have (using larger threshold)
+    if not found
+      found = @searchSubarray(p, @posture_graph.nodes, p.isCloseExplore)
+
+    #take closest found posture and try to reach it with position control
+    if found.length
+      parent = @
+      found.sort (a,b) ->
+        aa = parent.posture_graph.getNodeByIndex(a)
+        bb = parent.posture_graph.getNodeByIndex(b)
+        aa.euclidDistance(p) < bb.euclidDistance(p)
+
+      #if the closest existing posture is further away than safe error range (0.25) but was found with larger error range
+      #we try to reach it with the position controller
+      pp = @posture_graph.getNodeByIndex(found[0])
+      if p.thresholdDistance < pp.euclidDistance(p)
+        #enable position control
+        console.log("found an existing posture (" + pp.name + ") that is possibly the same we just detected. trying with position controller.")
+        uj.set_position = pp.configuration[1]
+        lj.set_position = pp.configuration[2]
+        physics.togglePositionController(uj)
+        physics.togglePositionController(lj)
+        @last_test_posture = pp
+        return
+
+    #check if there is a posture that we would have expected from the last posture and the last direction we went
+    expected_node = undefined
+    if @last_posture? and @last_posture.exit_directions[@last_dir_index] isnt 0
+      expected_node = @posture_graph.getNodeByName(@last_posture.exit_directions[@last_dir_index])
+
+    #if we found no posture (so we would create a new one) but expected one or the one we found is not the one we expected from
+    #the graph, we try to reach it explicitly (i.e. we are close to the attractor already)
+    if not found or (@last_posture? and expected_node? and @posture_graph.getNodeByIndex(found[0]).name isnt expected_node.name)
+      if expected_node
+        console.log("we should have arrived in node "+ expected_node.name + ", but thresholding didn't find it")
+        console.log("trying to collect with position controller")
+
+        #try to go to this posture with pos controller and see if next detected posture is the expected one      
+        uj = physics.upper_joint
+        lj = physics.lower_joint
+        uj.set_position = expected_node.configuration[1]
+        lj.set_position = expected_node.configuration[2]
+        #deactivate csl
+        physics.togglePositionController(uj)
+        physics.togglePositionController(lj)
+
+        #found = [expected_node.name-1]
+        @last_expected_node = expected_node
+        return
+      else
+        #we didn't find a posture close to this one yet and we didn't expect another one, so add a new one
+        node_name = @posture_graph.addPosture p
+
+    #we have this posture already, update it
+    if found.length
+      new_p = p
+      f = found[0]
+      p = @posture_graph.getNodeByIndex f
+      console.log("re-visiting node " + p.name)
+
+      #update to mean of old and current configurations
+      #(counter is used for proper weighting)
+      p.configuration[0] = (new_p.configuration[0] + p.configuration[0]*p.mean_n) / (p.mean_n+1)
+      p.configuration[1] = (new_p.configuration[1] + p.configuration[1]*p.mean_n) / (p.mean_n+1)
+      p.configuration[2] = (new_p.configuration[2] + p.configuration[2]*p.mean_n) / (p.mean_n+1)
+      p.mean_n += 1
+      #TODO: save scattering too
+
+      #make renderer draw updated semni posture
+      #(deleting will recreate)
+      n = @graph.getNode p.name
+
+      if n.data.semni
+        n.data.semni.remove()
+        n.data.semni = undefined
+
+    @connectLastPosture(p)
 
     @previous_posture = @last_posture
     @last_posture = p
     @newCSLMode()
-
-    #TODO: check how often this is best to be calculated (not every timestep, that would be too much)
-    #for now doing it twice for every new posture seems ok
-    @posture_graph.diffuseLearnProgress()
-    @posture_graph.diffuseLearnProgress()
 
     if @save_periodically
       #save svg and json
@@ -801,13 +895,15 @@ class abc
     if @explore_active
       @detectAttractor body, upper_joint, lower_joint, (configuration, parent) ->
         #when a new attractor is found, save posture
-        parent.savePosture configuration, body, upper_joint, lower_joint
+        parent.savePosture configuration, body, upper_joint.csl_mode, lower_joint.csl_mode
 
         #update once if we're not constantly updating so we can see what's going on
         if not parent.graph.renderer.draw_graph
           parent.graph.renderer.draw_graph = true
           parent.graph.renderer.redraw()
           parent.graph.renderer.draw_graph = false
+
+      @posture_graph.diffuseLearnProgress()
 
     if @posture_graph.walk_circle_active
       @detectAttractor body, upper_joint, lower_joint, (configuration, parent) ->
@@ -839,3 +935,4 @@ class abc
         #TODO: if we're here, there was no matching edge in the circle which means we are not there yet
         #find a path from the current posture (we found one) to one posture on the circle (the shortest/safest please)
 
+window.simni.Abc = abc

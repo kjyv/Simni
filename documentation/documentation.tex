@@ -4,6 +4,10 @@
 \usepackage[english]{isodate}
 \usepackage[parfill]{parskip}
 
+\usepackage{tikz}
+\usepackage{signalflowdiagram}
+\usetikzlibrary{arrows,shapes,positioning,matrix,chains,calc}
+
 \setlength{\topmargin}{-.5in}
 \setlength{\textheight}{9in}
 \setlength{\oddsidemargin}{.125in}
@@ -23,12 +27,42 @@ Neurorobotics Research Laboratory, Humbold-Universität zu Berlin}
 
 \section{Requirements}
 
-\section{Usage}
+\begin{list}{$\bullet$}
+\item A browser (preferrably using a fast JavaScript implementation like V8 in Chromium)
+\item For compiling the CoffeeScript sources: CoffeeScript 1.3.3
+\end{list}
 
-\subsection{Morphologies}
+\section{Usage}
+\subsection{Data plots}
+\subsection{Shortcuts}
+
+
+\section{Morphologies}
 \subsection{Included}
 \subsection{Custom}
 
-\subsection{ABC-Learning}
+\section{ABC-Learning}
+
+\section{Simulator Interna}
+
+Box2D\\
+
+\begin{figure}[H]
+    \centering
+    \input{figures/simulator_controllermodell.tex}
+    \caption{Controllermodell: Die Gleitreibung wurde zusätzlich zur bereits in Box2D vorhandenen trockenen Reibung und Haftreibung eingefügt.}
+    \label{fig:controllermodell}
+\end{figure}
+
+Friction\\
+
+RE-MAX 17 ist der Name des Motors, das sind also Konstanten aus dem Datenblatt.
+Da der Servo mit Getriebe usw. kommt, kann man die aber nicht direkt nehmen.
+Zusätzlich haben wir aber auch ein paar Daten gemessen und damit bessere Daten als die aus dem Datenblatt. In der Tat ist es wichtig, die Formeln auch mal zu sehen bzw. zu benennen, die den Rechnungen da zu Grunde liegen, Teilweise sind die aber auch im Maxon-Material enthalten.
+km wird umgerechnet, da die Einheit im Datenblatt nicht brauchbar ist ($mNm*A^-1$, die Physik will Nm), dann mit dem Übersetzungsfaktor des Getriebes (hat Mario ermittelt, ich glaube durch Zahnradzählen) multipliziert und dem Wirkungsgrad (der auch aus Messungen von Torsten kommt).
+Kb muss umgerechnet werden, da es im Datenblatt in rpm/V=(r/min)/V angegeben ist und wir aber rad/sec wollen. Umdrehung ist Einheitslos und eine entspricht 2*pi, eine Minute hat 60 Sekunden, dann noch den Übersetzungsfaktor. Die Zahl die Vorne steht, ist auf Korsika experimentell ermittelt worden (allerdings mit dem Spannungsmodus, nicht PWM. Das müsste/könnte man jetzt nochmal bei Torsten erfragen, ob sich die Werte geändert haben, aber viel wirds nicht sein).
+R ist der Widerstand aus dem Datenblatt (der für 25C gilt) mit einer Formel aus dem Maxon-Material und der Temperaturkonstante für Kupfer für 65C umgerechnet. 
+Und ja, Semniakkus haben nur drei Zellen, also wie ich heute gelernt hab kommen da maximal genau 4,2V*3=12,6V raus.
+
 
 \end{document}

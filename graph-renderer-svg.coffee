@@ -17,12 +17,14 @@ class RendererSVG
     @abc = abc
     $("canvas#viewport").hide()
 
-    @draw_graph = true
+    @draw_graph_animated = true
     @draw_color_activation = true
-    @draw_edge_labels = true
+    @draw_edge_labels = false
     @draw_activation = false
     @draw_semni = true
     @pause_drawing = true
+
+    @previous_hover = null
 
     arrowLength = 6 + 1
     arrowWidth = 2 + 1
@@ -36,6 +38,7 @@ class RendererSVG
         .attr("markerWidth", 10)
         .attr("markerHeight", 10)
         .attr("orient", "auto")
+        .attr("stroke", "gray")
       .append("svg:path")
         .attr("d", "M-7,3L0,0L-7,-3L-5.6,0")
 
@@ -90,6 +93,15 @@ class RendererSVG
 
     @intersect_line_line(p1, p2, tl, tr) or @intersect_line_line(p1, p2, tr, br) or @intersect_line_line(p1, p2, br, bl) or @intersect_line_line(p1, p2, bl, tl) or false
 
+  draw_once: ->
+    #draw at least once without touch animated settings
+    if @draw_graph_animated
+      @redraw()
+    else if not @draw_graph_animated
+      @draw_graph_animated = true
+      @redraw()
+      @draw_graph_animated = false
+
   redraw: ->
     # redraw will be called repeatedly during the run whenever the node positions
     # change. the new positions for the nodes can be accessed by looking at the
@@ -100,6 +112,9 @@ class RendererSVG
     # x,y point in the screen's coordinate system
     #
 
+    if not @draw_graph_animated
+      return
+
     parent = this
     graph = @graph
 
@@ -107,15 +122,13 @@ class RendererSVG
       # node: {mass:#, p:{x,y}, name:"", data:{}}
       # pt:   {x:#, y:#}  node position in screen coords
 
-      if not parent.draw_graph
-        return
-
       label = node.data.label
       number = node.data.number
       image = node.data.imageData
       positions = node.data.positions
       world_angles = node.data.world_angles
       activation = node.data.activation
+      hovered = node.data.hovered
 
       if label
         w = 26
@@ -137,6 +150,11 @@ class RendererSVG
         #move to current nodes position
         crect = node.data.semni[0][0].getBBox() #getBoundingClientRect()
         node.data.semni.attr("transform", "translate(" + (pt.x - crect.width - crect.x + 20) + "," + (pt.y - crect.height - crect.y - 10) + ")")
+        if hovered
+          node.data.semni.attr("stroke", "orange")
+        else
+          node.data.semni.attr("stroke", "gray")
+
 
       # draw a rectangle centered at pt
       if parent.svg_nodes[number] == undefined
@@ -145,6 +163,9 @@ class RendererSVG
       #draw last node highlit
       if graph.current_node is node
         strokeStyle = "red"
+        strokeWidth = "2px"
+      else if hovered
+        strokeStyle = "blue"
         strokeWidth = "2px"
       else
         strokeStyle = "black"
@@ -210,9 +231,6 @@ class RendererSVG
       # pt1:  {x:#, y:#}  source position in screen coords
       # pt2:  {x:#, y:#}  target position in screen coords
 
-      if not parent.draw_graph
-        return
-
       color = edge.data.color
       distance = edge.data.distance
       label = edge.data.label
@@ -252,6 +270,13 @@ class RendererSVG
         parent.svg_edges[edge.data.name].attr("x1", tail.x).attr("y1", tail.y)
                                         .attr("x2", head.x).attr("y2", head.y)
                                         .attr("marker-end", "url(#arrowtip)")
+
+        if edge.source.data.hovered
+          parent.svg_edges[edge.data.name].attr("stroke", "orange")
+        else if edge.target.data.hovered
+          parent.svg_edges[edge.data.name].attr("stroke", "blue")
+        else
+          parent.svg_edges[edge.data.name].attr("stroke", "gray")
 
         #draw a label
         if label? and parent.draw_edge_labels
@@ -325,5 +350,34 @@ class RendererSVG
         _mouseP = null
         return false
 
+      @hover: (e) ->
+        if dragged
+          return
+        pos = $(parent.svg[0][0]).offset()
+        _mouseP = arbor.Point(e.pageX-pos.left, e.pageY-pos.top)
+        hover = parent.particleSystem.nearest(_mouseP)
+        redraw = false
+        if hover and hover.distance < 25
+          hover.node.data.hovered = true
+          if parent.previous_hover? and parent.previous_hover isnt hover.node
+            parent.previous_hover.data.hovered = false
+          parent.previous_hover = hover.node
+          redraw = true
+        else
+          if parent.previous_hover and parent.previous_hover.data.hovered
+            parent.previous_hover.data.hovered = false
+            redraw = true
+          if hover
+            hover.node.data.hovered = false
+
+        if redraw
+          parent.draw_once()
+
     # start listening
     $(@svg[0][0]).mousedown(Handler.clicked)
+    $(@svg[0][0]).bind('mousemove', Handler.hover)
+
+if not window.simni?
+  window.simni = {}
+  
+window.simni.RendererSVG = RendererSVG

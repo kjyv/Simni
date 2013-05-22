@@ -10,7 +10,6 @@ steps_per_frame = 16
 b2MouseJointDef = Box2D.Dynamics.Joints.b2MouseJointDef
 b2Vec2 = Box2D.Common.Math.b2Vec2
 b2Color = Box2D.Common.b2Color
-b2AABB = Box2D.Collision.b2AABB
 b2Transform = Box2D.Common.Math.b2Transform
 b2BodyDef = Box2D.Dynamics.b2BodyDef
 b2Body = Box2D.Dynamics.b2Body
@@ -75,7 +74,7 @@ class physics
     @logged_data = []     #where we log our data
     @beta = 0             #friction coefficient
 
-    @abc = new abc()
+    @abc = new simni.Abc()
 
   ##### methods to create bodies #####
 
@@ -290,14 +289,14 @@ class physics
     @fixDef.restitution = bodyRestitution
     @fixDef.filter.groupIndex = -1  #negative groups never collide with each other
     @fixDef.shape = new b2PolygonShape
-    #@fixDef.shape.SetAsArray contour, contour.length
+    #@fixDef.shape.SetAsArray simni.contour, simni.contour.length
 
     #for fixture in contour
     #  @fixDef.shape.SetAsArray(fixture, fixture.length)
     #  @body.CreateFixture(@fixDef)
 
-    #if not e = b2Separator.Validate(contour_original)
-    b2Separator.Separate(@body, @fixDef, contour_original_low_detail, 1000, 0.177, 0.192)
+    #if not e = b2Separator.Validate(simni.contour_original)
+    b2Separator.Separate(@body, @fixDef, simni.contour_original_low_detail, 1000, 0.177, 0.192)
     ###
     #else
       console.log "can't import contour, validator error " + e
@@ -312,22 +311,22 @@ class physics
     #add head (hole)
     @fixDef.density = 0.00001
     @fixDef.shape = new b2CircleShape
-    @fixDef.shape.m_p.Set(head[0].x, head[0].y)
-    @fixDef.shape.m_radius = head[1]
+    @fixDef.shape.m_p.Set(simni.head[0].x, simni.head[0].y)
+    @fixDef.shape.m_radius = simni.head[1]
     @fixDef.filter.groupIndex = 1
     @body.CreateFixture(@fixDef)
 
     #set center of mass, but keep the rest of the data
     md = new b2MassData()
     @body.GetMassData(md)
-    md.center.Set(contourCenter.x, contourCenter.y)
+    md.center.Set(simni.contourCenter.x, simni.contourCenter.y)
     md.I = @body.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y)
     @body.SetMassData(md)
 
     #show center of mass
     #@fixDef.density = 0.00001
     #@fixDef.shape = new b2CircleShape
-    #@fixDef.shape.m_p.Set(contourCenter.x, contourCenter.y)
+    #@fixDef.shape.m_p.Set(simni.contourCenter.x, simni.contourCenter.y)
     #@fixDef.shape.m_radius = 0.01
     #@fixDef.filter.groupIndex = -1
     #@body.CreateFixture(@fixDef)
@@ -345,17 +344,17 @@ class physics
     @fixDef2.restitution = upperArmRestitution
     @fixDef2.filter.groupIndex = -1
     @fixDef2.shape = new b2PolygonShape
-    for fixture in arm1ContourConvex
+    for fixture in simni.arm1ContourConvex
       @fixDef2.shape.SetAsArray(fixture, fixture.length)
       @body2.CreateFixture(@fixDef2)
  
     #set center of mass
     md = new b2MassData()
     @body2.GetMassData(md)
-    md.center.Set(arm1Center.x, arm1Center.y)
+    md.center.Set(simni.arm1Center.x, simni.arm1Center.y)
     md.I = @body2.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y)
     @body2.SetMassData(md)
-    @body2.SetPositionAndAngle(new b2Vec2(arm1Center.x, arm1Center.y), 0)
+    @body2.SetPositionAndAngle(new b2Vec2(simni.arm1Center.x, simni.arm1Center.y), 0)
 
     #initialise friction and motor state
     @body2.z2 = 0
@@ -364,7 +363,7 @@ class physics
     ###
     @fixDef2.density = 14.2
     @fixDef2.shape = new b2CircleShape
-    @fixDef2.shape.m_p.Set(arm1Center.x+0.03, arm1Center.y-0.015)
+    @fixDef2.shape.m_p.Set(simni.arm1Center.x+0.03, simni.arm1Center.y-0.015)
     @fixDef2.shape.m_radius = 0.04
     @fixDef2.filter.groupIndex = -1
     @body2.CreateFixture(@fixDef2)
@@ -375,8 +374,8 @@ class physics
     #jointDef.Initialize @body, @body2, vertices2[0]
     jointDef.bodyA = @body
     jointDef.bodyB = @body2
-    jointDef.localAnchorA.Set(arm1JointAnchor.x, arm1JointAnchor.y) #point on arm that is attached to body
-    jointDef.localAnchorB.Set(arm1JointAnchor.x, arm1JointAnchor.y) #point on the body that arm is attached to 
+    jointDef.localAnchorA.Set(simni.arm1JointAnchor.x, simni.arm1JointAnchor.y) #point on arm that is attached to body
+    jointDef.localAnchorB.Set(simni.arm1JointAnchor.x, simni.arm1JointAnchor.y) #point on the body that arm is attached to 
     #jointDef.anchor = new b2Vec2(vertices[3].x, vertices[3].y)
     jointDef.collideConnected = true
 
@@ -414,23 +413,23 @@ class physics
     @fixDef3.restitution = lowerArmRestitution
     @fixDef3.filter.groupIndex = -1
     @fixDef3.shape = new b2PolygonShape
-    for fixture in arm2ContourConvex
+    for fixture in simni.arm2ContourConvex
       @fixDef3.shape.SetAsArray(fixture, fixture.length)
       @body3.CreateFixture(@fixDef3)
 
     #set center of mass
     md = new b2MassData()
     @body3.GetMassData(md)
-    md.center.Set(arm2Center.x, arm2Center.y)
+    md.center.Set(simni.arm2Center.x, simni.arm2Center.y)
     md.I = @body3.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y)
     @body3.SetMassData(md)
-    @body3.SetPositionAndAngle(new b2Vec2(arm1Center.x, arm1Center.y), 0)
+    @body3.SetPositionAndAngle(new b2Vec2(simni.arm1Center.x, simni.arm1Center.y), 0)
 
     #add motor mass separately to imitate moment of inertia different from only COM based
     ###
     @fixDef3.density = 22.4  #=72g
     @fixDef3.shape = new b2CircleShape
-    @fixDef3.shape.m_p.Set(arm2Center.x-0.04, arm2Center.y-0.01)
+    @fixDef3.shape.m_p.Set(simni.arm2Center.x-0.04, simni.arm2Center.y-0.01)
     @fixDef3.shape.m_radius = 0.03
     @fixDef3.filter.groupIndex = -1
     @body3.CreateFixture(@fixDef3)
@@ -439,7 +438,7 @@ class physics
     #show center of mass
     #@fixDef3.density = 0.00001
     #@fixDef3.shape = new b2CircleShape
-    #@fixDef3.shape.m_p.Set(arm2Center.x, arm2Center.y)
+    #@fixDef3.shape.m_p.Set(simni.arm2Center.x, simni.arm2Center.y)
     #@fixDef3.shape.m_radius = 0.01
     #@fixDef3.filter.groupIndex = -1
     #@body3.CreateFixture(@fixDef3)
@@ -451,8 +450,8 @@ class physics
     jointDef = new b2RevoluteJointDef()
     jointDef.bodyA = @body2
     jointDef.bodyB = @body3
-    jointDef.localAnchorA.Set(arm2JointAnchor.x, arm2JointAnchor.y)
-    jointDef.localAnchorB.Set(arm2JointAnchor.x, arm2JointAnchor.y)
+    jointDef.localAnchorA.Set(simni.arm2JointAnchor.x, simni.arm2JointAnchor.y)
+    jointDef.localAnchorB.Set(simni.arm2JointAnchor.x, simni.arm2JointAnchor.y)
     jointDef.collideConnected = false
 
     jointDef.maxMotorTorque = @beta
@@ -504,6 +503,8 @@ class physics
     bodyJoint.last_integrated = 0
 
   togglePositionController: (bodyJoint) =>
+    if bodyJoint.csl_active
+      $("#toggle_csl").click()
     if bodyJoint.position_controller_active
       bodyJoint.position_controller_active = false
     else
@@ -547,8 +548,8 @@ class physics
     bodyJoint.last_integrated += 35*(angle_diff-(vs*bodyJoint.bounce_sign))
     return bodyJoint.last_integrated
 
-  pos_p = 7
-  pos_i = 0.005
+  pos_p = 5 #6.5
+  pos_i = 0.001
   Position: (set_position, bodyJoint) =>
     offset = bodyJoint.GetJointAngle()-set_position
     bodyJoint.last_integrated += offset * pos_i
@@ -767,6 +768,7 @@ class physics
       draw_motor_torque()
 
     window.stats.end()
-
     requestAnimFrame @update
 
+#put class in global namespace 
+window.simni.Physics = physics

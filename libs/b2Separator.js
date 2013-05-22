@@ -12,6 +12,8 @@
 * Converted to JS by Stefan Bethge
 */
 
+b2Vec2 = Box2D.Common.Math.b2Vec2
+b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
 
 if (typeof(Box2D.b2Separator) === "undefined") Box2D.b2Separator = {}
 Box2D.b2Separator = b2Separator

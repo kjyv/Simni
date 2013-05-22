@@ -1,0 +1,114 @@
+\tikzstyle{connector} = [->,thick]
+
+\begin{tikzpicture}[remember picture,
+  inner/.style={inner sep=3pt},
+  outer/.style={inner sep=10pt},
+  state/.style={
+         rectangle,
+         rounded corners,
+         draw=black, very thick,
+         minimum height=2em,
+         inner sep=0.3cm,
+         text centered,
+         anchor=center
+         }
+  ]
+  \node[outer,state,label=Controller] (A) {
+    \begin{tikzpicture}[node distance=1cm]
+        \node[inner,multiplier]                  (m0)  {};
+        \textaboveof{m0}{$g_i$}
+        
+        \node[inner,input,below=of m0]          (Ain0) {};
+        \textrightof{Ain0}{[$\phi-\phi^{-1}$]}
+        
+        \node[inner,adder,right=of m0]           (a0)  {};   
+        \node[inner,multiplier,above right=0.7cm and 0.3cm of a0] (m1)  {};
+        \textrightof{m1}{$g_f$}
+        
+        \node[inner,delay,above left=0.5cm and 0.1cm of a0]       (d0) {$z^{-1}$};
+        \node[inner,adder,right=of a0]           (a1) {};        
+        \node[inner,output,right=of a1]          (Aout) {};
+        \textbelowof{Aout}{[$U$]}        
+        
+        \node[inner,input,below=of a1]           (Ain1) {};
+        \textrightof{Ain1}{$g_b$}
+                   
+        \draw [connector] (Ain0) to (m0);
+        \draw [connector] (m0) to (a0);
+        \draw [connector, bend right=45] (a0) to (m1);
+        \draw [connector, bend right=45] (m1) to (d0);
+        \draw [connector, bend right=45] (d0) to (a0);
+        \draw [connector] (a0) to (a1);
+        \draw [connector] (a1) to (Aout);
+        \draw [connector] (Ain1) to (a1);
+    \end{tikzpicture}
+  };
+  \node[outer,state,label=Motor,right=of A] (B) {
+    \begin{tikzpicture}
+	    \node [inner,input] (Bin0) {};
+        \textbelowof{Bin0}{[$U$]};
+        
+		\node [inner,adder,right=of Bin0] (sum) {};
+        \node [inner,multiplier,right=of sum] (resistor) {};
+		\textaboveof{resistor}{$\frac{1}{R}$};
+        
+        \node [inner,multiplier,right=of resistor] (constant0) {};
+    	\textaboveof{constant0}{$k_m$};
+	    
+        \node [inner,output,below=of constant0] (Bout) {};
+        \textrightof{Bout}{[$\tau$]};		
+        
+        \node [inner,multiplier,below=of resistor] (constant1) {};
+	    \textrightof{constant1}{$k_b$};
+        
+        \node [inner,input,below=of constant1] (Bin1) {};
+        \textrightof{Bin1}{[$\dot{\phi}$]};
+
+    	\node[rounded corners,draw=black,thick,minimum width=5mm,minimum height=5mm, inner sep=0,left=0.85cm of constant1] (clip) {
+    		\begin{tikzpicture}
+    		    \draw[semithick] (-1.75mm,-1.25mm) -- (0,-1.25mm);
+    		    \draw[semithick] (0,-1.25mm) -- (1.5mm,1.25mm);
+    		    \draw[semithick] (1.5mm,1.25mm) -- (3.25mm,1.25mm);
+            \end{tikzpicture}        	
+    	};
+        \textbelowof{clip}{\tiny{[-12V,+12V]}};
+        
+		\draw [connector] (Bin0) to node[pos=0.8,above,yshift=-0.25cm]{\tiny{+}} (sum);
+		\draw [connector] (sum) to (resistor);
+		\draw [connector] (resistor) to (constant0);
+		\draw [connector] (constant0) to (Bout);
+		\draw [connector] (Bin1) to (constant1);
+		\draw [connector] (constant1) to (clip);
+		\draw [connector] (clip) to node[pos=0.8,left,xshift=0.2cm]{\tiny{-}} (sum);
+    \end{tikzpicture}
+  };
+  \node[outer,state,label=Gleitreibung,right=of B] (C) {
+      \begin{tikzpicture}
+          \node [inner,multiplier] (constant) {};
+          \textaboveof{constant}{$\beta$};
+          
+          \node [inner,input,below=of constant] (Cin0) {};
+          \textrightof{Cin0}{[$\dot{\phi}$]};
+          
+          \node [inner,output,left=of constant] (Cout) {};
+          \textaboveof{Cout}{[$M$]};
+          
+          \draw [connector] (Cin0) to (constant);
+          \draw [connector] (constant) to (Cout);
+  		
+          
+      \end{tikzpicture}
+  };
+  \node[outer,state,below=of B] (D) { Box2D };
+  
+  \draw [connector] (Aout) |- (Bin0);
+  \draw [connector] (Bout) |- (D.10); 
+  \draw [connector] (Cout) |- (D.0); 
+      
+  \draw [connector] (D.180) -| (Ain0);
+  \draw [connector] (D.45) -| (Bin1); 
+  \draw [connector] (D.-10) -| (Cin0); 
+    
+\end{tikzpicture}
+
+

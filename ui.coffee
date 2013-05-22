@@ -33,7 +33,6 @@ class ui
 
       @halftime = not @halftime
 
-
   rotate_point: (cx, cy, angle, p) =>
     #translate point back to origin:origin
     p.x -= cx
@@ -63,26 +62,26 @@ class ui
       d.y*physics.ui.svg_scale
     ).interpolate("linear")
 
-    svg_semni_body = svg.append("svg:path").attr("d",d3line2(contour_original_lowest_detail))
+    svg_semni_body = svg.append("svg:path").attr("d",d3line2(simni.contour_original_lowest_detail))
             .style("stroke-width", 1)
-            .style("stroke", "gray")
+            #.style("stroke", "gray")
             .style("fill", "none")
 
-    svg_semni_arm1 = svg.append("svg:path").attr("d",d3line2(arm1Contour))
+    svg_semni_arm1 = svg.append("svg:path").attr("d",d3line2(simni.arm1Contour))
             .style("stroke-width", 1)
-            .style("stroke", "gray")
+            #.style("stroke", "gray")
             .style("fill", "none")
     svg_joint = svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", "1")
             .style("stroke", "red")
-    svg_semni_arm2 = svg.append("svg:path").attr("d",d3line2(arm2Contour))
+    svg_semni_arm2 = svg.append("svg:path").attr("d",d3line2(simni.arm2Contour))
             .style("stroke-width", 1)
-            .style("stroke", "gray")
+            #.style("stroke", "gray")
             .style("fill", "none")
     svg_joint2 = svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", "1")
             .style("stroke", "red")
-    svg_semni_head = svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", head2[1]*@svg_scale)
+    svg_semni_head = svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", simni.head2[1]*@svg_scale)
             .style("stroke-width", 1)
-            .style("stroke", "gray")
+            #.style("stroke", "gray")
             .style("fill", "none")
 
     #draw body at current position and angle
@@ -93,8 +92,8 @@ class ui
 
     #draw upper arm at first joint that is moved and rotated with the body, then rotated by arm angle
     arm1_joint = new b2Vec2()
-    arm1_joint.x = arm1JointAnchor2.x*@svg_scale #+b_x
-    arm1_joint.y = arm1JointAnchor2.y*@svg_scale #+b_y
+    arm1_joint.x = simni.arm1JointAnchor2.x*@svg_scale #+b_x
+    arm1_joint.y = simni.arm1JointAnchor2.y*@svg_scale #+b_y
     #arm1_joint = @rotate_point(b_x, b_y, body_angle, arm1_joint)
     arm1_joint = @rotate_point(0, 0, body_angle, arm1_joint)
     svg_joint.attr("transform", "translate(" +arm1_joint.x+ "," +arm1_joint.y+ ")")
@@ -102,8 +101,8 @@ class ui
 
     #draw lower arm at second joint that is moved with body and rotated, then rotated by upper arm angle, then by own angle
     arm2_joint = new b2Vec2()
-    arm2_joint.x = arm2JointAnchor2.x*@svg_scale #+b_x
-    arm2_joint.y = arm2JointAnchor2.y*@svg_scale #+b_y
+    arm2_joint.x = simni.arm2JointAnchor2.x*@svg_scale #+b_x
+    arm2_joint.y = simni.arm2JointAnchor2.y*@svg_scale #+b_y
 
     #arm2_joint = @rotate_point(b_x, b_y, body_angle, arm2_joint)
     arm2_joint = @rotate_point(0, 0, body_angle, arm2_joint)
@@ -112,8 +111,8 @@ class ui
     svg_semni_arm2.attr("transform", "rotate(" +arm2_angle*180/Math.PI+ "," +arm2_joint.x+ "," +arm2_joint.y+ ") translate(" +arm2_joint.x+ "," +arm2_joint.y+ ")")
 
     #draw head
-    h_x = head2[0].x*@svg_scale #+b_x
-    h_y = head2[0].y*@svg_scale #+b_y
+    h_x = simni.head2[0].x*@svg_scale #+b_x
+    h_y = simni.head2[0].y*@svg_scale #+b_y
     #svg_semni_head.attr("transform", "rotate(" +body_angle*180/Math.PI+ "," +b_x+ "," +b_y+ ") translate(" +h_x+ "," +h_y+ ")")
     svg_semni_head.attr("transform", "rotate(" +body_angle*180/Math.PI+ "," +0+ "," +0+ ") translate(" +h_x+ "," +h_y+ ")")
 
@@ -204,7 +203,7 @@ class ui
 
     window.getBodyAtMouse = ->
       window.mousePVec = new b2Vec2(mouseX, mouseY)
-      aabb = new b2AABB()
+      aabb = new Box2D.Collision.b2AABB()
       aabb.lowerBound.Set mouseX - 0.001, mouseY - 0.001
       aabb.upperBound.Set mouseX + 0.001, mouseY + 0.001
 
@@ -333,7 +332,7 @@ class ui
     #set ABC learning modes for exploration
     release_bias_hip = 0.4
     release_gf = 0
-    contract_gf_hip = 1.002 #1.003 #1.0025 #1.006
+    contract_gf_hip = 1.001 #1.002 #1.003 #1.0025 #1.006
     gi = 25 #30 #27 #50
     stall_gb = 5
     stall_gf = 0.8
@@ -376,7 +375,7 @@ class ui
 
   set_csl_mode_lower: (kneeCSL, change_select=true) =>
     release_bias_knee = 0.4
-    contract_gf_knee = 1.002 #1.003 #1.0015 #1.006
+    contract_gf_knee = 1.001 #1.002 #1.003 #1.0015 #1.006
     release_gf = 0
     gi = 25 #20 #35 #26 #50
     stall_gb = 5
@@ -522,8 +521,8 @@ class ui
 
     @hsvToRgb h,s,b
 
-  set_draw_graph: (value) =>
-    physics.abc.graph.renderer.draw_graph = value
+  set_graph_animated: (value) =>
+    physics.abc.graph.renderer.draw_graph_animated = value
     physics.abc.graph.renderer.redraw()
 
   set_color_activation: (value) =>
@@ -562,10 +561,11 @@ window.requestAnimFrame = (->
 
 $ ->
     ##after document load: read some values from the ui into variables so the ui sets the defaults
-    p = new physics()
-    #make physics global for external access
-    window.physics = p
-
+    p = new simni.Physics()
+    simni.Ui = ui
     ui = new ui(p)
     p.ui = ui
+
+    #make instances global for external access
+    window.physics = p
     window.ui = ui
