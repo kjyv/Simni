@@ -64,7 +64,7 @@ posture = (function() {
     this.exit_directions = [0, 0, 0, 0];
     this.length = 1;
     this.activation = 1;
-    this.thresholdDistance = 0.2;
+    this.thresholdDistance = 0.15;
   }
 
   posture.prototype.asJSON = function() {
@@ -131,7 +131,7 @@ posture = (function() {
   };
 
   posture.prototype.isCloseExplore = function(a, i, b, j) {
-    return a.isClose(b[j], 0.65);
+    return a.isClose(b[j], 0.45);
   };
 
   return posture;
@@ -484,7 +484,7 @@ postureGraph = (function() {
   };
 
   postureGraph.prototype.diffuseLearnProgress = function() {
-    var activation_in, divisor, e, node, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+    var activation_in, divisor, e, node, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
     if (!(this.nodes.length > 1)) {
       return;
     }
@@ -517,12 +517,13 @@ postureGraph = (function() {
       node.activation_tmp = node.activation_self * 0.7 + activation_in * 0.3;
     }
     _ref2 = this.nodes;
+    _results = [];
     for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
       node = _ref2[_k];
       node.activation = node.activation_tmp;
-      this.arborGraph.getNode(node.name).data.activation = node.activation;
+      _results.push(this.arborGraph.getNode(node.name).data.activation = node.activation);
     }
-    return this.arborGraph.renderer.redraw();
+    return _results;
   };
 
   return postureGraph;
@@ -725,6 +726,7 @@ abc = (function() {
   };
 
   abc.prototype.connectLastPosture = function(p) {
+    var a_p;
     if (this.last_posture) {
       this.last_posture.exit_directions[this.last_dir_index] = p.name;
     }
@@ -734,13 +736,19 @@ abc = (function() {
     p.timestamp = Date.now();
     if (this.last_posture && this.posture_graph.length() > 1) {
       this.addEdge(this.last_posture, p);
-      this.graph.current_node = this.graph.getNode(p.name);
+      a_p = this.graph.getNode(p.name);
+      this.graph.current_node = a_p;
+      a_p.data.world_angles = p.world_angles;
+      a_p.data.positions = p.positions;
       return this.graph.renderer.draw_once();
     }
   };
 
   abc.prototype.savePosture = function(configuration, body, upper_csl, lower_csl) {
     var expected_node, f, found, graph_func, lj, n, new_p, node_name, p, p_expect, parent, pp, uj;
+    if (this.manual_noop) {
+      return;
+    }
     p = new posture(configuration, [upper_csl, lower_csl], body.GetWorldCenter().x);
     uj = physics.upper_joint;
     lj = physics.lower_joint;
@@ -753,39 +761,51 @@ abc = (function() {
         physics.togglePositionController(uj);
         physics.togglePositionController(lj);
         console.log("collected node " + this.last_expected_node.name + " with position controller, back to csl");
+        ui.set_csl_mode_upper(this.last_expected_node.csl_mode[0]);
+        ui.set_csl_mode_lower(this.last_expected_node.csl_mode[1]);
         $("#toggle_csl").click();
+        found = [this.last_expected_node.name - 1];
       } else {
         console.log("warning, could not collect node with position controller. either we fell off the manifold or the context changed. continuing somewhere else.");
         this.switch_to_random_release_after_position(uj);
         this.switch_to_random_release_after_position(lj);
+        this.last_expected_node = null;
         return;
       }
       this.last_expected_node = null;
     } else if (physics.upper_joint.position_controller_active && physics.lower_joint.position_controller_active && this.last_test_posture) {
       if (p.isClose(this.last_test_posture)) {
-        console.log("found a posture that was too far away for thresholding but was reachable");
+        console.log("arrived in posture that was too far away for thresholding but was reachable");
         found = [this.last_test_posture.name - 1];
         this.last_test_posture = null;
+        physics.togglePositionController(uj);
+        physics.togglePositionController(lj);
+        $("#toggle_csl").click();
       } else {
         console.log("candidate was not a reachable posture, creating new posture for previously found one");
-        node_name = this.posture_graph.addPosture(this.last_test_posture);
-        this.connectLastPosture(p);
+        node_name = this.posture_graph.addPosture(this.last_detected);
+        this.connectLastPosture(this.last_detected);
         this.switch_to_random_release_after_position(uj);
         this.switch_to_random_release_after_position(lj);
         this.last_test_posture = null;
+        this.last_detected = null;
         return;
       }
+    }
+    expected_node = void 0;
+    if ((this.last_posture != null) && this.last_posture.exit_directions[this.last_dir_index] !== 0) {
+      expected_node = this.posture_graph.getNodeByName(this.last_posture.exit_directions[this.last_dir_index]);
     }
     if (!found) {
       found = this.searchSubarray(p, this.posture_graph.nodes, p.isCloseExplore);
     }
-    if (found.length) {
+    if (found.length && !(expected_node != null)) {
       parent = this;
       found.sort(function(a, b) {
         var aa, bb;
         aa = parent.posture_graph.getNodeByIndex(a);
         bb = parent.posture_graph.getNodeByIndex(b);
-        return aa.euclidDistance(p) < bb.euclidDistance(p);
+        return aa.euclidDistance(p) - bb.euclidDistance(p);
       });
       pp = this.posture_graph.getNodeByIndex(found[0]);
       if (p.thresholdDistance < pp.euclidDistance(p)) {
@@ -795,19 +815,14 @@ abc = (function() {
         physics.togglePositionController(uj);
         physics.togglePositionController(lj);
         this.last_test_posture = pp;
+        this.last_detected = p;
         return;
       }
-    }
-    expected_node = void 0;
-    if ((this.last_posture != null) && this.last_posture.exit_directions[this.last_dir_index] !== 0) {
-      expected_node = this.posture_graph.getNodeByName(this.last_posture.exit_directions[this.last_dir_index]);
     }
     if (!found || ((this.last_posture != null) && (expected_node != null) && this.posture_graph.getNodeByIndex(found[0]).name !== expected_node.name)) {
       if (expected_node) {
         console.log("we should have arrived in node " + expected_node.name + ", but thresholding didn't find it");
         console.log("trying to collect with position controller");
-        uj = physics.upper_joint;
-        lj = physics.lower_joint;
         uj.set_position = expected_node.configuration[1];
         lj.set_position = expected_node.configuration[2];
         physics.togglePositionController(uj);
@@ -1009,6 +1024,7 @@ abc = (function() {
             }
             found_index = this.last_posture.exit_directions.indexOf(0, found_index + 1);
           }
+          console.log("leaving node in direction " + next_dir_index);
         } else {
           if (!(next_dir_index != null) || this.last_posture.exit_directions[next_dir_index] === -1) {
             go_this_edge = this.last_posture.edges_out[0];
@@ -1027,7 +1043,7 @@ abc = (function() {
                   next_dir_index = dir;
                 }
               }
-              console.log("take first non stalling direction, this should probably not happen");
+              console.log("warning: take first non stalling direction, this should probably not happen");
             } else {
               next_dir_index = dir_index_for_modes(this.last_posture.csl_mode, go_this_edge.target_node.csl_mode);
               console.log("following the edge " + go_this_edge.start_node.name + "->" + go_this_edge.target_node.name + " because of largest activation.");
@@ -1051,17 +1067,19 @@ abc = (function() {
       this.last_dir_index = next_dir_index;
       this.last_joint_index = joint_index;
       this.transition_mode = current_mode.clone();
-      return this.transition_mode[joint_index] = next_mode;
+      this.transition_mode[joint_index] = next_mode;
+      return this.graph.renderer.redraw();
     } else if (this.mode_strategy === "random") {
       return set_random_mode(current_mode);
     } else if (this.mode_strategy === "manual") {
+      this.manual_noop = true;
       return 1;
     }
   };
 
   abc.prototype.limitCSL = function(upper_joint, lower_joint) {
     var limit, mc;
-    limit = 15;
+    limit = 10;
     if (upper_joint.csl_active && upper_joint.csl_mode === "c") {
       mc = upper_joint.motor_control;
       if (mc > limit) {

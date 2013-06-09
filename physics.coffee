@@ -33,17 +33,17 @@ class physics
 
     fixDef = new b2FixtureDef
     fixDef.density = 10
-    fixDef.friction = 0.5
-    fixDef.restitution = 0.1
+    fixDef.friction = 0.1
+    fixDef.restitution = 0.3
     @fixDef = fixDef
 
     #create ground
-    @ground_height = 0.03
+    @ground_height = 0.02
     @ground_width = 50
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_staticBody
     bodyDef.position.x = 0
-    bodyDef.position.y = 1.1
+    bodyDef.position.y = 0.7
     bodyDef.linearDamping = 50
 
     fixDef.shape = new b2PolygonShape
@@ -59,7 +59,7 @@ class physics
     #setup debug draw
     @debugDraw = new b2DebugDraw()
     @debugDraw.SetSprite $("#simulation canvas")[0].getContext("2d")
-    @debugDraw.SetDrawScale 260
+    @debugDraw.SetDrawScale 450
     @debugDraw.SetFillAlpha 0
     @debugDraw.SetLineThickness 1.0
     @debugDraw.AppendFlags b2DebugDraw.e_shapeBit
@@ -72,7 +72,7 @@ class physics
     @recordPhase = false  #if we log state data for saving later
     @startLog = true      #if we start a new log
     @logged_data = []     #where we log our data
-    @beta = 0             #friction coefficient
+    @beta = 0             #friction coefficient (still comes from html file)
 
     @abc = new simni.Abc()
 
@@ -91,7 +91,7 @@ class physics
 
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_staticBody
-    bodyDef.position.Set 2, 0.8
+    bodyDef.position.Set 1, 0.8
     box = @world.CreateBody bodyDef
     box.CreateFixture fixDef
 
@@ -107,7 +107,7 @@ class physics
 
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_staticBody
-    bodyDef.position.Set 2, 0.8
+    bodyDef.position.Set 1, 0.8
     box = @world.CreateBody bodyDef
     box.CreateFixture fixDef
 
@@ -132,7 +132,6 @@ class physics
     @body = @world.CreateBody(bodyDef)
     line = @body.CreateFixture(@fixDef)
 
-    #initialise friction 
     @body.z2 = 0
 
     #create mass circle
@@ -183,7 +182,6 @@ class physics
     @body = @world.CreateBody(bodyDef)
     line = @body.CreateFixture(@fixDef)
 
-    #initialise friction
     @body.z2 = 0
 
     #lower rotating joint
@@ -222,7 +220,7 @@ class physics
     @body2 = @world.CreateBody(bodyDef)
     line2 = @body2.CreateFixture(@fixDef)
 
-    #initialise friction and motor state
+    #initialise motor state
     @body2.z2 = 0
 
     #upper rotating joint
@@ -265,16 +263,16 @@ class physics
     #second arm: 177 g (105+72) 
     #min/max angle of lower arm: -3.2421 and 1.90816 
 
-    bodyDensity = 0.96  #0.99
-    bodyFriction = 0.25
+    bodyDensity = 3.96
+    bodyFriction = 0.5
     bodyRestitution = 0.1
 
-    upperArmDensity = 4.2 #=135g   #2.06 #=63g   #4.35
-    upperArmFriction =  0.25
+    upperArmDensity = 17.45 #=135g 
+    upperArmFriction =  0.5
     upperArmRestitution = 0.1
 
-    lowerArmDensity = 11.35 #7 #=105g #11.35 #=185g #10.9 #=177g  
-    lowerArmFriction = 0.25
+    lowerArmDensity = 43.4 #=177g  
+    lowerArmFriction = 0.5
     lowerArmRestitution = 0.2
 
     #create body
@@ -290,13 +288,14 @@ class physics
     @fixDef.filter.groupIndex = -1  #negative groups never collide with each other
     @fixDef.shape = new b2PolygonShape
     #@fixDef.shape.SetAsArray simni.contour, simni.contour.length
+    #@fixDef.shape.SetAsArray simni.contour_original_low_detail, simni.contour_original_low_detail.length
 
     #for fixture in contour
     #  @fixDef.shape.SetAsArray(fixture, fixture.length)
     #  @body.CreateFixture(@fixDef)
 
-    #if not e = b2Separator.Validate(simni.contour_original)
-    b2Separator.Separate(@body, @fixDef, simni.contour_original_low_detail, 1000, 0.177, 0.192)
+    #if not e = b2Separator.Validate(simni.contour_original_low_detail)
+    b2Separator.Separate(@body, @fixDef, simni.contour_original_low_detail, 1000, 0.177*0.5, 0.192*0.5)
     ###
     #else
       console.log "can't import contour, validator error " + e
@@ -356,10 +355,11 @@ class physics
     @body2.SetMassData(md)
     @body2.SetPositionAndAngle(new b2Vec2(simni.arm1Center.x, simni.arm1Center.y), 0)
 
-    #initialise friction and motor state
+    #initialise motor state
     @body2.z2 = 0
 
     #add motor mass separately to imitate moment of inertia different from only COM based
+    #(gives problems)
     ###
     @fixDef2.density = 14.2
     @fixDef2.shape = new b2CircleShape
@@ -443,7 +443,7 @@ class physics
     #@fixDef3.filter.groupIndex = -1
     #@body3.CreateFixture(@fixDef3)
 
-    #initialise friction and motor state
+    #initialise motor state
     @body3.z2 = 0
 
     #lower rotating joint
@@ -536,7 +536,7 @@ class physics
     vel = gi * angle_diff
     sum = vel + bodyJoint.last_integrated
     bodyJoint.last_integrated = gf * sum
-    return (sum * gain) + gb
+    return @clip((sum * gain) + gb, 1)*12
 
   Bounce: (vs, angle_diff, bodyJoint) =>
     #constant velocity controller that moves until angle limit is hit
@@ -580,17 +580,20 @@ class physics
   ##### motor calculation #####
 
   #motor constants
-  km = 1.393        #(10.7 / 1000) * 194.57 * 0.625   #torque constant, km_RE-MAX = 0.0107
+  km = 1.8737       #(10.7 / 1000) * 194.57 * 0.9   #torque constant, km_RE-MAX = 0.0107
   kb = 2.563        #back emf, RE-MAX 889/(60*2*%pi*180) * 194.57 = 2.549
-  R = 9.59        #R_RE-MAX = 8.3 ohm, R_65 = R_25 * (1+0.0039*(65-25)) (assume mean temp of 65°)
+  R = 9.59          #R_RE-MAX = 8.3 ohm, R_65 = R_25 * (1+0.0039*(65-25)) (assume mean temp of 65°)
   R_inv = 1/R
   U_in = 0
+  max_V = 12        #limit to max battery voltage of 12 V
   updateMotor: (bodyJoint) =>
     # motor model
-    U_in = bodyJoint.motor_control
-    bodyJoint.I_t = @clip(U_in - (kb*(-bodyJoint.GetJointSpeed())), 12)*(R_inv)   #12: limit to max battery voltage
+    U_in = @clip(bodyJoint.motor_control, max_V)
+    bodyJoint.angle_speed = (0.4*bodyJoint.GetJointSpeed()+0.6*bodyJoint.angle_speed)
+    bodyJoint.I_t = (U_in - (kb*-bodyJoint.angle_speed))*(R_inv)
     bodyJoint.motor_torque = km * bodyJoint.I_t
-    bodyJoint.m_applyTorque += bodyJoint.motor_torque #* bodyJoint.csl_sign
+    #bodyJoint.motor_torque = @clip(bodyJoint.motor_control, max_V)*R_inv*km
+    bodyJoint.m_applyTorque += bodyJoint.motor_torque
     return
 
   ##### friction calculation #####
@@ -601,9 +604,9 @@ class physics
   applyFriction: (bodyJoint) =>
     v = -bodyJoint.GetJointSpeed()
     #fluid/gliding friction
-    fg = -v * @beta * 5
+    fg = -v * @beta
 
-    #dry friction (box2d joint motor provides dry and sticky already)
+    #dry friction (but box2d joint motor provides dry and sticky already)
     #fd = @sgn(-v) * (@beta)
 
     bodyJoint.m_applyTorque += fg #+ fd
@@ -753,7 +756,7 @@ class physics
 
         @world.Step(
           dt,              #timestep (advance timestep ms further in this step)
-          10,              #velocity iterations
+          50,              #velocity iterations
           10               #position iterations
         )
         i--
@@ -768,7 +771,8 @@ class physics
       draw_motor_torque()
 
     window.stats.end()
-    requestAnimFrame @update
+    if @ui.realtime
+      requestAnimFrame @update
 
 #put class in global namespace 
 window.simni.Physics = physics

@@ -103,6 +103,13 @@ input[type="range"] {
     width: 416px;
 }
 
+#simulation canvas {
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 #viewport_svg {
     width: 1400px;
     height: 850px;
@@ -184,7 +191,7 @@ line {
 }
 
 text {
-  font-family: Verdana; sans-serif;
+  font-family: Verdana, sans-serif;
   font-size: 7pt;
   text-anchor: middle;
   fill: #333333;

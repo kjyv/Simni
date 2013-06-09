@@ -56,10 +56,13 @@ Box2D\\
 
 Friction\\
 
+Joint Motor von Box2D hat Paramter maxTorque und setVelocity 0, so dass dieser versucht, die Geschwindigkeit auf 0 zu halten, so lange die eingehenden Kräfte nicht größer als maxTorque werden, wir haben eine Haftreibung. Wenn die eingehende Kraft größer ist, wird die maxTorque effektiv abgezogen und dadurch eine trockene/konstante Reibung erzeugt.
+Der Übergang weist aber damit keinen Stribeck-Effekt auf, der ÜBergang ist (wie beim Legomotor) sehr sauber.
+
 RE-MAX 17 ist der Name des Motors, das sind also Konstanten aus dem Datenblatt.
 Da der Servo mit Getriebe usw. kommt, kann man die aber nicht direkt nehmen.
 Zusätzlich haben wir aber auch ein paar Daten gemessen und damit bessere Daten als die aus dem Datenblatt. In der Tat ist es wichtig, die Formeln auch mal zu sehen bzw. zu benennen, die den Rechnungen da zu Grunde liegen, Teilweise sind die aber auch im Maxon-Material enthalten.
-km wird umgerechnet, da die Einheit im Datenblatt nicht brauchbar ist ($mNm*A^-1$, die Physik will Nm), dann mit dem Übersetzungsfaktor des Getriebes (hat Mario ermittelt, ich glaube durch Zahnradzählen) multipliziert und dem Wirkungsgrad (der auch aus Messungen von Torsten kommt).
+km des Motors wird umgerechnet, da die Einheit im Datenblatt nicht brauchbar ist ($mNm*A^-1$, die Physik will Nm), dann mit dem Übersetzungsfaktor des Getriebes (hat Mario ermittelt, ich glaube durch Zahnradzählen) multipliziert und dem Wirkungsgrad (der auch aus Messungen von Torsten kommt). (Wirkungsgrad ist Messgröße, die sich ergibt. Kann aber so nicht reinmultipliziert werden.).
 Kb muss umgerechnet werden, da es im Datenblatt in rpm/V=(r/min)/V angegeben ist und wir aber rad/sec wollen. Umdrehung ist Einheitslos und eine entspricht 2*pi, eine Minute hat 60 Sekunden, dann noch den Übersetzungsfaktor. Die Zahl die Vorne steht, ist auf Korsika experimentell ermittelt worden (allerdings mit dem Spannungsmodus, nicht PWM. Das müsste/könnte man jetzt nochmal bei Torsten erfragen, ob sich die Werte geändert haben, aber viel wirds nicht sein).
 R ist der Widerstand aus dem Datenblatt (der für 25C gilt) mit einer Formel aus dem Maxon-Material und der Temperaturkonstante für Kupfer für 65C umgerechnet. 
 Und ja, Semniakkus haben nur drei Zellen, also wie ich heute gelernt hab kommen da maximal genau 4,2V*3=12,6V raus.

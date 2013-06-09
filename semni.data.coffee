@@ -2,7 +2,7 @@
 b2Vec2 = Box2D.Common.Math.b2Vec2
 
 #data coming from PhysicsEditor
-ptm_ratio = simni.ptm_ratio = 1500
+ptm_ratio = simni.ptm_ratio = 1500*2
 simni.contour = [
   [   new b2Vec2(276/ptm_ratio, 501/ptm_ratio)  ,  new b2Vec2(277/ptm_ratio, 487/ptm_ratio)  ,  new b2Vec2(293/ptm_ratio, 461/ptm_ratio)  ,  new b2Vec2(334/ptm_ratio, 429/ptm_ratio)  ,  new b2Vec2(341/ptm_ratio, 568/ptm_ratio)  ,  new b2Vec2(293/ptm_ratio, 529/ptm_ratio)  ,  new b2Vec2(280/ptm_ratio, 515/ptm_ratio)  ] ,
                                                 [   new b2Vec2(293/ptm_ratio, 461/ptm_ratio)  ,  new b2Vec2(277/ptm_ratio, 487/ptm_ratio)  ,  new b2Vec2(282/ptm_ratio, 474/ptm_ratio)  ] ,
@@ -69,7 +69,10 @@ simni.head = [
 
 #original cutting data outline, with some points deleted
 #these have y +/- swapped
-ptm_ratio2 = simni.ptm_ratio2 = 16890
+
+#scaling factor from solid works units, semni x range is 0 to 10000
+#(we want box2d units where 1.0 equals 1m)
+ptm_ratio2 = simni.ptm_ratio2 = 16890 * 2
 
 simni.contour_original = [
   new b2Vec2(157/ptm_ratio2, 2686/ptm_ratio2),
@@ -138,7 +141,6 @@ simni.contour_original = [
   new b2Vec2(14/ptm_ratio2, 2222/ptm_ratio2),
   new b2Vec2(16/ptm_ratio2, 2214/ptm_ratio2),
   new b2Vec2(18/ptm_ratio2, 2206/ptm_ratio2),
-  new b2Vec2(20/ptm_ratio2, 2198/ptm_ratio2),
   new b2Vec2(23/ptm_ratio2, 2191/ptm_ratio2),
   new b2Vec2(26/ptm_ratio2, 2183/ptm_ratio2),
   new b2Vec2(28/ptm_ratio2, 2175/ptm_ratio2),
@@ -1324,6 +1326,7 @@ for p in simni.arm2Contour
   p.x = p.x - simni.arm2JointAnchor2.x
   p.y = -p.y + simni.arm2JointAnchor2.y
 
+#center point and radius
 simni.head2 = [
   new b2Vec2(8600/ptm_ratio2,2300/ptm_ratio2),
   1400/ptm_ratio2

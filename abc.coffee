@@ -29,7 +29,7 @@ class posture   #i.e. node
     @exit_directions = [0,0,0,0]   #h+,h-,k+,k- : list of the target nodes for each direction of each joint
     @length = 1  #quirk for searchSubarray
     @activation = 1
-    @thresholdDistance = 0.2       #the euclidian distance that is considered to be small enough to say two postures are the same
+    @thresholdDistance = 0.15       #the euclidian distance that is considered to be small enough to say two postures are the same
 
   asJSON: =>
     #prevent circular references
@@ -65,7 +65,7 @@ class posture   #i.e. node
   #comparator for exploring
   isCloseExplore: (a,i, b,j) =>
     #TODO: also consider e.g. r+,s+ and r+,c equal. test that properly, might produce weird results...
-    a.isClose(b[j], 0.65)
+    a.isClose(b[j], 0.45)
 
 class transition  #i.e. edge
   constructor: (start_node, target_node) ->
@@ -353,7 +353,6 @@ class postureGraph
     for node in @nodes
       node.activation = node.activation_tmp
       @arborGraph.getNode(node.name).data.activation = node.activation
-    @arborGraph.renderer.redraw()
 
 class abc
   constructor: ->
@@ -535,10 +534,15 @@ class abc
       @addEdge @last_posture, p
 
       #update graph render stuff
-      @graph.current_node = @graph.getNode p.name
+      a_p = @graph.getNode p.name
+      @graph.current_node = a_p
+      a_p.data.world_angles = p.world_angles
+      a_p.data.positions = p.positions
       @graph.renderer.draw_once()
 
   savePosture: (configuration, body, upper_csl, lower_csl) =>
+    if @manual_noop
+      return
     #create temporary posture object
     p = new posture(configuration, [upper_csl, lower_csl], body.GetWorldCenter().x)
 
@@ -566,7 +570,10 @@ class abc
 
         #enable csl again
         #this will/should use the same mode that didn't reach this node
+        ui.set_csl_mode_upper @last_expected_node.csl_mode[0]
+        ui.set_csl_mode_lower @last_expected_node.csl_mode[1]
         $("#toggle_csl").click()
+        found = [@last_expected_node.name-1]
       else
         #this could also mean there is indeed another position in the
         #same direction. could also be another situation now
@@ -575,6 +582,7 @@ class abc
         #(so that way we simply go on and don't make a connection to the next node)
         @switch_to_random_release_after_position uj
         @switch_to_random_release_after_position lj
+        @last_expected_node = null
         return
 
       @last_expected_node = null
@@ -583,32 +591,44 @@ class abc
     #also, if we are not in the possible posture, we have to create a new node at the before detected one (it is indeed new)
     else if physics.upper_joint.position_controller_active and physics.lower_joint.position_controller_active and @last_test_posture
       if p.isClose(@last_test_posture)
-        console.log("found a posture that was too far away for thresholding but was reachable")
+        console.log("arrived in posture that was too far away for thresholding but was reachable")
         found = [@last_test_posture.name-1]
+        #TODO: merge the previously detected posture and the one we have to get a mean
         @last_test_posture = null
+
+        #re-enable csl
+        physics.togglePositionController(uj)
+        physics.togglePositionController(lj)
+        $("#toggle_csl").click()
       else
         #create previous posture as new node
         console.log("candidate was not a reachable posture, creating new posture for previously found one")
-        node_name = @posture_graph.addPosture @last_test_posture
-        @connectLastPosture(p)
+        node_name = @posture_graph.addPosture @last_detected
+        @connectLastPosture(@last_detected)
 
         #continue with csl whereever we landed instead
         @switch_to_random_release_after_position uj
         @switch_to_random_release_after_position lj
         @last_test_posture = null
+        @last_detected = null
         return
 
-    #search for current posture in all the nodes that we already have (using larger threshold)
+    #check if there is a posture that we would have expected from the last posture and the last direction we went
+    expected_node = undefined
+    if @last_posture? and @last_posture.exit_directions[@last_dir_index] isnt 0
+      expected_node = @posture_graph.getNodeByName(@last_posture.exit_directions[@last_dir_index])
+
+    #search for detected posture in all the nodes that we already have (using larger threshold)
     if not found
       found = @searchSubarray(p, @posture_graph.nodes, p.isCloseExplore)
 
     #take closest found posture and try to reach it with position control
-    if found.length
+    if found.length and not expected_node?
       parent = @
       found.sort (a,b) ->
         aa = parent.posture_graph.getNodeByIndex(a)
         bb = parent.posture_graph.getNodeByIndex(b)
-        aa.euclidDistance(p) < bb.euclidDistance(p)
+        aa.euclidDistance(p) - bb.euclidDistance(p)
 
       #if the closest existing posture is further away than safe error range (0.25) but was found with larger error range
       #we try to reach it with the position controller
@@ -621,12 +641,8 @@ class abc
         physics.togglePositionController(uj)
         physics.togglePositionController(lj)
         @last_test_posture = pp
+        @last_detected = p
         return
-
-    #check if there is a posture that we would have expected from the last posture and the last direction we went
-    expected_node = undefined
-    if @last_posture? and @last_posture.exit_directions[@last_dir_index] isnt 0
-      expected_node = @posture_graph.getNodeByName(@last_posture.exit_directions[@last_dir_index])
 
     #if we found no posture (so we would create a new one) but expected one or the one we found is not the one we expected from
     #the graph, we try to reach it explicitly (i.e. we are close to the attractor already)
@@ -635,9 +651,7 @@ class abc
         console.log("we should have arrived in node "+ expected_node.name + ", but thresholding didn't find it")
         console.log("trying to collect with position controller")
 
-        #try to go to this posture with pos controller and see if next detected posture is the expected one      
-        uj = physics.upper_joint
-        lj = physics.lower_joint
+        #try to go to this posture with pos controller and see if next detected posture is the expected one
         uj.set_position = expected_node.configuration[1]
         lj.set_position = expected_node.configuration[2]
         #deactivate csl
@@ -826,6 +840,7 @@ class abc
               if Math.floor(Math.random() / 0.5)
                 break
             found_index = @last_posture.exit_directions.indexOf 0, found_index+1
+          console.log("leaving node in direction " + next_dir_index)
         else
           #we went all directions already, take one with largest activation
           if not next_dir_index? or @last_posture.exit_directions[next_dir_index] is -1
@@ -840,7 +855,7 @@ class abc
               #if we didn't find an edge (i.e. there are no outgoing edges),
               #get first one that isn't stalling
               next_dir_index = dir for dir in @last_posture.exit_directions when dir > -1
-              console.log("take first non stalling direction, this should probably not happen")
+              console.log("warning: take first non stalling direction, this should probably not happen")
             else
               next_dir_index = dir_index_for_modes @last_posture.csl_mode, go_this_edge.target_node.csl_mode
               console.log("following the edge "+go_this_edge.start_node.name+"->"+go_this_edge.target_node.name+" because of largest activation.")
@@ -865,16 +880,19 @@ class abc
       @transition_mode = current_mode.clone()
       @transition_mode[joint_index] = next_mode
 
+      @graph.renderer.redraw()
+
     else if @mode_strategy is "random"
       set_random_mode current_mode
 
     else if @mode_strategy is "manual"
       #don't do anything
+      @manual_noop = true
       1
 
   limitCSL: (upper_joint, lower_joint) =>
     # if csl goes against limit, set to stall mode (hold with small bias)
-    limit = 15
+    limit = 10
     if upper_joint.csl_active and upper_joint.csl_mode is "c"
       mc = upper_joint.motor_control
       if mc > limit

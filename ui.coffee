@@ -5,8 +5,9 @@ class ui
     @draw_graphics = true
     @physics = physics
     @init()
-    @halftime = true
-    @svg_scale = 100
+    @halftime = true   #draw only every second frame of the physic bodies
+    @svg_scale = 200
+    @realtime = false
 
   update: =>
       if @draw_graphics and @halftime
@@ -149,9 +150,6 @@ class ui
     @physics.w0_abs = ($("#w0_abs").attr("checked") isnt undefined)
     @physics.w1_abs = ($("#w1_abs").attr("checked") isnt undefined)
 
-    #request first frame from browser to start update cycle
-    requestAnimFrame @physics.update
-
     #fps counter
     window.stats = new Stats()
     window.stats.setMode 0
@@ -160,6 +158,9 @@ class ui
     window.stats.domElement.style.left = "0px"
     window.stats.domElement.style.top = "0px"
     document.body.appendChild window.stats.domElement
+
+    #request first frame from browser to start update cycle (depends on realtime option)
+    @set_realtime @realtime
 
     # stuff to handle mouse manipulation
     window.mouseX = undefined
@@ -330,33 +331,39 @@ class ui
 
   set_csl_mode_upper: (hipCSL, change_select=true) =>
     #set ABC learning modes for exploration
-    release_bias_hip = 0.4
+    release_bias_hip = 0.02
     release_gf = 0
-    contract_gf_hip = 1.001 #1.002 #1.003 #1.0025 #1.006
-    gi = 25 #30 #27 #50
-    stall_gb = 5
-    stall_gf = 0.8
+    release_gi = 0
+    contract_gf_hip = 1.01 #1.003 #1.0025 #1.006
+    contract_gi = 3 #30 #27 #50
+    stall_gb = 0.3
+    stall_gf = 0 #0.8
 
     if hipCSL is "r+"
       gf = release_gf
       gb = release_bias_hip
-      @physics.upper_joint.csl_prefill = 0.5
+      gi = release_gi
+      @physics.upper_joint.csl_prefill = 0 #0.5
     else if hipCSL is "r-"
       gf = release_gf
       gb = -release_bias_hip
-      @physics.upper_joint.csl_prefill = -0.5
+      gi = release_gi
+      @physics.upper_joint.csl_prefill = 0 #-0.5
     else if hipCSL is "c"
       gf = contract_gf_hip
       gb = 0
+      gi = contract_gi
       #prefill integrator to pre-determine direction
       @physics.upper_joint.last_integrated = @physics.upper_joint.csl_prefill
     else if hipCSL is "s+"
       gf = stall_gf
       gb = stall_gb
+      gi = release_gi
       @physics.upper_joint.last_integrated = 0
     else if hipCSL is "s-"
       gf = stall_gf
       gb = -stall_gb
+      gi = release_gi
       @physics.upper_joint.last_integrated = 0
 
     if change_select
@@ -373,33 +380,42 @@ class ui
     @physics.upper_joint.gb = gb
     @physics.upper_joint.csl_mode = hipCSL
 
+    #reset manual mode noop if enabled
+    @physics.abc.manual_noop = false
+
   set_csl_mode_lower: (kneeCSL, change_select=true) =>
-    release_bias_knee = 0.4
-    contract_gf_knee = 1.001 #1.002 #1.003 #1.0015 #1.006
+    release_bias_knee = 0.02
     release_gf = 0
-    gi = 25 #20 #35 #26 #50
-    stall_gb = 5
-    stall_gf = 0.8
+    release_gi = 0
+    contract_gf_knee = 1.01 #1.003 #1.0015 #1.006
+    contract_gi = 3 #35 #26 #50
+    stall_gb = 0.3
+    stall_gf = 0 #0.8
 
     if kneeCSL is "r+"
       gf = release_gf
       gb = release_bias_knee
-      @physics.lower_joint.csl_prefill = 0.5
+      gi = release_gi
+      @physics.lower_joint.csl_prefill = 0 #0.5
     else if kneeCSL is "r-"
       gf = release_gf
       gb = -release_bias_knee
-      @physics.lower_joint.csl_prefill = -0.5
+      gi = release_gi
+      @physics.lower_joint.csl_prefill = 0 #-0.5
     else if kneeCSL is "c"
       gf = contract_gf_knee
       gb = 0
+      gi = contract_gi
       @physics.lower_joint.last_integrated = @physics.lower_joint.csl_prefill
     else if kneeCSL is "s+"
       gf = stall_gf
       gb = stall_gb
+      gi = release_gi
       @physics.lower_joint.last_integrated = 0
     else if kneeCSL is "s-"
       gf = stall_gf
       gb = -stall_gb
+      gi = release_gi
       @physics.lower_joint.last_integrated = 0
 
     if change_select
@@ -418,6 +434,9 @@ class ui
 
     if physics.abc.mode_strategy is "manual"
       physics.abc.trajectory = []
+
+    #reset manual mode noop if enabled
+    @physics.abc.manual_noop = false
 
   toggleRecorder: =>
     @physics.startLog = true
@@ -520,6 +539,16 @@ class ui
     b = 0.9           #brightness
 
     @hsvToRgb h,s,b
+
+  set_realtime: (value) =>
+    @realtime = value
+
+    #we were drawing with setInterval before, cancel the interval timer 
+    if @realtime
+      clearInterval(@realtime_timer)
+      physics.update()
+    else
+      @realtime_timer = setInterval(@physics.update, 1)
 
   set_graph_animated: (value) =>
     physics.abc.graph.renderer.draw_graph_animated = value

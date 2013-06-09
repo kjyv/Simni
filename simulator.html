@@ -84,7 +84,10 @@ Neurorobotics Research Laboratory, Berlin
                     <option value="1">Single Pendulum</option>
                     <option value="2">Double Pendulum</option>
                     <option value="3" selected="selected">Semni</option>
-                </select><br/>
+                </select>
+                <input type="checkbox" id="animate_realtime" value="no" onchange="ui.set_realtime(this.checked)"/>
+                <label for="animate_realtime">Simulate in Realtime (~60 fps)</label>
+                <br/>
                 <script type="text/coffeescript">
                     $ ->
                         #create physic bodies depending on selection
@@ -155,7 +158,7 @@ Neurorobotics Research Laboratory, Berlin
                 </script>
                 <button id="toggle_pause" class="toggle-button" onClick="physics.run = !physics.run; physics.update();">pause/run simulation [p]</button> 
                 <button id="next_step" onClick="physics.step = true; physics.update();">next step(s) [n]</button><br/>
-                <button id="toggle_csl" class="toggle-button">toggle CSL [t]</button>
+                <button id="toggle_csl" class="toggle-button">toggle CSL [c]</button>
                 <button id="toggle_bounce" class="toggle-button">toggle bounce controller [b]</button>
                 <script type="text/coffeescript">
                     $ ->
@@ -176,8 +179,8 @@ Neurorobotics Research Laboratory, Berlin
                 <br/>
 
                 <div style="display: none;">
-                <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.030" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
-                <span id="friction_val">0.035</span><br/>
+                <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.010" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
+                <span id="friction_val">0.010</span><br/>
                 </div>
 
                 <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="30" style="width:60px;"/>
@@ -199,6 +202,7 @@ Neurorobotics Research Laboratory, Berlin
                 <label for="mode_param_upper">csl mode hip</label> <input id="mode_param_upper" type="range" min="-2" max="3" value="1.2" step="0.005" onchange="if(physics.upper_joint){ui.map_mode(physics.upper_joint)}" />
                 <span id="mode_val_upper"></span> <span id="csl_mode_name_upper">contraction</span><br/>
 
+                <hr/>
 
                 <label for="gi_param_lower">g<sub>i</sub></label> <input id="gi_param_lower" type="text" value="30" style="width:60px;"/>
                 <label for="gf_param_lower">g<sub>f</sub></label> <input id="gf_param_lower" type="text" value="0.1" style="width:60px;"/>
@@ -325,7 +329,7 @@ Neurorobotics Research Laboratory, Berlin
                 <label for="graph_animated">Animate graph (slow) [a]</label>
                 <input type="checkbox" id="graph_animated" value="yes" checked onchange="ui.set_graph_animated(this.checked)"/></br>
 
-                <label for="graph_pause_drawing">Pause graph updating between new poses</label>
+                <label for="graph_pause_drawing">Pause graph layouting between new poses</label>
                 <input type="checkbox" id="graph_pause_drawing" value="yes" checked onchange="ui.set_pause_drawing(this.checked)"/></br>
 
                 <label for="graph_activation">Show node activation (discovery possibilities)</label>
@@ -338,7 +342,7 @@ Neurorobotics Research Laboratory, Berlin
                 <input type="checkbox" id="graph_draw_semnis" value="yes" checked onchange="ui.set_draw_semni(this.checked)"/></br>
 
                 <label for="graph_draw_edge_labels">Show transition labels</label>
-                <input type="checkbox" id="graph_draw_edge_labels" value="no" checked onchange="ui.set_draw_edge_labels(this.checked)"/></br>
+                <input type="checkbox" id="graph_draw_edge_labels" value="no" onchange="ui.set_draw_edge_labels(this.checked)"/></br>
 
                 <label for="graph_save_periodically">Save graph with every new posture</label>
                 <input type="checkbox" id="graph_save_periodically" value="no" onchange="ui.set_save_periodically(this.checked)"/></br>
@@ -535,10 +539,10 @@ Neurorobotics Research Laboratory, Berlin
                 }
             }
 
-            for(i=0; i<3; i=i+0.003){
+            for(i=0; i<1; i=i+0.001){
                 xdata2.push(i)
             }
-            brd2 = JXG.JSXGraph.initBoard('motor_torque_plot', {boundingbox:[0,2,5,-2], axis:true})
+            brd2 = JXG.JSXGraph.initBoard('motor_torque_plot', {boundingbox:[0,2,1.1,-2], axis:true})
             function draw_motor_torque(){
                 if(motor_torque_enabled){
                     if (ydata2.length==1000) {
@@ -624,7 +628,7 @@ Neurorobotics Research Laboratory, Berlin
                 $("#gain_param_upper").keyup(handle_enter)
 
                 //keyboard shortcuts
-                $(document).bind('keydown', 't', function (evt){
+                $(document).bind('keydown', 'c', function (evt){
                    $('#toggle_csl').click(); return false;
                 })
 
