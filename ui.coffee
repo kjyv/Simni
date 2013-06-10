@@ -331,7 +331,7 @@ class ui
 
   set_csl_mode_upper: (hipCSL, change_select=true) =>
     #set ABC learning modes for exploration
-    release_bias_hip = 0.02
+    release_bias_hip = 0.025
     release_gf = 0
     release_gi = 0
     contract_gf_hip = 1.01 #1.003 #1.0025 #1.006
@@ -343,12 +343,12 @@ class ui
       gf = release_gf
       gb = release_bias_hip
       gi = release_gi
-      @physics.upper_joint.csl_prefill = 0 #0.5
+      @physics.upper_joint.csl_prefill = 0.01
     else if hipCSL is "r-"
       gf = release_gf
       gb = -release_bias_hip
       gi = release_gi
-      @physics.upper_joint.csl_prefill = 0 #-0.5
+      @physics.upper_joint.csl_prefill = -0.01
     else if hipCSL is "c"
       gf = contract_gf_hip
       gb = 0
@@ -384,7 +384,7 @@ class ui
     @physics.abc.manual_noop = false
 
   set_csl_mode_lower: (kneeCSL, change_select=true) =>
-    release_bias_knee = 0.02
+    release_bias_knee = 0.025
     release_gf = 0
     release_gi = 0
     contract_gf_knee = 1.01 #1.003 #1.0015 #1.006
@@ -396,12 +396,12 @@ class ui
       gf = release_gf
       gb = release_bias_knee
       gi = release_gi
-      @physics.lower_joint.csl_prefill = 0 #0.5
+      @physics.lower_joint.csl_prefill = 0.01
     else if kneeCSL is "r-"
       gf = release_gf
       gb = -release_bias_knee
       gi = release_gi
-      @physics.lower_joint.csl_prefill = 0 #-0.5
+      @physics.lower_joint.csl_prefill = -0.01
     else if kneeCSL is "c"
       gf = contract_gf_knee
       gb = 0
