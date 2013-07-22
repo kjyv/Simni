@@ -605,6 +605,7 @@ class abc
         console.log("candidate was not a reachable posture, creating new posture for previously found one")
         node_name = @posture_graph.addPosture @last_detected
         @connectLastPosture(@last_detected)
+        @graph.renderer.redraw()
 
         #continue with csl whereever we landed instead
         @switch_to_random_release_after_position uj
@@ -664,6 +665,7 @@ class abc
       else
         #we didn't find a posture close to this one yet and we didn't expect another one, so add a new one
         node_name = @posture_graph.addPosture p
+        @graph.renderer.redraw()
 
     #we have this posture already, update it
     if found.length

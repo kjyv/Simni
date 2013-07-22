@@ -86,7 +86,7 @@ Neurorobotics Research Laboratory, Berlin
                     <option value="3" selected="selected">Semni</option>
                 </select>
                 <input type="checkbox" id="animate_realtime" value="no" onchange="ui.set_realtime(this.checked)"/>
-                <label for="animate_realtime">Simulate in Realtime (~60 fps)</label>
+                <label for="animate_realtime">Simulate in realtime (~60 fps)</label>
                 <br/>
                 <script type="text/coffeescript">
                     $ ->
@@ -179,8 +179,8 @@ Neurorobotics Research Laboratory, Berlin
                 <br/>
 
                 <div style="display: none;">
-                <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.010" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
-                <span id="friction_val">0.010</span><br/>
+                <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.001" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
+                <span id="friction_val">0.001</span><br/>
                 </div>
 
                 <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="30" style="width:60px;"/>
@@ -304,7 +304,7 @@ Neurorobotics Research Laboratory, Berlin
                     <option value="s+">s+</option>
                     <option value="s-">s-</option>
                 </select><br/>
-                <label for="csl_strategy">Next Mode Strategy</label>:
+                <label for="csl_strategy">Next mode strategy</label>:
                 <select id="csl_strategy" onchange="physics.abc.set_strategy($('#csl_strategy').val())">
                     <option value="manual">manual</option>
                     <option value="random">random</option>
@@ -485,7 +485,7 @@ Neurorobotics Research Laboratory, Berlin
 
             function draw_phase_space(){
                 if(phase_space_enabled){
-                    if (xdata.length==500) {
+                    if (xdata.length==1000) {
                         xdata.shift()
                         ydata.shift()
                     }

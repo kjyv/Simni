@@ -91,7 +91,7 @@ class physics
 
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_staticBody
-    bodyDef.position.Set 1, 0.8
+    bodyDef.position.Set 1, 0.3
     box = @world.CreateBody bodyDef
     box.CreateFixture fixDef
 
@@ -107,7 +107,7 @@ class physics
 
     bodyDef = new b2BodyDef
     bodyDef.type = b2Body.b2_staticBody
-    bodyDef.position.Set 1, 0.8
+    bodyDef.position.Set 1, 0.3
     box = @world.CreateBody bodyDef
     box.CreateFixture fixDef
 
@@ -548,7 +548,7 @@ class physics
     bodyJoint.last_integrated += 35*(angle_diff-(vs*bodyJoint.bounce_sign))
     return bodyJoint.last_integrated
 
-  pos_p = 5 #6.5
+  pos_p = 2 #5 #6.5
   pos_i = 0.001
   Position: (set_position, bodyJoint) =>
     offset = bodyJoint.GetJointAngle()-set_position

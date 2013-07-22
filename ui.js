@@ -344,7 +344,7 @@ ui = (function() {
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_hip = 0.025;
+    release_bias_hip = 0.02;
     release_gf = 0;
     release_gi = 0;
     contract_gf_hip = 1.01;
@@ -395,7 +395,7 @@ ui = (function() {
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_knee = 0.025;
+    release_bias_knee = 0.022;
     release_gf = 0;
     release_gi = 0;
     contract_gf_knee = 1.01;

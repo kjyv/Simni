@@ -331,7 +331,7 @@ class ui
 
   set_csl_mode_upper: (hipCSL, change_select=true) =>
     #set ABC learning modes for exploration
-    release_bias_hip = 0.025
+    release_bias_hip = 0.02
     release_gf = 0
     release_gi = 0
     contract_gf_hip = 1.01 #1.003 #1.0025 #1.006
@@ -384,7 +384,7 @@ class ui
     @physics.abc.manual_noop = false
 
   set_csl_mode_lower: (kneeCSL, change_select=true) =>
-    release_bias_knee = 0.025
+    release_bias_knee = 0.022
     release_gf = 0
     release_gi = 0
     contract_gf_knee = 1.01 #1.003 #1.0015 #1.006

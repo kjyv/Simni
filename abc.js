@@ -785,6 +785,7 @@ abc = (function() {
         console.log("candidate was not a reachable posture, creating new posture for previously found one");
         node_name = this.posture_graph.addPosture(this.last_detected);
         this.connectLastPosture(this.last_detected);
+        this.graph.renderer.redraw();
         this.switch_to_random_release_after_position(uj);
         this.switch_to_random_release_after_position(lj);
         this.last_test_posture = null;
@@ -831,6 +832,7 @@ abc = (function() {
         return;
       } else {
         node_name = this.posture_graph.addPosture(p);
+        this.graph.renderer.redraw();
       }
     }
     if (found.length) {

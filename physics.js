@@ -135,7 +135,7 @@ physics = (function() {
     fixDef.shape.SetAsBox(0.1, 0.1);
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_staticBody;
-    bodyDef.position.Set(1, 0.8);
+    bodyDef.position.Set(1, 0.3);
     box = this.world.CreateBody(bodyDef);
     return box.CreateFixture(fixDef);
   };
@@ -151,7 +151,7 @@ physics = (function() {
     fixDef.shape.m_radius = 0.12;
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_staticBody;
-    bodyDef.position.Set(1, 0.8);
+    bodyDef.position.Set(1, 0.3);
     box = this.world.CreateBody(bodyDef);
     return box.CreateFixture(fixDef);
   };
@@ -515,7 +515,7 @@ physics = (function() {
     return bodyJoint.last_integrated;
   };
 
-  pos_p = 5;
+  pos_p = 2;
 
   pos_i = 0.001;
 
