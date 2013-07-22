@@ -35,10 +35,6 @@ ui = (function() {
 
     this.getSemniTransformAsJSON = __bind(this.getSemniTransformAsJSON, this);
 
-    this.getLogfile = __bind(this.getLogfile, this);
-
-    this.toggleRecorder = __bind(this.toggleRecorder, this);
-
     this.set_csl_mode_lower = __bind(this.set_csl_mode_lower, this);
 
     this.set_csl_mode_upper = __bind(this.set_csl_mode_upper, this);
@@ -444,18 +440,6 @@ ui = (function() {
     return this.physics.abc.manual_noop = false;
   };
 
-  ui.prototype.toggleRecorder = function() {
-    this.physics.startLog = true;
-    return this.physics.recordPhase = !this.physics.recordPhase;
-  };
-
-  ui.prototype.getLogfile = function() {
-    this.physics.recordPhase = false;
-    location.href = 'data:text;charset=utf-8,' + encodeURI(Functional.reduce(function(x, y) {
-      return x + y + "\n";
-    }, "", this.physics.logged_data));
-  };
-
   ui.prototype.getSemniTransformAsJSON = function() {
     var t, t2, t3;
     t = this.physics.body.GetTransform();
@@ -615,11 +599,13 @@ window.requestAnimFrame = (function() {
 })();
 
 $(function() {
-  var p;
+  var logging, p;
   p = new simni.Physics();
   simni.Ui = ui;
   ui = new ui(p);
   p.ui = ui;
+  logging = new simni.Logging(p);
   window.physics = p;
-  return window.ui = ui;
+  window.ui = ui;
+  return window.logging = logging;
 });

@@ -438,18 +438,6 @@ class ui
     #reset manual mode noop if enabled
     @physics.abc.manual_noop = false
 
-  toggleRecorder: =>
-    @physics.startLog = true
-    @physics.recordPhase = !@physics.recordPhase
-
-  getLogfile: =>
-    @physics.recordPhase = false
-    location.href = 'data:text;charset=utf-8,'+encodeURI Functional.reduce((x, y) ->
-      x + y + "\n"
-    , "", @physics.logged_data)
-
-    return
-
   getSemniTransformAsJSON: =>
     t = @physics.body.GetTransform()
     t2 = @physics.body2.GetTransform()
@@ -594,7 +582,9 @@ $ ->
     simni.Ui = ui
     ui = new ui(p)
     p.ui = ui
+    logging = new simni.Logging(p)
 
     #make instances global for external access
     window.physics = p
     window.ui = ui
+    window.logging = logging

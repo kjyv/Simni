@@ -69,9 +69,6 @@ class physics
     @run = true           #if we are running continuously
     @step = false         #if we display the next step
     @pend_style = 0       #what pendulum / robot / etc. model is currently simulated
-    @recordPhase = false  #if we log state data for saving later
-    @startLog = true      #if we start a new log
-    @logged_data = []     #where we log our data
     @beta = 0             #friction coefficient (still comes from html file)
 
     @abc = new simni.Abc()
@@ -521,14 +518,6 @@ class physics
   myon_precision: (number) =>
     Math.floor(number * 10000) / 10000
 
-  logData: =>
-    if @recordPhase
-      if @startLog
-        @logged_data = []
-        @startLog = false
-
-      @logged_data.push(-@body.GetAngle() + " " + -@upper_joint.GetJointAngle() + " " + -@lower_joint.GetJointAngle()+ " " + @body2.motor_control + " " + @body3.motor_control)
-
   ##### controllers #####
 
   CSL: (gi, gf, gb, angle_diff, gain=1, bodyJoint) =>
@@ -730,7 +719,7 @@ class physics
       else if @pend_style is 3   #semni
         @abc.update @body, @upper_joint, @lower_joint
 
-      @logData()
+      window.logging.logTrajectoryData()
 
       #recalc quick stuff, 60 Hz * 16 = 960 Hz loop
       i = steps_per_frame
@@ -774,5 +763,5 @@ class physics
     if @ui.realtime
       requestAnimFrame @update
 
-#put class in global namespace 
+#put class in global namespace
 window.simni.Physics = physics

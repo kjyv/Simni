@@ -34,10 +34,12 @@ Neurorobotics Research Laboratory, Berlin
         <script src="libs/arbor-start-stop-fixed/src/physics/physics.js"></script>
         <script src="libs/arbor-start-stop-fixed/src/physics/system.js"></script>
         <script src="libs/arbor-start-stop-fixed/src/dev.js"></script>
+        <script src="libs/FileSaver.js"></script>
         <script src="graph-renderer-svg.js"></script>
         <script src="semni.data.js"></script>
         <script src="physics.js"></script>
         <script src="abc.js"></script>
+        <script src="logging.js"></script>
         <script src="ui.js"></script>
         <link rel="stylesheet" type="text/css" href="libs/jsxgraph.css" />
         <link rel="stylesheet" type="text/css" href="simulator.css" />
@@ -69,8 +71,8 @@ Neurorobotics Research Laboratory, Berlin
                 <br/>
 
                 Log:
-                <button id="start_log" onclick="ui.toggleRecorder()">Start</button>
-                <button id="get_log" onclick="ui.getLogfile()">Get</button>
+                <button id="start_log" class="toggle-button" onclick="logging.toggleRecorder()">Start</button>
+                <button id="get_log" onclick="logging.getLogfile()">Get</button>
             </div>
 
             <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;<sub>hip</sub>/&phi;<sub>knee</sub><button id="clear_phase">clear</button></div>

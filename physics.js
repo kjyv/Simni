@@ -64,8 +64,6 @@ physics = (function() {
 
     this.CSL = __bind(this.CSL, this);
 
-    this.logData = __bind(this.logData, this);
-
     this.myon_precision = __bind(this.myon_precision, this);
 
     this.getNoisyAngle = __bind(this.getNoisyAngle, this);
@@ -117,9 +115,6 @@ physics = (function() {
     this.run = true;
     this.step = false;
     this.pend_style = 0;
-    this.recordPhase = false;
-    this.startLog = true;
-    this.logged_data = [];
     this.beta = 0;
     this.abc = new simni.Abc();
   }
@@ -485,16 +480,6 @@ physics = (function() {
     return Math.floor(number * 10000) / 10000;
   };
 
-  physics.prototype.logData = function() {
-    if (this.recordPhase) {
-      if (this.startLog) {
-        this.logged_data = [];
-        this.startLog = false;
-      }
-      return this.logged_data.push(-this.body.GetAngle() + " " + -this.upper_joint.GetJointAngle() + " " + -this.lower_joint.GetJointAngle() + " " + this.body2.motor_control + " " + this.body3.motor_control);
-    }
-  };
-
   physics.prototype.CSL = function(gi, gf, gb, angle_diff, gain, bodyJoint) {
     var sum, vel;
     if (gain == null) {
@@ -695,7 +680,7 @@ physics = (function() {
       } else if (this.pend_style === 3) {
         this.abc.update(this.body, this.upper_joint, this.lower_joint);
       }
-      this.logData();
+      window.logging.logTrajectoryData();
       i = steps_per_frame;
       while (i > 0) {
         if (this.pend_style === 3) {
