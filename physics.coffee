@@ -706,7 +706,7 @@ class physics
           @world.DestroyJoint mouseJoint
           window.mouseJoint = null
 
-      # recalc slow stuff, ~60 Hz
+      # recalc slow stuff, 60 Hz
       # TODO: move this into ui or separate classes (mapping to mode and other
       # logic is not part of physics)
       if @pend_style is 1
@@ -719,6 +719,7 @@ class physics
       else if @pend_style is 3   #semni
         @abc.update @body, @upper_joint, @lower_joint
 
+      #log data every 16th physics time step, delay is 62.5 ms
       window.logging.logTrajectoryData()
 
       #recalc quick stuff, 60 Hz * 16 = 960 Hz loop

@@ -63,17 +63,24 @@ logging = (function() {
             }), parent.errorHandler);
           }), parent.errorHandler);
         }
-        return fs.root.getFile("log.txt", {
+        return fs.root.getFile("trace.bin", {
           create: true
         }, (function(fileEntry) {
           parent.logfileURL = fileEntry.toURL();
           return fileEntry.createWriter((function(fileWriter) {
-            var bb;
+            var bb, buffer, floatView;
             fileWriter.onerror = function(e) {
               return console.log("Write failed: " + e.toString());
             };
             fileWriter.seek(fileWriter.length);
-            bb = new Blob([-this.physics.body.GetAngle() + " " + -this.physics.upper_joint.GetJointAngle() + " " + -this.physics.lower_joint.GetJointAngle() + " " + this.physics.upper_joint.motor_control + " " + this.physics.lower_joint.motor_control], {
+            buffer = new ArrayBuffer(20);
+            floatView = new Float32Array(buffer);
+            floatView[0] = -this.physics.body.GetAngle();
+            floatView[1] = -this.physics.upper_joint.GetJointAngle();
+            floatView[2] = -this.physics.lower_joint.GetJointAngle();
+            floatView[3] = this.physics.upper_joint.motor_control;
+            floatView[4] = this.physics.lower_joint.motor_control;
+            bb = new Blob([buffer], {
               type: "application/octet-stream"
             });
             return fileWriter.write(bb);

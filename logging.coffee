@@ -42,7 +42,7 @@ class logging
             ), parent.errorHandler
           ), parent.errorHandler
 
-        fs.root.getFile "log.txt", create: true, ((fileEntry) ->
+        fs.root.getFile "trace.bin", create: true, ((fileEntry) ->
           parent.logfileURL = fileEntry.toURL()
 
           # Create a FileWriter object for our FileEntry (log.txt)
@@ -54,7 +54,16 @@ class logging
 
             # Create a new Blob and write it to log.txt
             # TODO: use direct byte data for this
-            bb = new Blob([-@physics.body.GetAngle() + " " + -@physics.upper_joint.GetJointAngle() + " " + -@physics.lower_joint.GetJointAngle()+ " " + @physics.upper_joint.motor_control + " " + @physics.lower_joint.motor_control], { type: "application/octet-stream" })
+            #bb = new Blob([-@physics.body.GetAngle() + " " + -@physics.upper_joint.GetJointAngle() + " " + -@physics.lower_joint.GetJointAngle()+ " " + @physics.upper_joint.motor_control + " " + @physics.lower_joint.motor_control], { type: "application/octet-stream" })
+
+            buffer = new ArrayBuffer(20) #4 bytes for 32 bit float * 5 = 20
+            floatView = new Float32Array(buffer)
+            floatView[0] = -@physics.body.GetAngle()
+            floatView[1] = -@physics.upper_joint.GetJointAngle()
+            floatView[2] = -@physics.lower_joint.GetJointAngle()
+            floatView[3] = @physics.upper_joint.motor_control
+            floatView[4] = @physics.lower_joint.motor_control
+            bb = new Blob([buffer], { type: "application/octet-stream" })
 
             fileWriter.write bb
           ), parent.errorHandler
@@ -74,6 +83,6 @@ class logging
           saveAs file, "log.txt"
         , parent.errorHandler
       ), parent.errorHandler
-    window.requestFileSystem TEMPORARY, 5 * 1024 * 1024, onInitFs, @errorHandler #5MB
+    window.requestFileSystem TEMPORARY, 5 * 1024 * 1024, onInitFs, @errorHandler #request 5 MB of space
 
 window.simni.Logging = logging
