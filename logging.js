@@ -109,7 +109,7 @@ logging = (function() {
             fileWriter.onerror = function(e) {
               return console.log("Write failed: " + e.toString());
             };
-            fileWriter.seek(fileWriter.length);
+            fileWriter.seek(fileWriter.length - 1);
             buffer = new ArrayBuffer(20);
             floatView = new Float32Array(buffer);
             floatView[0] = Infinity;
