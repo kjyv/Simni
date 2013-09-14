@@ -105,6 +105,7 @@ class postureGraph
   addPosture: (p) =>
     node_name = @addNode p
     console.log("found new posture: " + p.configuration + " (posture " + node_name + ")")
+    window.logging.logNewPosture()
 
     #add an arbor node as well (not connected yet)
     data =

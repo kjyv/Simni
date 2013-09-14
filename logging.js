@@ -7,6 +7,8 @@ logging = (function() {
   function logging(physics) {
     this.getLogfile = __bind(this.getLogfile, this);
 
+    this.logNewPosture = __bind(this.logNewPosture, this);
+
     this.logTrajectoryData = __bind(this.logTrajectoryData, this);
 
     this.errorHandler = __bind(this.errorHandler, this);
@@ -16,6 +18,8 @@ logging = (function() {
     this.recordTrajectory = false;
     this.startLog = true;
     this.logged_data = [];
+    this.fileSystemSize = 100;
+    this.fileName = "trace.bin";
     window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
   }
 
@@ -55,7 +59,7 @@ logging = (function() {
       parent = this;
       onInitFs = function(fs) {
         if (parent.startLog) {
-          fs.root.getFile("log.txt", {
+          fs.root.getFile(parent.fileName, {
             create: false
           }, (function(fileEntry) {
             return fileEntry.remove((function() {
@@ -63,7 +67,7 @@ logging = (function() {
             }), parent.errorHandler);
           }), parent.errorHandler);
         }
-        return fs.root.getFile("trace.bin", {
+        return fs.root.getFile(parent.fileName, {
           create: true
         }, (function(fileEntry) {
           parent.logfileURL = fileEntry.toURL();
@@ -87,27 +91,57 @@ logging = (function() {
           }), parent.errorHandler);
         }), parent.errorHandler);
       };
-      return window.requestFileSystem(TEMPORARY, 5 * 1024 * 1024, onInitFs, this.errorHandler);
+      return window.requestFileSystem(TEMPORARY, parent.fileSystemSize * 1024 * 1024, onInitFs, this.errorHandler);
+    }
+  };
+
+  logging.prototype.logNewPosture = function() {
+    var onInitFs, parent;
+    if (this.recordTrajectory) {
+      parent = this;
+      onInitFs = function(fs) {
+        return fs.root.getFile(parent.fileName, {
+          create: true
+        }, (function(fileEntry) {
+          parent.logfileURL = fileEntry.toURL();
+          return fileEntry.createWriter((function(fileWriter) {
+            var bb, buffer, floatView;
+            fileWriter.onerror = function(e) {
+              return console.log("Write failed: " + e.toString());
+            };
+            fileWriter.seek(fileWriter.length);
+            buffer = new ArrayBuffer(20);
+            floatView = new Float32Array(buffer);
+            floatView[0] = Infinity;
+            floatView[1] = Infinity;
+            floatView[2] = Infinity;
+            floatView[3] = Infinity;
+            floatView[4] = Infinity;
+            bb = new Blob([buffer], {
+              type: "application/octet-stream"
+            });
+            return fileWriter.write(bb);
+          }), parent.errorHandler);
+        }), parent.errorHandler);
+      };
+      return window.requestFileSystem(TEMPORARY, parent.fileSystemSize * 1024 * 1024, onInitFs, this.errorHandler);
     }
   };
 
   logging.prototype.getLogfile = function() {
     var onInitFs, parent;
-    if (this.recordTrajectory) {
-      $("#start_log").click();
-    }
     parent = this;
     onInitFs = function(fs) {
-      return fs.root.getFile("log.txt", {
-        create: true
+      return fs.root.getFile(parent.fileName, {
+        create: false
       }, (function(fileEntry) {
         console.log("downloading from " + fileEntry.toURL());
         return fileEntry.file(function(file) {
-          return saveAs(file, "log.txt");
+          return saveAs(file, parent.fileName);
         }, parent.errorHandler);
       }), parent.errorHandler);
     };
-    return window.requestFileSystem(TEMPORARY, 5 * 1024 * 1024, onInitFs, this.errorHandler);
+    return window.requestFileSystem(TEMPORARY, parent.fileSystemSize * 1024 * 1024, onInitFs, this.errorHandler);
   };
 
   return logging;

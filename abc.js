@@ -222,6 +222,7 @@ postureGraph = (function() {
     var data, node_name;
     node_name = this.addNode(p);
     console.log("found new posture: " + p.configuration + " (posture " + node_name + ")");
+    window.logging.logNewPosture();
     data = {
       label: p.csl_mode,
       number: p.name,

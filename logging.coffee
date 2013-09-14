@@ -5,6 +5,9 @@ class logging
     @recordTrajectory = false  #if we log state data for saving later
     @startLog = true      #if we start a new log
     @logged_data = []     #where we log our data
+    @fileSystemSize = 100 #mb
+    @fileName = "trace.bin"
+
 
     window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem
 
@@ -36,13 +39,13 @@ class logging
       parent = @
       onInitFs = (fs) ->
         if parent.startLog
-          fs.root.getFile "log.txt", create: false, ((fileEntry) ->
+          fs.root.getFile parent.fileName, create: false, ((fileEntry) ->
             fileEntry.remove (->
               parent.startLog = false
             ), parent.errorHandler
           ), parent.errorHandler
 
-        fs.root.getFile "trace.bin", create: true, ((fileEntry) ->
+        fs.root.getFile parent.fileName, create: true, ((fileEntry) ->
           parent.logfileURL = fileEntry.toURL()
 
           # Create a FileWriter object for our FileEntry (log.txt)
@@ -53,9 +56,6 @@ class logging
             fileWriter.seek(fileWriter.length)
 
             # Create a new Blob and write it to log.txt
-            # TODO: use direct byte data for this
-            #bb = new Blob([-@physics.body.GetAngle() + " " + -@physics.upper_joint.GetJointAngle() + " " + -@physics.lower_joint.GetJointAngle()+ " " + @physics.upper_joint.motor_control + " " + @physics.lower_joint.motor_control], { type: "application/octet-stream" })
-
             buffer = new ArrayBuffer(20) #4 bytes for 32 bit float * 5 = 20
             floatView = new Float32Array(buffer)
             floatView[0] = -@physics.body.GetAngle()
@@ -68,21 +68,48 @@ class logging
             fileWriter.write bb
           ), parent.errorHandler
         ), parent.errorHandler
-      window.requestFileSystem TEMPORARY, 5 * 1024 * 1024, onInitFs, @errorHandler #5MB
+      window.requestFileSystem TEMPORARY, parent.fileSystemSize * 1024 * 1024, onInitFs, @errorHandler #100MB
+
+  logNewPosture: =>
+    if @recordTrajectory
+      parent = @
+      onInitFs = (fs) ->
+        fs.root.getFile parent.fileName, create: true, ((fileEntry) ->
+          parent.logfileURL = fileEntry.toURL()
+
+          # Create a FileWriter object for our FileEntry (log.txt)
+          fileEntry.createWriter ((fileWriter) ->
+            fileWriter.onerror = (e) ->
+              console.log "Write failed: " + e.toString()
+
+            fileWriter.seek(fileWriter.length)
+
+            # Create a new Blob and write it to log.txt
+            buffer = new ArrayBuffer(20) #4 bytes for 32 bit float * 5 = 20
+            floatView = new Float32Array(buffer)
+            floatView[0] = Infinity
+            floatView[1] = Infinity
+            floatView[2] = Infinity
+            floatView[3] = Infinity
+            floatView[4] = Infinity
+            bb = new Blob([buffer], { type: "application/octet-stream" })
+
+            fileWriter.write bb
+          ), parent.errorHandler
+        ), parent.errorHandler
+
+      window.requestFileSystem TEMPORARY, parent.fileSystemSize * 1024 * 1024, onInitFs, @errorHandler #100MB
 
   getLogfile: =>
-    #download log file from sandbox (and disable logging)
-    if @recordTrajectory
-      $("#start_log").click()
-
+    #download log file from sandbox
     parent = @
     onInitFs = (fs) ->
-      fs.root.getFile "log.txt", create: true, ((fileEntry) ->
+      fs.root.getFile parent.fileName, create: false, ((fileEntry) ->
         console.log("downloading from " + fileEntry.toURL())
         fileEntry.file (file) ->
-          saveAs file, "log.txt"
+          saveAs file, parent.fileName
         , parent.errorHandler
       ), parent.errorHandler
-    window.requestFileSystem TEMPORARY, 5 * 1024 * 1024, onInitFs, @errorHandler #request 5 MB of space
+    window.requestFileSystem TEMPORARY, parent.fileSystemSize * 1024 * 1024, onInitFs, @errorHandler
 
 window.simni.Logging = logging

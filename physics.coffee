@@ -697,7 +697,7 @@ class physics
           body.SetAwake true
       if mouseJoint
         if isMouseDown
-         mouseJoint.SetTarget new b2Vec2(mouseX, mouseY)
+          mouseJoint.SetTarget new b2Vec2(mouseX, mouseY)
         else
           if was_static
             mouseJoint.m_bodyB.SetType b2Body.b2_staticBody
