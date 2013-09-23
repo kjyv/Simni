@@ -257,18 +257,18 @@ class physics
     #body: 120 g
     #weight of one dynamixel: 72g
     #arm at body: 135 g (63+72)
-    #second arm: 177 g (105+72) 
-    #min/max angle of lower arm: -3.2421 and 1.90816 
+    #second arm: 177 g (105+72)
+    #min/max angle of lower arm: -3.2421 and 1.90816
 
     bodyDensity = 3.96
     bodyFriction = 0.5
     bodyRestitution = 0.1
 
-    upperArmDensity = 17.45 #=135g 
+    upperArmDensity = 17.45 #=135g
     upperArmFriction =  0.5
     upperArmRestitution = 0.1
 
-    lowerArmDensity = 43.4 #=177g  
+    lowerArmDensity = 43.4 #=177g
     lowerArmFriction = 0.5
     lowerArmRestitution = 0.2
 
@@ -343,7 +343,7 @@ class physics
     for fixture in simni.arm1ContourConvex
       @fixDef2.shape.SetAsArray(fixture, fixture.length)
       @body2.CreateFixture(@fixDef2)
- 
+
     #set center of mass
     md = new b2MassData()
     @body2.GetMassData(md)
@@ -372,7 +372,7 @@ class physics
     jointDef.bodyA = @body
     jointDef.bodyB = @body2
     jointDef.localAnchorA.Set(simni.arm1JointAnchor.x, simni.arm1JointAnchor.y) #point on arm that is attached to body
-    jointDef.localAnchorB.Set(simni.arm1JointAnchor.x, simni.arm1JointAnchor.y) #point on the body that arm is attached to 
+    jointDef.localAnchorB.Set(simni.arm1JointAnchor.x, simni.arm1JointAnchor.y) #point on the body that arm is attached to
     #jointDef.anchor = new b2Vec2(vertices[3].x, vertices[3].y)
     jointDef.collideConnected = true
 

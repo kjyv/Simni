@@ -10,8 +10,8 @@ class ui
     @realtime = false
 
   update: =>
-      if @draw_graphics and @halftime
-        @physics.world.DrawDebugData()
+    if @draw_graphics and @halftime
+      @physics.world.DrawDebugData()
 
       ###
       #draw semni as svg
@@ -32,7 +32,7 @@ class ui
       )
       ###
 
-      @halftime = not @halftime
+    @halftime = not @halftime
 
   rotate_point: (cx, cy, angle, p) =>
     #translate point back to origin:origin
@@ -146,7 +146,7 @@ class ui
     $("#w1_abs").change =>
       @physics.w1_abs = ($("#w1_abs").attr("checked") isnt undefined)
       draw_state_to_mode_mapping()
-    #initial values  
+    #initial values
     @physics.w0_abs = ($("#w0_abs").attr("checked") isnt undefined)
     @physics.w1_abs = ($("#w1_abs").attr("checked") isnt undefined)
 
@@ -194,8 +194,8 @@ class ui
     document.addEventListener "mouseup", (->
       document.removeEventListener "mousemove", handleMouseMove, true
       window.isMouseDown = false
-      window.mouseX = `undefined`
-      window.mouseY = `undefined`
+      window.mouseX = undefined
+      window.mouseY = undefined
     ), true
 
     handleMouseMove = (e) ->
@@ -331,12 +331,12 @@ class ui
 
   set_csl_mode_upper: (hipCSL, change_select=true) =>
     #set ABC learning modes for exploration
-    release_bias_hip = 0.02
+    release_bias_hip = 0.015
     release_gf = 0
     release_gi = 0
     contract_gf_hip = 1.01 #1.003 #1.0025 #1.006
     contract_gi = 3 #30 #27 #50
-    stall_gb = 0.3
+    stall_gb = 0.25
     stall_gf = 0 #0.8
 
     if hipCSL is "r+"
@@ -384,12 +384,12 @@ class ui
     @physics.abc.manual_noop = false
 
   set_csl_mode_lower: (kneeCSL, change_select=true) =>
-    release_bias_knee = 0.022
+    release_bias_knee = 0.015
     release_gf = 0
     release_gi = 0
     contract_gf_knee = 1.01 #1.003 #1.0015 #1.006
     contract_gi = 3 #35 #26 #50
-    stall_gb = 0.3
+    stall_gb = 0.25
     stall_gf = 0 #0.8
 
     if kneeCSL is "r+"
@@ -479,7 +479,7 @@ class ui
         font-size: 7pt;
         text-anchor: middle;
         fill: #333333;
-      } 
+      }
     </style>
     """
     location.href = 'data:text;charset=utf-8,'+encodeURI ('<?xml version="1.0" encoding="UTF-8" standalone="no"?>')+svg.html()
@@ -531,7 +531,7 @@ class ui
   set_realtime: (value) =>
     @realtime = value
 
-    #we were drawing with setInterval before, cancel the interval timer 
+    #we were drawing with setInterval before, cancel the interval timer
     if @realtime
       clearInterval(@realtime_timer)
       physics.update()
@@ -578,13 +578,13 @@ window.requestAnimFrame = (->
 
 $ ->
     ##after document load: read some values from the ui into variables so the ui sets the defaults
-    p = new simni.Physics()
-    simni.Ui = ui
-    ui = new ui(p)
-    p.ui = ui
-    logging = new simni.Logging(p)
+  p = new simni.Physics()
+  simni.Ui = ui
+  ui = new ui(p)
+  p.ui = ui
+  logging = new simni.Logging(p)
 
-    #make instances global for external access
-    window.physics = p
-    window.ui = ui
-    window.logging = logging
+  #make instances global for external access
+  window.physics = p
+  window.ui = ui
+  window.logging = logging

@@ -82,8 +82,8 @@ class logging
             fileWriter.onerror = (e) ->
               console.log "Write failed: " + e.toString()
 
-            #overwrite last line so we don't introduce a time shift
-            fileWriter.seek(fileWriter.length-1)
+            #overwrite last line (number of bytes!) so we don't introduce a time shift
+            fileWriter.seek(fileWriter.length-20)
 
             # Create a new Blob and write it to log.txt
             buffer = new ArrayBuffer(20) #4 bytes for 32 bit float * 5 = 20

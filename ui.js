@@ -69,26 +69,26 @@ ui = (function() {
   ui.prototype.update = function() {
     if (this.draw_graphics && this.halftime) {
       this.physics.world.DrawDebugData();
-    }
-    /*
-          #draw semni as svg
-          container = "#semni_svg"
-          $(container).html("")
-          @svg = d3.select(container).append("svg:svg")
-                  .attr("width", 300)
-                  .attr("height", 300)
-                  .attr("xmlns", "http://www.w3.org/2000/svg")
-          @semni = @getSemniOutlineSVG(
-            @physics.body.GetPosition(),
-            @physics.body2.GetPosition(),
-            @physics.body3.GetPosition(),
-            @physics.body.GetAngle(),
-            @physics.body2.GetAngle(),
-            @physics.body3.GetAngle(),
-            @svg
-          )
-    */
+      /*
+            #draw semni as svg
+            container = "#semni_svg"
+            $(container).html("")
+            @svg = d3.select(container).append("svg:svg")
+                    .attr("width", 300)
+                    .attr("height", 300)
+                    .attr("xmlns", "http://www.w3.org/2000/svg")
+            @semni = @getSemniOutlineSVG(
+              @physics.body.GetPosition(),
+              @physics.body2.GetPosition(),
+              @physics.body3.GetPosition(),
+              @physics.body.GetAngle(),
+              @physics.body2.GetAngle(),
+              @physics.body3.GetAngle(),
+              @svg
+            )
+      */
 
+    }
     return this.halftime = !this.halftime;
   };
 
@@ -219,8 +219,8 @@ ui = (function() {
     document.addEventListener("mouseup", (function() {
       document.removeEventListener("mousemove", handleMouseMove, true);
       window.isMouseDown = false;
-      window.mouseX = undefined;
-      return window.mouseY = undefined;
+      window.mouseX = void 0;
+      return window.mouseY = void 0;
     }), true);
     handleMouseMove = function(e) {
       window.mouseX = (e.clientX - canvasPosition.x) / physics.debugDraw.GetDrawScale();
@@ -340,12 +340,12 @@ ui = (function() {
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_hip = 0.02;
+    release_bias_hip = 0.015;
     release_gf = 0;
     release_gi = 0;
     contract_gf_hip = 1.01;
     contract_gi = 3;
-    stall_gb = 0.3;
+    stall_gb = 0.25;
     stall_gf = 0;
     if (hipCSL === "r+") {
       gf = release_gf;
@@ -391,12 +391,12 @@ ui = (function() {
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_knee = 0.022;
+    release_bias_knee = 0.015;
     release_gf = 0;
     release_gi = 0;
     contract_gf_knee = 1.01;
     contract_gi = 3;
-    stall_gb = 0.3;
+    stall_gb = 0.25;
     stall_gf = 0;
     if (kneeCSL === "r+") {
       gf = release_gf;
@@ -489,7 +489,7 @@ ui = (function() {
   ui.prototype.getPostureGraphAsFile = function() {
     var svg;
     svg = $("#viewport_svg").clone();
-    svg.find("defs").append("<style>\n   line {\n      stroke-width: 1;\n      stroke: black;\n      fill: none;\n  }\n\n  text {\n    font-family: Verdana; sans-serif;\n    font-size: 7pt;\n    text-anchor: middle;\n    fill: #333333;\n  } \n</style>");
+    svg.find("defs").append("<style>\n   line {\n      stroke-width: 1;\n      stroke: black;\n      fill: none;\n  }\n\n  text {\n    font-family: Verdana; sans-serif;\n    font-size: 7pt;\n    text-anchor: middle;\n    fill: #333333;\n  }\n</style>");
     return location.href = 'data:text;charset=utf-8,' + encodeURI('<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + svg.html());
   };
 
