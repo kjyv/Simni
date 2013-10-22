@@ -55,7 +55,12 @@
 
       //apply torque
       if (this.m_applyTorque){
+          //calc impulse for torque
           impulse = this.m_applyTorque * step.dt
+
+          //TODO: clamp with maxImpulse ?
+
+          //calc rotational velocities for the participating links
           w1 += i1 * impulse
           w2 -= i2 * impulse
           this.m_applyTorque = 0

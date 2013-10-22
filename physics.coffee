@@ -60,6 +60,7 @@ class physics
     @debugDraw = new b2DebugDraw()
     @debugDraw.SetSprite $("#simulation canvas")[0].getContext("2d")
     @debugDraw.SetDrawScale 450
+    @debugDraw.SetXFormScale 0.1
     @debugDraw.SetFillAlpha 0
     @debugDraw.SetLineThickness 1.0
     @debugDraw.AppendFlags b2DebugDraw.e_shapeBit
@@ -69,7 +70,8 @@ class physics
     @run = true           #if we are running continuously
     @step = false         #if we display the next step
     @pend_style = 0       #what pendulum / robot / etc. model is currently simulated
-    @beta = 0             #friction coefficient (still comes from html file)
+    @beta = 0             #sticky and dry friction coefficient (still comes from html file)
+    @gamma = 0.1         #fluid friction coefficient
 
     @abc = new simni.Abc()
 
@@ -511,8 +513,9 @@ class physics
 
   getNoisyAngle: (bodyJoint) =>
     #sensor noise
-    rand = Math.random() / 1000
-    rand = rand - (0.5/1000)
+    prec = 500                     #noise magnitude
+    rand = Math.random() / prec    #get small random number
+    rand -= (0.5/prec)             #shift into negative range so it is +/- symmetric
     bodyJoint.GetJointAngle() + rand
 
   myon_precision: (number) =>
@@ -568,20 +571,25 @@ class physics
 
   ##### motor calculation #####
 
-  #motor constants
-  km = 1.8737       #(10.7 / 1000) * 194.57 * 0.9   #torque constant, km_RE-MAX = 0.0107
-  kb = 2.563        #back emf, RE-MAX 889/(60*2*%pi*180) * 194.57 = 2.549
-  R = 9.59          #R_RE-MAX = 8.3 ohm, R_65 = R_25 * (1+0.0039*(65-25)) (assume mean temp of 65°)
+  #motor constants (*_RE-Max is the value from the RE-max data sheet)
+  km = 1.8737       #torque constant: (10.7 / 1000) * 194.57 * 0.9, km_RE-MAX = 0.0107 (includes motor efficiency)
+  kb = 0.4968       #back emf/revolution constant: kn_RE-MAX ((889*2*PI)/60)/194.57 = 0.4784; kn_Siedel = 923.05
+  R = 9.59          #coil resistance: R_RE-MAX = 8.3 ohm, R_65 = R_25 * (1+0.0039*(65-25)) (assume mean temp of 65°)
   R_inv = 1/R
-  U_in = 0
   max_V = 12        #limit to max battery voltage of 12 V
+
+  U_in = 0
   updateMotor: (bodyJoint) =>
     # motor model
+    # clip input voltage
     U_in = @clip(bodyJoint.motor_control, max_V)
+    #filter velocity
     bodyJoint.angle_speed = (0.4*bodyJoint.GetJointSpeed()+0.6*bodyJoint.angle_speed)
+    #calc current from constants
     bodyJoint.I_t = (U_in - (kb*-bodyJoint.angle_speed))*(R_inv)
+    #calc torque
     bodyJoint.motor_torque = km * bodyJoint.I_t
-    #bodyJoint.motor_torque = @clip(bodyJoint.motor_control, max_V)*R_inv*km
+
     bodyJoint.m_applyTorque += bodyJoint.motor_torque
     return
 
@@ -593,7 +601,7 @@ class physics
   applyFriction: (bodyJoint) =>
     v = -bodyJoint.GetJointSpeed()
     #fluid/gliding friction
-    fg = -v * @beta
+    fg = -v * @gamma
 
     #dry friction (but box2d joint motor provides dry and sticky already)
     #fd = @sgn(-v) * (@beta)

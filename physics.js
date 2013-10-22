@@ -108,6 +108,7 @@ physics = (function() {
     this.debugDraw = new b2DebugDraw();
     this.debugDraw.SetSprite($("#simulation canvas")[0].getContext("2d"));
     this.debugDraw.SetDrawScale(450);
+    this.debugDraw.SetXFormScale(0.1);
     this.debugDraw.SetFillAlpha(0);
     this.debugDraw.SetLineThickness(1.0);
     this.debugDraw.AppendFlags(b2DebugDraw.e_shapeBit);
@@ -116,6 +117,7 @@ physics = (function() {
     this.step = false;
     this.pend_style = 0;
     this.beta = 0;
+    this.gamma = 0.1;
     this.abc = new simni.Abc();
   }
 
@@ -470,9 +472,10 @@ physics = (function() {
   };
 
   physics.prototype.getNoisyAngle = function(bodyJoint) {
-    var rand;
-    rand = Math.random() / 1000;
-    rand = rand - (0.5 / 1000);
+    var prec, rand;
+    prec = 500;
+    rand = Math.random() / prec;
+    rand -= 0.5 / prec;
     return bodyJoint.GetJointAngle() + rand;
   };
 
@@ -531,15 +534,15 @@ physics = (function() {
 
   km = 1.8737;
 
-  kb = 2.563;
+  kb = 0.4968;
 
   R = 9.59;
 
   R_inv = 1 / R;
 
-  U_in = 0;
-
   max_V = 12;
+
+  U_in = 0;
 
   physics.prototype.updateMotor = function(bodyJoint) {
     U_in = this.clip(bodyJoint.motor_control, max_V);
@@ -560,7 +563,7 @@ physics = (function() {
 
   physics.prototype.applyFriction = function(bodyJoint) {
     v = -bodyJoint.GetJointSpeed();
-    fg = -v * this.beta;
+    fg = -v * this.gamma;
     return bodyJoint.m_applyTorque += fg;
   };
 

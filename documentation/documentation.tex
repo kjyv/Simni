@@ -28,7 +28,7 @@ Neurorobotics Research Laboratory, Humbold-Universität zu Berlin}
 \section{Introduction}
 
 The Simni simulator is a testbed for simple robots that work in a two-dimensional world (restricted). The built in morphology is imitating the Semni morphology of the Neurorobotics Research Laboratory, Berlin, (see \url{http://neurorobotics.de}).
-On top of the physics simulation, it contains an implementation of the ABC learning framework to explore the morphologies own fixpoints and therefore movement possibilites.
+On top of the physics simulation, it contains an implementation of the ABC learning framework to explore the morphology's own fixpoints and therefore movement possibilites.
 
 It provides phase space and motor voltage plots and a graph representation of the interesting points and connection between them in the explored manifold.
 
@@ -51,7 +51,7 @@ To see current data and a history of the last 1000 time steps (96 Hz control loo
 \subsection{Buttons, Toggles and Shortcuts}
 
 There are a number of controls in the interface that are grouped by usage.\
-The "Simulation Controls" allow the selection of morphologies, at the moment single and double pendulum and Semni. "Simulate in Reatime" is intended to make the physics move the robot at about 60 fps which corresponds to about the same speed as realtime. Otherwise the simulation will run as fast as possible.
+The ``Simulation Controls'' allow the selection of morphologies, at the moment single and double pendulum and Semni. "Simulate in Reatime" is intended to make the physics move the robot at about 60 fps which corresponds to about the same speed as realtime. Otherwise the simulation will run as fast as possible.
 "Pause/Run Simulation" toggles between halting and running again. The graph layouting and other processes independent from the physics will not be paused. While paused, progressing one step can be achieved by pressing "Next step(s)". This means however 10 physics simulation steps and one controller step, c.f. Section \ref{sim_internal}.
 The buttons "toggle CSL" and "toggle bounce controller" each enable or disable motor controllers for both joints. The CSL controller will use the paramters below the buttons, the bounce controller (using constant velocity and changing direction on stall) has default parameters.
 
@@ -81,27 +81,47 @@ Uses Box2D (2.1a3) port to JavaScipt, patched so torque can be applied to a join
 The morphology is drawn on a html5 canvas, the graph is drawn directly with svg.
 The html5 range element provides sliders for certain values.
 
-Aport from mere physics simulation, there is simple motor model and a simple fluid friction model that is currently switched off however as fluid friction does not play a big role in real experiments.
+Apart from the basic physics simulation, there is simple motor model and a simple fluid friction model.
 
 \begin{figure}[H]
     \centering
     \input{figures/simulator_controllermodell.tex}
-    \caption{Controller model: Fluid friction was added, Box2D provides dry and sticky friction with a simple controller on physics update rate that tries to maintain a zero velocity and has a very small maximum torque set. This stiction and dry friction has no Stribeck effect. \todo[inline]{Add limit and voltage multiplier }}
+    \caption{Die einzelnen Komponenten der Simulation CSL-Controller, Motormodell und
+    Reibungsmodell und Box2D. Leere Kreise symbolisieren eine Multiplikation, Kreise mit Plus
+    eine Addition. Plus oder Minus an einem Pfeil bedeuten ein Vorzeichen für eine Addition.
+    Werte in eckigen Klammern geben das Formelzeichen für eine Größe an. $U$ entspricht dabei
+    einer Spannung, $M$ einem Drehmoment und $\dot{\phi}$ einer Winkelgeschwindigkeit.}
     \label{fig:controllermodell}
 \end{figure}
 
-Friction\\
+\subsection{Friction}
 
-Joint Motor von Box2D hat Paramter maxTorque und setVelocity 0, so dass dieser versucht, die Geschwindigkeit auf 0 zu halten, so lange die eingehenden Kräfte nicht größer als maxTorque werden, wir haben eine Haftreibung. Wenn die eingehende Kraft größer ist, wird die maxTorque effektiv abgezogen und dadurch eine trockene/konstante Reibung erzeugt.
-Der Übergang weist aber damit keinen Stribeck-Effekt auf, der Übergang ist (wie beim Legomotor) sehr sauber.
+In addition to the movements of objects themselves, frition forces occur between two bodies that are in contact. These are directed against the forces that produce the motion and can be considered threefold.
+If the two bodies remain completely still, \textit{static friction} occurs, which is dependent on the materials and the pressure and prevents movement up to a maximum force $F_H^{Max}$.
+So it can be though ofa force $F_H$ equal to the moving force $F$ being applied in opposite direction.
+Let $mu_H$ be the friction coefficient of static friction and $F_N$ be the force perpendicular to the
+surface. Then for $v = 0$:
+\begin{eqnarray}
+    F_H & = & -F \\
+    F_H \le \vec F_H^{Max} & = & \mu_H \cdot F_N
+\end{eqnarray}
 
-RE-MAX 17 ist der Name des Motors, das sind also Konstanten aus dem Datenblatt.
-Da der Servo mit Getriebe usw. kommt, kann man die aber nicht direkt nehmen.
-Zusätzlich haben wir aber auch ein paar Daten gemessen und damit bessere Daten als die aus dem Datenblatt. In der Tat ist es wichtig, die Formeln auch mal zu sehen bzw. zu benennen, die den Rechnungen da zu Grunde liegen, Teilweise sind die aber auch im Maxon-Material enthalten.
-km des Motors wird umgerechnet, da die Einheit im Datenblatt nicht brauchbar ist ($mNm*A^-1$, die Physik will Nm), dann mit dem Übersetzungsfaktor des Getriebes (hat Mario ermittelt, ich glaube durch Zahnradzählen) multipliziert und dem Wirkungsgrad (der auch aus Messungen von Torsten kommt). (Wirkungsgrad ist Messgröße, die sich ergibt. Kann aber so nicht reinmultipliziert werden.).
-Kb muss umgerechnet werden, da es im Datenblatt in rpm/V=(r/min)/V angegeben ist und wir aber rad/sec wollen. Umdrehung ist Einheitslos und eine entspricht 2*pi, eine Minute hat 60 Sekunden, dann noch den Übersetzungsfaktor. Die Zahl die Vorne steht, ist auf Korsika experimentell ermittelt worden (allerdings mit dem Spannungsmodus, nicht PWM. Das müsste/könnte man jetzt nochmal bei Torsten erfragen, ob sich die Werte geändert haben, aber viel wirds nicht sein).
-R ist der Widerstand aus dem Datenblatt (der für 25C gilt) mit einer Formel aus dem Maxon-Material und der Temperaturkonstante für Kupfer für 65C umgerechnet. 
-Und ja, Semniakkus haben nur drei Zellen, also wie ich heute gelernt hab kommen da maximal genau 4,2V*3=12,6V raus.
+If the applied force is greater that $F_H^{Max}$, movement begins along the surfaces and the bodies
+are no longer subject to static friction but to \textit{gliding friction}.
+This in turn is divided into the \textit {dry friction}, a constant frictional force,
+and \textit{viscous friction}, which depends on the velocity of the movement.
+The dry friction force is also called \textit{Coulomb friction}.
+and is only dependent on the normal force $F_N$ and a coefficient $\mu_G$ for the
+specific material combination that is involved.
+\begin{eqnarray}
+    F_{G_T} = \mu_G \cdot F_N
+\end{eqnarray}
 
+The viscous friction force, however, is additionally dependent on velocity $v$ or the
+angular velocity $\omega$ respectively and a separate coefficient $\mu_V$.
+
+\begin{eqnarray}
+    F_{G_V} = \mu_V \cdot F_N \cdot v
+\end{eqnarray}
 
 \end{document}

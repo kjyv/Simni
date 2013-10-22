@@ -334,9 +334,9 @@ class ui
     release_bias_hip = 0.015
     release_gf = 0
     release_gi = 0
-    contract_gf_hip = 1.01 #1.003 #1.0025 #1.006
-    contract_gi = 3 #30 #27 #50
-    stall_gb = 0.25
+    contract_gf_hip = 1.01 #1.0025 #1.006
+    contract_gi = 7 #30 #27 #50
+    stall_gb = 0.2
     stall_gf = 0 #0.8
 
     if hipCSL is "r+"
@@ -387,9 +387,9 @@ class ui
     release_bias_knee = 0.015
     release_gf = 0
     release_gi = 0
-    contract_gf_knee = 1.01 #1.003 #1.0015 #1.006
-    contract_gi = 3 #35 #26 #50
-    stall_gb = 0.25
+    contract_gf_knee = 1.01 #1.0015 #1.006
+    contract_gi = 7 #35 #26 #50
+    stall_gb = 0.2
     stall_gf = 0 #0.8
 
     if kneeCSL is "r+"
