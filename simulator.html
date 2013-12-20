@@ -180,9 +180,9 @@ Neurorobotics Research Laboratory, Berlin
                 </script>
                 <br/>
 
-                <div style="display: none;">
-                <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.1" value="0.050" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
-                <span id="friction_val">0.050</span><br/>
+                <div style="display: block;">
+                <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.2" value="0.045" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
+                <span id="friction_val">0.045</span><br/>
                 </div>
 
                 <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="30" style="width:60px;"/>
@@ -321,6 +321,8 @@ Neurorobotics Research Laboratory, Berlin
                 <button id="save_graph_json" onclick="physics.abc.posture_graph.saveGaphToFile()">Save graph as JSON</button><br/>
                 <button id="set_graph_json" onclick="$('#set_graph_json_file').click()">Load graph from JSON</button><br/>
                 <input type="file" id="set_graph_json_file" style="display:none" onchange="physics.abc.posture_graph.loadGraphFromFile(this.files)">
+                <button id="set_graph_semni" onclick="$('#set_graph_semni_file').click()">Load graph from Semni (serial)</button><br/>
+                <input type="file" id="set_graph_semni_file" style="display:none" onchange="physics.abc.posture_graph.loadGraphFromSemniFile(this.files)">
 
             </div>
             <div id="graph_controls" class="box">

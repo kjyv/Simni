@@ -307,7 +307,7 @@ class ui
     $("#friction_val").html beta.toFixed(3)
     if @physics.pend_style is 3
       @physics.upper_joint.m_maxMotorTorque = beta
-      @physics.lower_joint.m_maxMotorTorque = beta
+      @physics.lower_joint.m_maxMotorTorque = beta*1.5
     else
       @physics.lower_joint.m_maxMotorTorque = beta
     @physics.beta = beta
@@ -384,11 +384,11 @@ class ui
     @physics.abc.manual_noop = false
 
   set_csl_mode_lower: (kneeCSL, change_select=true) =>
-    release_bias_knee = 0.015
+    release_bias_knee = 0.025
     release_gf = 0
     release_gi = 0
-    contract_gf_knee = 1.01 #1.0015 #1.006
-    contract_gi = 7 #35 #26 #50
+    contract_gf_knee = 1.02 #1.0015 #1.006
+    contract_gi = 25 #35 #26 #50
     stall_gb = 0.2
     stall_gf = 0 #0.8
 

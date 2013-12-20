@@ -315,7 +315,7 @@ ui = (function() {
     $("#friction_val").html(beta.toFixed(3));
     if (this.physics.pend_style === 3) {
       this.physics.upper_joint.m_maxMotorTorque = beta;
-      this.physics.lower_joint.m_maxMotorTorque = beta;
+      this.physics.lower_joint.m_maxMotorTorque = beta * 1.5;
     } else {
       this.physics.lower_joint.m_maxMotorTorque = beta;
     }
@@ -391,11 +391,11 @@ ui = (function() {
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_knee = 0.015;
+    release_bias_knee = 0.025;
     release_gf = 0;
     release_gi = 0;
-    contract_gf_knee = 1.01;
-    contract_gi = 7;
+    contract_gf_knee = 1.02;
+    contract_gi = 25;
     stall_gb = 0.2;
     stall_gf = 0;
     if (kneeCSL === "r+") {

@@ -60,7 +60,6 @@ posture = (function() {
     this.body_x = x_pos;
     this.timestamp = timestamp;
     this.edges_out = [];
-    this.edges_in = [];
     this.exit_directions = [0, 0, 0, 0];
     this.length = 1;
     this.activation = 1;
@@ -191,6 +190,10 @@ postureGraph = (function() {
     this.walkCircle = __bind(this.walkCircle, this);
 
     this.findElementaryCircles = __bind(this.findElementaryCircles, this);
+
+    this.loadGraphFromSemniFile = __bind(this.loadGraphFromSemniFile, this);
+
+    this.populateGraphFromSemni = __bind(this.populateGraphFromSemni, this);
 
     this.loadGraphFromFile = __bind(this.loadGraphFromFile, this);
 
@@ -373,6 +376,137 @@ postureGraph = (function() {
     if (files.length > 0) {
       readFile(files[0], function(file, evt) {
         return physics.abc.posture_graph.populateGraphFromJSON(evt.target.result);
+      });
+    }
+    this.arborGraph.renderer.pause_drawing = false;
+    $("#graph_pause_drawing").attr('checked', false);
+    this.arborGraph.start(true);
+    this.arborGraph.renderer.click_time = Date.now();
+    return this.arborGraph.renderer.redraw();
+  };
+
+  postureGraph.prototype.populateGraphFromSemni = function(data) {
+    var ag, csl_mode_to_string_mode, e, ee, l, n, nn, source_node, target_node, v, vals, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n, _o, _ref, _ref1, _ref2, _ref3, _ref4, _results;
+    if (data == null) {
+      data = null;
+    }
+    csl_mode_to_string_mode = function(mode) {
+      var m, _i, _ref;
+      for (m = _i = 0, _ref = mode.length - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; m = 0 <= _ref ? ++_i : --_i) {
+        mode[m] = ["r+", "r-", "c", "s+", "s-"][mode[m]];
+      }
+      return mode;
+    };
+    this.nodes = [];
+    data = data.split("\n");
+    data.pop();
+    for (_i = 0, _len = data.length; _i < _len; _i++) {
+      l = data[_i];
+      vals = [];
+      _ref = l.split(" ");
+      for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+        v = _ref[_j];
+        v = v.replace(/(\]|\[)/gm, "").split(",");
+        for (n = _k = 0, _ref1 = v.length - 1; 0 <= _ref1 ? _k <= _ref1 : _k >= _ref1; n = 0 <= _ref1 ? ++_k : --_k) {
+          v[n] = Number(v[n]);
+        }
+        vals.push(v);
+      }
+      nn = new posture(vals[3], csl_mode_to_string_mode(vals[2], 0, Date.now()));
+      nn.name = vals[0][0];
+      nn.mean_n = 0;
+      nn.activation = 0.5;
+      nn.exit_directions = vals[1];
+      nn.positions = [0, 0, 0];
+      nn.world_angles = [(vals[3][2] / 1023) * 2 * Math.PI, 0, 0];
+      this.nodes.push(nn);
+    }
+    for (_l = 0, _len2 = data.length; _l < _len2; _l++) {
+      l = data[_l];
+      vals = [];
+      _ref2 = l.split(" ");
+      for (_m = 0, _len3 = _ref2.length; _m < _len3; _m++) {
+        v = _ref2[_m];
+        vals.push(v.replace(/(\]|\[)/gm, "").split(","));
+      }
+      n = this.getNodeByName(vals[0][0]);
+      _ref3 = vals[1];
+      for (_n = 0, _len4 = _ref3.length; _n < _len4; _n++) {
+        e = _ref3[_n];
+        if (e > 0 && e <= this.nodes.length) {
+          nn = this.getNodeByName(e);
+          ee = new transition(n, nn);
+          ee.csl_mode = csl_mode_to_string_mode(vals[2]);
+          ee.distance = 0;
+          ee.timedelta = 0;
+          n.edges_out.push(ee);
+        }
+      }
+    }
+    ag = this.arborGraph;
+    this.arborGraph.prune();
+    this.arborGraph.renderer.svg_nodes = {};
+    this.arborGraph.renderer.svg_edges = {};
+    $("#viewport_svg svg g").remove();
+    $("#viewport_svg svg rect").remove();
+    $("#viewport_svg svg text").remove();
+    $("#viewport_svg svg line").remove();
+    _ref4 = this.nodes;
+    _results = [];
+    for (_o = 0, _len5 = _ref4.length; _o < _len5; _o++) {
+      n = _ref4[_o];
+      _results.push((function() {
+        var _len6, _p, _ref5, _results1;
+        _ref5 = n.edges_out;
+        _results1 = [];
+        for (_p = 0, _len6 = _ref5.length; _p < _len6; _p++) {
+          e = _ref5[_p];
+          nn = e.target_node;
+          ag.addEdge(n.name, nn.name, {
+            "label": e.csl_mode,
+            "distance": e.distance,
+            "timedelta": e.timedelta
+          });
+          source_node = ag.getNode(n.name);
+          target_node = ag.getNode(nn.name);
+          source_node.data = {
+            label: n.csl_mode,
+            number: n.name,
+            activation: n.activation,
+            configuration: n.configuration,
+            positions: n.positions,
+            world_angles: n.world_angles
+          };
+          _results1.push(target_node.data = {
+            label: nn.csl_mode,
+            number: nn.name,
+            activation: nn.activation,
+            configuration: nn.configuration,
+            positions: nn.positions,
+            world_angles: nn.world_angles
+          });
+        }
+        return _results1;
+      })());
+    }
+    return _results;
+  };
+
+  postureGraph.prototype.loadGraphFromSemniFile = function(files) {
+    var readFile;
+    readFile = function(file, callback) {
+      var reader;
+      reader = new FileReader();
+      reader.onload = function(evt) {
+        if (typeof callback === "function") {
+          return callback(file, evt);
+        }
+      };
+      return reader.readAsBinaryString(file);
+    };
+    if (files.length > 0) {
+      readFile(files[0], function(file, evt) {
+        return physics.abc.posture_graph.populateGraphFromSemni(evt.target.result);
       });
     }
     this.arborGraph.renderer.pause_drawing = false;
@@ -659,7 +793,6 @@ abc = (function() {
       if (edge_list.length > 4) {
         console.log("warning: now more than 4 outgoing edges in " + start_node.name);
       }
-      target_node.edges_in.push(edge);
       n0 = start_node.name;
       n1 = target_node.name;
       if (this.posture_graph.length() > 2) {
@@ -707,11 +840,6 @@ abc = (function() {
       return this.graph.renderer.click_time = Date.now();
     }
   };
-
-  /* temp
-  for(i=1; i<physics.abc.posture_graph.length(); i++){if (physics.abc.posture_graph.nodes[i].edges_out.length>4){console.log(i)}}
-  */
-
 
   abc.prototype.switch_to_random_release_after_position = function(joint) {
     var which;

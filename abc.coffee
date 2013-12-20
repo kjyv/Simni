@@ -25,7 +25,7 @@ class posture   #i.e. node
     @body_x = x_pos
     @timestamp = timestamp
     @edges_out = []
-    @edges_in = []
+    #@edges_in = []
     @exit_directions = [0,0,0,0]   #h+,h-,k+,k- : list of the target nodes for each direction of each joint
     @length = 1  #quirk for searchSubarray
     @activation = 1
@@ -224,6 +224,105 @@ class postureGraph
     if files.length > 0
       readFile files[0], (file, evt) ->
         physics.abc.posture_graph.populateGraphFromJSON evt.target.result
+
+    @arborGraph.renderer.pause_drawing = false
+    $("#graph_pause_drawing").attr('checked', false)
+    @arborGraph.start(true)
+    @arborGraph.renderer.click_time = Date.now()
+    @arborGraph.renderer.redraw()
+
+
+  populateGraphFromSemni: (data=null) =>
+    csl_mode_to_string_mode = (mode) ->
+      for m in [0..mode.length-1]
+        mode[m] = ["r+","r-","c","s+","s-"][mode[m]]
+      return mode
+
+    #clear nodes we might already have
+    @nodes = []
+
+    data = data.split("\n")
+    data.pop()
+
+    #create the new nodes
+    for l in data
+      vals = []
+      for v in l.split(" ")
+        v = v.replace(/(\]|\[)/gm,"").split(",")
+        for n in [0..v.length-1]
+          v[n]=Number(v[n])
+        vals.push(v)
+
+      nn = new posture(vals[3], csl_mode_to_string_mode vals[2], 0, Date.now())
+      nn.name = vals[0][0]
+      nn.mean_n = 0
+      nn.activation = 0.5
+      nn.exit_directions = vals[1]
+      nn.positions = [0,0,0]
+      nn.world_angles = [((vals[3][2])/1023)*2*Math.PI,0,0]
+      @nodes.push nn
+
+    #put in edges
+    for l in data
+      vals = []
+      for v in l.split(" ")
+        vals.push(v.replace(/(\]|\[)/gm,"").split(","))
+
+      n = @getNodeByName vals[0][0]
+      for e in vals[1]
+        if e > 0 and e <= @nodes.length
+          nn = @getNodeByName e
+          ee = new transition(n, nn)
+          ee.csl_mode = csl_mode_to_string_mode vals[2]
+          ee.distance = 0
+          ee.timedelta = 0
+          n.edges_out.push(ee)
+
+    #refresh display graph
+    ag = @arborGraph
+    @arborGraph.prune()
+
+    @arborGraph.renderer.svg_nodes = {}
+    @arborGraph.renderer.svg_edges = {}
+
+    $("#viewport_svg svg g").remove()
+    $("#viewport_svg svg rect").remove()
+    $("#viewport_svg svg text").remove()
+    $("#viewport_svg svg line").remove()
+
+    for n in @nodes
+      for e in n.edges_out
+        nn = e.target_node
+        ag.addEdge(n.name, nn.name, {"label": e.csl_mode, "distance": e.distance, "timedelta": e.timedelta})
+        source_node = ag.getNode(n.name)
+        target_node = ag.getNode(nn.name)
+
+        source_node.data =
+          label: n.csl_mode
+          number: n.name
+          activation: n.activation
+          configuration: n.configuration
+          positions: n.positions
+          world_angles: n.world_angles
+
+        target_node.data =
+          label: nn.csl_mode
+          number: nn.name
+          activation: nn.activation
+          configuration: nn.configuration
+          positions: nn.positions
+          world_angles: nn.world_angles
+
+  loadGraphFromSemniFile: (files) =>
+    readFile = (file, callback) ->
+      reader = new FileReader()
+      reader.onload = (evt) ->
+        callback file, evt  if typeof callback is "function"
+      reader.readAsBinaryString file
+
+    if files.length > 0
+      readFile files[0], (file, evt) ->
+        physics.abc.posture_graph.populateGraphFromSemni evt.target.result
 
     @arborGraph.renderer.pause_drawing = false
     $("#graph_pause_drawing").attr('checked', false)
@@ -454,7 +553,7 @@ class abc
       edge_list.push edge
       if edge_list.length > 4
         console.log("warning: now more than 4 outgoing edges in " +start_node.name)
-      target_node.edges_in.push edge
+      #target_node.edges_in.push edge
 
       ##create new edge in display graph
       n0 = start_node.name
@@ -498,10 +597,9 @@ class abc
       @graph.start(true)
       @graph.renderer.click_time = Date.now()
 
-  ### temp
-  for(i=1; i<physics.abc.posture_graph.length(); i++){if (physics.abc.posture_graph.nodes[i].edges_out.length>4){console.log(i)}}
-  ###
-
+  #temp
+  #for(i=1; i<physics.abc.posture_graph.length(); i++){if (physics.abc.posture_graph.nodes[i].edges_out.length>4){console.log(i)}}
+  
   switch_to_random_release_after_position: (joint) =>
     @last_posture = null
     @previous_posture = null
@@ -589,7 +687,7 @@ class abc
       @last_expected_node = null
 
     #if we're trying to reach the closest position that is already saved, we need to catch it here
-    #also, if we are not in the possible posture, we have to create a new node at the before detected one (it is indeed new)
+    #also, if we are not in the possible posture, we have to create a new node at the one detected before (it is indeed new)
     else if physics.upper_joint.position_controller_active and physics.lower_joint.position_controller_active and @last_test_posture
       if p.isClose(@last_test_posture)
         console.log("arrived in posture that was too far away for thresholding but was reachable")
@@ -802,7 +900,7 @@ class abc
       previous_mode = undefined
 
     #we just added a new posture; if it has a stall mode set (from limitCSL()),
-    #prevent further going in the last direction if we now are in stall
+    #prevent going further in the last direction if we now are in stall
     for joint in [0,1]
       if "s" in current_mode[joint]
         @last_posture.exit_directions[stall_index_for_mode current_mode[joint], joint] = -1
