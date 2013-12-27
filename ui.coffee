@@ -23,8 +23,6 @@ class ui
               .attr("xmlns", "http://www.w3.org/2000/svg")
       @semni = @getSemniOutlineSVG(
         @physics.body.GetPosition(),
-        @physics.body2.GetPosition(),
-        @physics.body3.GetPosition(),
         @physics.body.GetAngle(),
         @physics.body2.GetAngle(),
         @physics.body3.GetAngle(),
@@ -52,8 +50,9 @@ class ui
 
     return p
 
-  getSemniOutlineSVG: (body_pos, arm1_pos, arm2_pos, body_angle, arm1_angle, arm2_angle, container) =>
-    #draw semni with given angles and position values into given svg container, return
+  getSemniOutlineSVG: (body_pos, body_angle, arm1_angle, arm2_angle, container) =>
+    ##draw semni with given angles and position values into given svg container
+
     #set up svg objects
     svg = container.append("svg:g")
 
@@ -86,8 +85,8 @@ class ui
             .style("fill", "none")
 
     #draw body at current position and angle
-    b_x = body_pos.x*@svg_scale
-    b_y = body_pos.y*@svg_scale
+    #b_x = body_pos.x*@svg_scale
+    #b_y = body_pos.y*@svg_scale
     #svg_semni_body.attr("transform", "translate(" +b_x+ "," +b_y+ ") rotate("+body_angle*180/Math.PI+")")
     svg_semni_body.attr("transform", "rotate("+body_angle*180/Math.PI+")")
 
@@ -98,7 +97,7 @@ class ui
     #arm1_joint = @rotate_point(b_x, b_y, body_angle, arm1_joint)
     arm1_joint = @rotate_point(0, 0, body_angle, arm1_joint)
     svg_joint.attr("transform", "translate(" +arm1_joint.x+ "," +arm1_joint.y+ ")")
-    svg_semni_arm1.attr("transform", "rotate(" +arm1_angle*180/Math.PI+ "," +arm1_joint.x+ "," +arm1_joint.y+ ") translate(" +arm1_joint.x+ "," +arm1_joint.y+ ")")
+    svg_semni_arm1.attr("transform", "rotate(" +(arm1_angle+body_angle)*180/Math.PI + "," +arm1_joint.x+ "," +arm1_joint.y+ ") translate(" +arm1_joint.x+ "," +arm1_joint.y+ ")")
 
     #draw lower arm at second joint that is moved with body and rotated, then rotated by upper arm angle, then by own angle
     arm2_joint = new b2Vec2()
@@ -107,9 +106,9 @@ class ui
 
     #arm2_joint = @rotate_point(b_x, b_y, body_angle, arm2_joint)
     arm2_joint = @rotate_point(0, 0, body_angle, arm2_joint)
-    arm2_joint = @rotate_point(arm1_joint.x, arm1_joint.y, arm1_angle-body_angle-0.85, arm2_joint) #confused why angle offset is necessary
+    arm2_joint = @rotate_point(arm1_joint.x, arm1_joint.y, arm1_angle-0.85, arm2_joint) #confused why angle offset is necessary
     svg_joint2.attr("transform", "translate(" +arm2_joint.x+ "," +arm2_joint.y+ ")")
-    svg_semni_arm2.attr("transform", "rotate(" +arm2_angle*180/Math.PI+ "," +arm2_joint.x+ "," +arm2_joint.y+ ") translate(" +arm2_joint.x+ "," +arm2_joint.y+ ")")
+    svg_semni_arm2.attr("transform", "rotate(" +(body_angle+arm1_angle+arm2_angle)*180/Math.PI+ "," +arm2_joint.x+ "," +arm2_joint.y+ ") translate(" +arm2_joint.x+ "," +arm2_joint.y+ ")")
 
     #draw head
     h_x = simni.head2[0].x*@svg_scale #+b_x

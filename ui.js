@@ -79,8 +79,6 @@ ui = (function() {
                     .attr("xmlns", "http://www.w3.org/2000/svg")
             @semni = @getSemniOutlineSVG(
               @physics.body.GetPosition(),
-              @physics.body2.GetPosition(),
-              @physics.body3.GetPosition(),
               @physics.body.GetAngle(),
               @physics.body2.GetAngle(),
               @physics.body3.GetAngle(),
@@ -105,8 +103,8 @@ ui = (function() {
     return p;
   };
 
-  ui.prototype.getSemniOutlineSVG = function(body_pos, arm1_pos, arm2_pos, body_angle, arm1_angle, arm2_angle, container) {
-    var arm1_joint, arm2_joint, b_x, b_y, d3line2, h_x, h_y, svg, svg_joint, svg_joint2, svg_semni_arm1, svg_semni_arm2, svg_semni_body, svg_semni_head;
+  ui.prototype.getSemniOutlineSVG = function(body_pos, body_angle, arm1_angle, arm2_angle, container) {
+    var arm1_joint, arm2_joint, d3line2, h_x, h_y, svg, svg_joint, svg_joint2, svg_semni_arm1, svg_semni_arm2, svg_semni_body, svg_semni_head;
     svg = container.append("svg:g");
     d3line2 = d3.svg.line().x(function(d) {
       return d.x * physics.ui.svg_scale;
@@ -119,22 +117,20 @@ ui = (function() {
     svg_semni_arm2 = svg.append("svg:path").attr("d", d3line2(simni.arm2Contour)).style("stroke-width", 1).style("fill", "none");
     svg_joint2 = svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", "1").style("stroke", "red");
     svg_semni_head = svg.append("svg:circle").attr("cx", 0).attr("cy", 0).attr("r", simni.head2[1] * this.svg_scale).style("stroke-width", 1).style("fill", "none");
-    b_x = body_pos.x * this.svg_scale;
-    b_y = body_pos.y * this.svg_scale;
     svg_semni_body.attr("transform", "rotate(" + body_angle * 180 / Math.PI + ")");
     arm1_joint = new b2Vec2();
     arm1_joint.x = simni.arm1JointAnchor2.x * this.svg_scale;
     arm1_joint.y = simni.arm1JointAnchor2.y * this.svg_scale;
     arm1_joint = this.rotate_point(0, 0, body_angle, arm1_joint);
     svg_joint.attr("transform", "translate(" + arm1_joint.x + "," + arm1_joint.y + ")");
-    svg_semni_arm1.attr("transform", "rotate(" + arm1_angle * 180 / Math.PI + "," + arm1_joint.x + "," + arm1_joint.y + ") translate(" + arm1_joint.x + "," + arm1_joint.y + ")");
+    svg_semni_arm1.attr("transform", "rotate(" + (arm1_angle + body_angle) * 180 / Math.PI + "," + arm1_joint.x + "," + arm1_joint.y + ") translate(" + arm1_joint.x + "," + arm1_joint.y + ")");
     arm2_joint = new b2Vec2();
     arm2_joint.x = simni.arm2JointAnchor2.x * this.svg_scale;
     arm2_joint.y = simni.arm2JointAnchor2.y * this.svg_scale;
     arm2_joint = this.rotate_point(0, 0, body_angle, arm2_joint);
-    arm2_joint = this.rotate_point(arm1_joint.x, arm1_joint.y, arm1_angle - body_angle - 0.85, arm2_joint);
+    arm2_joint = this.rotate_point(arm1_joint.x, arm1_joint.y, arm1_angle - 0.85, arm2_joint);
     svg_joint2.attr("transform", "translate(" + arm2_joint.x + "," + arm2_joint.y + ")");
-    svg_semni_arm2.attr("transform", "rotate(" + arm2_angle * 180 / Math.PI + "," + arm2_joint.x + "," + arm2_joint.y + ") translate(" + arm2_joint.x + "," + arm2_joint.y + ")");
+    svg_semni_arm2.attr("transform", "rotate(" + (body_angle + arm1_angle + arm2_angle) * 180 / Math.PI + "," + arm2_joint.x + "," + arm2_joint.y + ") translate(" + arm2_joint.x + "," + arm2_joint.y + ")");
     h_x = simni.head2[0].x * this.svg_scale;
     h_y = simni.head2[0].y * this.svg_scale;
     svg_semni_head.attr("transform", "rotate(" + body_angle * 180 / Math.PI + "," + 0 + "," + 0 + ") translate(" + h_x + "," + h_y + ")");

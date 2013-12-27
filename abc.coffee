@@ -242,7 +242,8 @@ class postureGraph
     @nodes = []
 
     data = data.split("\n")
-    data.pop()
+    if data[data.length-1] is ''
+      data.pop()
 
     #create the new nodes
     for l in data
@@ -259,7 +260,23 @@ class postureGraph
       nn.activation = 0.5
       nn.exit_directions = vals[1]
       nn.positions = [0,0,0]
-      nn.world_angles = [((vals[3][2])/1023)*2*Math.PI,0,0]
+
+      #semni to angle mappings
+      #body: 260 => 0
+      #508 => 1.57
+      #0 => -1.57
+
+      #knee
+      #5 => -3.194
+      #640 => 0
+      #1007 => 1.908
+
+      #hip
+      #361 => 0
+      #895 => 2.716
+      #176 => -0.94
+
+      nn.world_angles = [((((vals[3][0])-245)/1023)*2*Math.PI), ((vals[3][1]-361)/1023)*0.818*2*Math.PI, ((vals[3][2]-640)/1023)*0.818*2*Math.PI]
       @nodes.push nn
 
     #put in edges
@@ -599,7 +616,7 @@ class abc
 
   #temp
   #for(i=1; i<physics.abc.posture_graph.length(); i++){if (physics.abc.posture_graph.nodes[i].edges_out.length>4){console.log(i)}}
-  
+
   switch_to_random_release_after_position: (joint) =>
     @last_posture = null
     @previous_posture = null
@@ -623,7 +640,7 @@ class abc
 
     #set/update body positions for svg drawing
     p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]
-    p.world_angles = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()]
+    p.world_angles = [physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()]
     p.body_x = physics.body.GetWorldCenter().x
     p.timestamp = Date.now()
 

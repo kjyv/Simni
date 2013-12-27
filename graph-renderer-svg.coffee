@@ -140,7 +140,7 @@ class RendererSVG
       #draw semni contour and posture
       if not node.data.semni and positions and positions.length and world_angles
         #put new svg elements with nodes posture if not existent
-        node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], world_angles[0], world_angles[1], world_angles[2], parent.svg)
+        node.data.semni = ui.getSemniOutlineSVG(positions[0], world_angles[0], world_angles[1], world_angles[2], parent.svg)
 
       if not parent.draw_semni and node.data.semni
         node.data.semni.remove()

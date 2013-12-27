@@ -116,7 +116,7 @@ RendererSVG = (function() {
         w2 = 4;
       }
       if (!node.data.semni && positions && positions.length && world_angles) {
-        node.data.semni = ui.getSemniOutlineSVG(positions[0], positions[1], positions[2], world_angles[0], world_angles[1], world_angles[2], parent.svg);
+        node.data.semni = ui.getSemniOutlineSVG(positions[0], world_angles[0], world_angles[1], world_angles[2], parent.svg);
       }
       if (!parent.draw_semni && node.data.semni) {
         node.data.semni.remove();

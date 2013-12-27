@@ -399,7 +399,9 @@ postureGraph = (function() {
     };
     this.nodes = [];
     data = data.split("\n");
-    data.pop();
+    if (data[data.length - 1] === '') {
+      data.pop();
+    }
     for (_i = 0, _len = data.length; _i < _len; _i++) {
       l = data[_i];
       vals = [];
@@ -418,7 +420,7 @@ postureGraph = (function() {
       nn.activation = 0.5;
       nn.exit_directions = vals[1];
       nn.positions = [0, 0, 0];
-      nn.world_angles = [(vals[3][2] / 1023) * 2 * Math.PI, 0, 0];
+      nn.world_angles = [((vals[3][0] - 245) / 1023) * 2 * Math.PI, ((vals[3][1] - 361) / 1023) * 0.818 * 2 * Math.PI, ((vals[3][2] - 640) / 1023) * 0.818 * 2 * Math.PI];
       this.nodes.push(nn);
     }
     for (_l = 0, _len2 = data.length; _l < _len2; _l++) {
@@ -860,7 +862,7 @@ abc = (function() {
       this.last_posture.exit_directions[this.last_dir_index] = p.name;
     }
     p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()];
-    p.world_angles = [physics.body.GetAngle(), physics.body2.GetAngle(), physics.body3.GetAngle()];
+    p.world_angles = [physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()];
     p.body_x = physics.body.GetWorldCenter().x;
     p.timestamp = Date.now();
     if (this.last_posture && this.posture_graph.length() > 1) {
