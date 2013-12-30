@@ -193,7 +193,7 @@ postureGraph = (function() {
 
     this.loadGraphFromSemniFile = __bind(this.loadGraphFromSemniFile, this);
 
-    this.populateGraphFromSemni = __bind(this.populateGraphFromSemni, this);
+    this.populateGraphFromSemniFile = __bind(this.populateGraphFromSemniFile, this);
 
     this.loadGraphFromFile = __bind(this.loadGraphFromFile, this);
 
@@ -385,7 +385,7 @@ postureGraph = (function() {
     return this.arborGraph.renderer.redraw();
   };
 
-  postureGraph.prototype.populateGraphFromSemni = function(data) {
+  postureGraph.prototype.populateGraphFromSemniFile = function(data) {
     var ag, csl_mode_to_string_mode, e, ee, l, n, nn, source_node, target_node, v, vals, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n, _o, _ref, _ref1, _ref2, _ref3, _ref4, _results;
     if (data == null) {
       data = null;
@@ -417,10 +417,10 @@ postureGraph = (function() {
       nn = new posture(vals[3], csl_mode_to_string_mode(vals[2], 0, Date.now()));
       nn.name = vals[0][0];
       nn.mean_n = 0;
-      nn.activation = 0.5;
+      nn.activation = vals[4][0] / 100;
       nn.exit_directions = vals[1];
       nn.positions = [0, 0, 0];
-      nn.world_angles = [((vals[3][0] - 245) / 1023) * 2 * Math.PI, ((vals[3][1] - 361) / 1023) * 0.818 * 2 * Math.PI, ((vals[3][2] - 640) / 1023) * 0.818 * 2 * Math.PI];
+      nn.world_angles = [((vals[3][0] - 240) / 1023) * 2 * Math.PI, ((vals[3][1] - 361) / 1023) * 0.818 * 2 * Math.PI, ((vals[3][2] - 640) / 1023) * 0.818 * 2 * Math.PI];
       this.nodes.push(nn);
     }
     for (_l = 0, _len2 = data.length; _l < _len2; _l++) {
@@ -508,7 +508,7 @@ postureGraph = (function() {
     };
     if (files.length > 0) {
       readFile(files[0], function(file, evt) {
-        return physics.abc.posture_graph.populateGraphFromSemni(evt.target.result);
+        return physics.abc.posture_graph.populateGraphFromSemniFile(evt.target.result);
       });
     }
     this.arborGraph.renderer.pause_drawing = false;

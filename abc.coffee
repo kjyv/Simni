@@ -232,7 +232,7 @@ class postureGraph
     @arborGraph.renderer.redraw()
 
 
-  populateGraphFromSemni: (data=null) =>
+  populateGraphFromSemniFile: (data=null) =>
     csl_mode_to_string_mode = (mode) ->
       for m in [0..mode.length-1]
         mode[m] = ["r+","r-","c","s+","s-"][mode[m]]
@@ -257,7 +257,7 @@ class postureGraph
       nn = new posture(vals[3], csl_mode_to_string_mode vals[2], 0, Date.now())
       nn.name = vals[0][0]
       nn.mean_n = 0
-      nn.activation = 0.5
+      nn.activation = vals[4][0]/100
       nn.exit_directions = vals[1]
       nn.positions = [0,0,0]
 
@@ -276,7 +276,7 @@ class postureGraph
       #895 => 2.716
       #176 => -0.94
 
-      nn.world_angles = [((((vals[3][0])-245)/1023)*2*Math.PI), ((vals[3][1]-361)/1023)*0.818*2*Math.PI, ((vals[3][2]-640)/1023)*0.818*2*Math.PI]
+      nn.world_angles = [((((vals[3][0])-240)/1023)*2*Math.PI), ((vals[3][1]-361)/1023)*0.818*2*Math.PI, ((vals[3][2]-640)/1023)*0.818*2*Math.PI]
       @nodes.push nn
 
     #put in edges
@@ -339,7 +339,7 @@ class postureGraph
 
     if files.length > 0
       readFile files[0], (file, evt) ->
-        physics.abc.posture_graph.populateGraphFromSemni evt.target.result
+        physics.abc.posture_graph.populateGraphFromSemniFile evt.target.result
 
     @arborGraph.renderer.pause_drawing = false
     $("#graph_pause_drawing").attr('checked', false)
