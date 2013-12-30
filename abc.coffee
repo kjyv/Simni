@@ -21,7 +21,7 @@ class posture   #i.e. node
     @configuration = configuration  # [body angle, hip joint angle, knee joint angle]
     @mean_n = 1   #count the amount of configurations we have merged into this one
     @positions = []  #positions of the body part for svg drawing
-    @world_angles = []  #body world angles for svg drawing
+    @angles = []  #body and joint angles for svg drawing
     @body_x = x_pos
     @timestamp = timestamp
     @edges_out = []
@@ -39,7 +39,7 @@ class posture   #i.e. node
         new_edges.push e.target_node.name
       new_edges
 
-    JSON.stringify {"name": @name, "csl_mode":@csl_mode, "configuration":@configuration, "mean_n":@mean_n, "positions":@positions, "world_angles":@world_angles, "body_x": @body_x, "timestamp": @timestamp, "exit_directions": @exit_directions, "activation": @activation, "edges_out": replacer(@edges_out)}, null, 4
+    JSON.stringify {"name": @name, "csl_mode":@csl_mode, "configuration":@configuration, "mean_n":@mean_n, "positions":@positions, "angles":@angles, "body_x": @body_x, "timestamp": @timestamp, "exit_directions": @exit_directions, "activation": @activation, "edges_out": replacer(@edges_out)}, null, 4
 
   getEdgeTo: (target) =>
     for edge in @edges_out
@@ -114,7 +114,7 @@ class postureGraph
       activation: p.activation
       configuration: p.configuration
       positions: p.positions
-      world_angles: p.world_angles
+      angles: p.angles
     @arborGraph.addNode p.name, data
     return node_name
 
@@ -164,7 +164,7 @@ class postureGraph
       nn.activation = n.activation
       nn.exit_directions = n.exit_directions
       nn.positions = n.positions
-      nn.world_angles = n.world_angles
+      nn.angles = n.angles
       @nodes.push nn
 
     #put in edges
@@ -204,7 +204,7 @@ class postureGraph
           activation: n.activation
           configuration: n.configuration
           positions: n.positions
-          world_angles: n.world_angles
+          angles: n.angles
 
         target_node.data =
           label: nn.csl_mode
@@ -212,7 +212,7 @@ class postureGraph
           activation: nn.activation
           configuration: nn.configuration
           positions: nn.positions
-          world_angles: nn.world_angles
+          angles: nn.angles
 
   loadGraphFromFile: (files) =>
     readFile = (file, callback) ->
@@ -276,7 +276,10 @@ class postureGraph
       #895 => 2.716
       #176 => -0.94
 
-      nn.world_angles = [((((vals[3][0])-240)/1023)*2*Math.PI), ((vals[3][1]-361)/1023)*0.818*2*Math.PI, ((vals[3][2]-640)/1023)*0.818*2*Math.PI]
+      #TODO: use
+      #body_angle = Math.atan2(accely, accelz)
+
+      nn.angles = [((((vals[3][0])-250)/1023)*2*Math.PI), ((vals[3][1]-361)/1023)*0.818*2*Math.PI, ((vals[3][2]-640)/1023)*0.818*2*Math.PI]
       @nodes.push nn
 
     #put in edges
@@ -320,7 +323,7 @@ class postureGraph
           activation: n.activation
           configuration: n.configuration
           positions: n.positions
-          world_angles: n.world_angles
+          angles: n.angles
 
         target_node.data =
           label: nn.csl_mode
@@ -328,7 +331,7 @@ class postureGraph
           activation: nn.activation
           configuration: nn.configuration
           positions: nn.positions
-          world_angles: nn.world_angles
+          angles: nn.angles
 
   loadGraphFromSemniFile: (files) =>
     readFile = (file, callback) ->
@@ -599,14 +602,14 @@ class abc
         init_node.data.number = start_node.name
         init_node.data.activation = start_node.activation
         init_node.data.positions = start_node.positions
-        init_node.data.world_angles = start_node.world_angles
+        init_node.data.angles = start_node.angles
 
       source_node = @graph.getNode n0
       @graph.current_node = current_node = @graph.getNode(n1)
       current_node.data.label = target_node.csl_mode
       current_node.data.number = target_node.name
       current_node.data.positions = target_node.positions
-      current_node.data.world_angles = target_node.world_angles
+      current_node.data.angles = target_node.angles
       current_node.data.activation = target_node.activation
       source_node.data.activation = start_node.activation
 
@@ -640,7 +643,7 @@ class abc
 
     #set/update body positions for svg drawing
     p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]
-    p.world_angles = [physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()]
+    p.angles = [physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()]
     p.body_x = physics.body.GetWorldCenter().x
     p.timestamp = Date.now()
 
@@ -652,7 +655,7 @@ class abc
       #update graph render stuff
       a_p = @graph.getNode p.name
       @graph.current_node = a_p
-      a_p.data.world_angles = p.world_angles
+      a_p.data.angles = p.angles
       a_p.data.positions = p.positions
       @graph.renderer.draw_once()
 

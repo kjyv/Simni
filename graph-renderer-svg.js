@@ -100,12 +100,12 @@ RendererSVG = (function() {
     parent = this;
     graph = this.graph;
     this.particleSystem.eachNode(function(node, pt) {
-      var a, activation, c, crect, hovered, image, label, number, positions, strokeStyle, strokeWidth, w, w2, world_angles;
+      var a, activation, angles, c, crect, hovered, image, label, number, positions, strokeStyle, strokeWidth, w, w2;
       label = node.data.label;
       number = node.data.number;
       image = node.data.imageData;
       positions = node.data.positions;
-      world_angles = node.data.world_angles;
+      angles = node.data.angles;
       activation = node.data.activation;
       hovered = node.data.hovered;
       if (label) {
@@ -115,8 +115,8 @@ RendererSVG = (function() {
         w = 8;
         w2 = 4;
       }
-      if (!node.data.semni && positions && positions.length && world_angles) {
-        node.data.semni = ui.getSemniOutlineSVG(positions[0], world_angles[0], world_angles[1], world_angles[2], parent.svg);
+      if (!node.data.semni && positions && positions.length && angles) {
+        node.data.semni = ui.getSemniOutlineSVG(positions[0], angles[0], angles[1], angles[2], parent.svg);
       }
       if (!parent.draw_semni && node.data.semni) {
         node.data.semni.remove();

@@ -126,7 +126,7 @@ class RendererSVG
       number = node.data.number
       image = node.data.imageData
       positions = node.data.positions
-      world_angles = node.data.world_angles
+      angles = node.data.angles
       activation = node.data.activation
       hovered = node.data.hovered
 
@@ -138,9 +138,9 @@ class RendererSVG
         w2 = 4
 
       #draw semni contour and posture
-      if not node.data.semni and positions and positions.length and world_angles
+      if not node.data.semni and positions and positions.length and angles
         #put new svg elements with nodes posture if not existent
-        node.data.semni = ui.getSemniOutlineSVG(positions[0], world_angles[0], world_angles[1], world_angles[2], parent.svg)
+        node.data.semni = ui.getSemniOutlineSVG(positions[0], angles[0], angles[1], angles[2], parent.svg)
 
       if not parent.draw_semni and node.data.semni
         node.data.semni.remove()

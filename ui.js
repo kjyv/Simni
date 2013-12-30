@@ -260,9 +260,9 @@ ui = (function() {
 
   ui.prototype.map_mode_to_gi = function(mode) {
     if (mode < 0) {
-      return mode * 3;
+      return mode * 0.1;
     } else {
-      return 15 + (5 * mode);
+      return 0.7 + (0.1 * mode);
     }
   };
 

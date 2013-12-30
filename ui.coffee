@@ -246,9 +246,9 @@ class ui
 
     #single pendulum
     if mode < 0
-      mode * 3
+      mode * 0.1
     else
-      15 + (5 * mode)
+      0.7 + (0.1 * mode)
 
   map_mode_to_gf: (mode) =>
     #double pendulum
@@ -268,7 +268,7 @@ class ui
       mode
 
   map_mode: (bodyJoint, mode, joint=bodyJoint.joint_name) =>
-    #re-calc gi and gf from joints mode parameter and save in bodyJoint
+    #re-calc gi and gf from joint's mode parameter and save in bodyJoint
     #bodyJoint should have a useful joint_name set (lower, upper, depends on dom elements)
 
     #support:      gi < 0, gf = 0

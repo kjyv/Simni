@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 
+<!--
 
 Simulate various actuated shapes with a simple motor model and a CSL implementation.
 
@@ -123,12 +123,25 @@ Neurorobotics Research Laboratory, Berlin
                                 physics.createPendulum()
 
                                 #get initial gi/gf from current mode setting
-                                ui.map_mode physics.lower_joint
+                                #ui.map_mode physics.lower_joint
+
+                                gi = 0.5
+                                $("#gi_param_lower").val(gi)
+                                physics.lower_joint.gi = gi
+
+                                gf = 1.0005
+                                $("#gf_param_lower").val(gf)
+                                physics.lower_joint.gf = gf
+
+                                gb = 0
+                                $("#gb_param_lower").val(gb)
+                                physics.lower_joint.gb = gb
 
                                 $("#semni_posture_controls").fadeOut "fast", ->
                                     $("#map_state_to_mode_panel").fadeIn("fast")
                                     $("#state_to_mode_presets").fadeIn("fast")
                                     $("#state_to_mode_mapping").fadeIn("fast")
+
 
                             else if style is "2"
                                 physics.pend_style = 2
@@ -158,7 +171,7 @@ Neurorobotics Research Laboratory, Berlin
                         $("#friction_param").trigger("change")
 
                 </script>
-                <button id="toggle_pause" class="toggle-button" onClick="physics.run = !physics.run; physics.update();">pause/run simulation [p]</button> 
+                <button id="toggle_pause" class="toggle-button" onClick="physics.run = !physics.run; physics.update();">pause/run simulation [p]</button>
                 <button id="next_step" onClick="physics.step = true; physics.update();">next step(s) [n]</button><br/>
                 <button id="toggle_csl" class="toggle-button">toggle CSL [c]</button>
                 <button id="toggle_bounce" class="toggle-button">toggle bounce controller [b]</button>
@@ -356,7 +369,7 @@ Neurorobotics Research Laboratory, Berlin
                 <canvas width="1400" height="900" id="viewport"></canvas>
                 <canvas width="300" height="300" id="tempimage" style="display:none;"></canvas>
                 <div id="viewport_svg"></div>
-            </div> 
+            </div>
         </div>
 
         <script>
@@ -423,7 +436,7 @@ Neurorobotics Research Laboratory, Berlin
             }
 
             function draw_state_to_mode_mapping() {
-                //recalc mapping  
+                //recalc mapping
                 //imgData = context.createImageData(300,300)
                 context.clearRect(0,0,300,300)
                 var i, j, mode = 0
@@ -441,7 +454,7 @@ Neurorobotics Research Laboratory, Berlin
                         context.fillStyle = "rgb("+c.red.toFixed()+","+c.green.toFixed()+","+c.blue.toFixed()+")"
                         context.fillRect(px,py, 2,2)
                     }
-                } 
+                }
                 //context.putImageData(imgData, 300,300)
             }
 
@@ -494,7 +507,7 @@ Neurorobotics Research Laboratory, Berlin
                         ydata.shift()
                     }
 
-                    if (physics.pend_style == 3) { 
+                    if (physics.pend_style == 3) {
                         xdata.push(physics.lower_joint.GetJointAngle())
                         ydata.push(physics.upper_joint.GetJointAngle())
                     } else if (physics.pend_style == 1) {
@@ -504,7 +517,7 @@ Neurorobotics Research Laboratory, Berlin
                     }
 
                     if (!g) {                   // If the curve does not exist yet, create it.
-                        g = brd.create('curve', [xdata,ydata], {strokeWidth:1, strokeColor:'red'}); 
+                        g = brd.create('curve', [xdata,ydata], {strokeWidth:1, strokeColor:'red'});
                     }
 
                     //don't draw every frame
@@ -533,7 +546,7 @@ Neurorobotics Research Laboratory, Berlin
                         path
                           .attr("d", line)
                           .attr("transform", null)
-                    } 
+                    }
                 }
 
                 if (update_skip == 0) {
@@ -576,11 +589,11 @@ Neurorobotics Research Laboratory, Berlin
                     }
 
                     if (!g3) {                   // If the curve does not exist yet, create it.
-                        g3 = brd2.create('curve', [xdata2,ydata2], {strokeWidth:1, strokeColor:'green'}); 
-                    } 
+                        g3 = brd2.create('curve', [xdata2,ydata2], {strokeWidth:1, strokeColor:'green'});
+                    }
                     if (!g4) {                   // If the curve does not exist yet, create it.
-                        g4 = brd2.create('curve', [xdata2,ydata3], {strokeWidth:1, strokeColor:'blue'}); 
-                    } 
+                        g4 = brd2.create('curve', [xdata2,ydata3], {strokeWidth:1, strokeColor:'blue'});
+                    }
 
                     //don't draw every frame
                     if (update_skip_2 == 0) {
@@ -588,14 +601,14 @@ Neurorobotics Research Laboratory, Berlin
                         update_skip_2 = update_skip_initial
                     } else {
                         update_skip_2--
-                    } 
+                    }
                 }
             }
 
             //draw state to mode mapping and state
             context = $("<canvas>").appendTo("#state_to_mode_mapping").attr("width", 300).attr("height", 300)[0].getContext('2d')
 
-            /* 
+            /*
             //state space plot
             angle_speed = physics.lower_joint.angle_speed
             if (!angle_speed)

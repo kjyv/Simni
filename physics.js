@@ -162,7 +162,7 @@ physics = (function() {
     bodyDef.type = b2Body.b2_dynamicBody;
     this.fixDef.density = 35;
     this.fixDef.shape = new b2PolygonShape;
-    pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x + (this.ground_width / 2) + 1.4, this.ground_bodyDef.position.y - this.ground_height - 0.005), new b2Vec2(this.ground_bodyDef.position.x + (this.ground_width / 2) + 1.4, this.ground_bodyDef.position.y - this.ground_height - pend_length));
+    pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x + 1, this.ground_bodyDef.position.y - this.ground_height - 0.005), new b2Vec2(this.ground_bodyDef.position.x + 1, this.ground_bodyDef.position.y - this.ground_height - pend_length));
     this.fixDef.shape.SetAsArray(pend_vertices, 2);
     bodyDef.linearDamping = damping;
     bodyDef.angularDamping = damping;
@@ -194,14 +194,14 @@ physics = (function() {
 
   physics.prototype.createDoublePendulum = function() {
     var bodyDef, damping, jointDef, line, line2, mass, mass_size, pend_length, pend_vertices;
-    pend_length = 0.5;
-    mass_size = 0.04;
+    pend_length = 0.2;
+    mass_size = 0.02;
     damping = 0;
     bodyDef = new b2BodyDef;
     bodyDef.type = b2Body.b2_dynamicBody;
     this.fixDef.density = 10;
     this.fixDef.shape = new b2PolygonShape;
-    pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x + (this.ground_width / 2) + 1.4, this.ground_bodyDef.position.y - this.ground_height - 0.005), new b2Vec2(this.ground_bodyDef.position.x + (this.ground_width / 2) + 1.4, this.ground_bodyDef.position.y - this.ground_height - pend_length));
+    pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x + 1, this.ground_bodyDef.position.y - this.ground_height - 0.005), new b2Vec2(this.ground_bodyDef.position.x + 1, this.ground_bodyDef.position.y - this.ground_height - pend_length));
     this.fixDef.shape.SetAsArray(pend_vertices, 2);
     bodyDef.linearDamping = damping;
     bodyDef.angularDamping = damping;
@@ -226,7 +226,7 @@ physics = (function() {
     this.fixDef.shape = new b2CircleShape(mass_size);
     this.fixDef.shape.m_p = pend_vertices[1];
     mass = this.body.CreateFixture(this.fixDef);
-    pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x + (this.ground_width / 2) + 1.4, this.ground_bodyDef.position.y - this.ground_height - pend_length - 0.005), new b2Vec2(this.ground_bodyDef.position.x + (this.ground_width / 2) + 1.4, this.ground_bodyDef.position.y - this.ground_height - (2 * pend_length)));
+    pend_vertices = new Array(new b2Vec2(this.ground_bodyDef.position.x + 1, this.ground_bodyDef.position.y - this.ground_height - pend_length - 0.005), new b2Vec2(this.ground_bodyDef.position.x + 1, this.ground_bodyDef.position.y - this.ground_height - (2 * pend_length)));
     this.fixDef.shape = new b2PolygonShape;
     this.fixDef.shape.SetAsArray(pend_vertices, 2);
     bodyDef.linearDamping = damping;
@@ -576,7 +576,7 @@ physics = (function() {
 
   physics.prototype.updateMode = function(bodyJoint) {
     var mode;
-    mode = this.calcMode(bodyJoint.motor_torque, bodyJoint.angle_diff_csl);
+    mode = this.calcMode(bodyJoint.motor_torque, bodyJoint.angle_diff);
     mode = this.clip(mode, 3);
     return this.ui.map_mode(bodyJoint, mode);
   };

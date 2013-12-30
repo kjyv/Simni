@@ -56,7 +56,7 @@ posture = (function() {
     this.configuration = configuration;
     this.mean_n = 1;
     this.positions = [];
-    this.world_angles = [];
+    this.angles = [];
     this.body_x = x_pos;
     this.timestamp = timestamp;
     this.edges_out = [];
@@ -83,7 +83,7 @@ posture = (function() {
       "configuration": this.configuration,
       "mean_n": this.mean_n,
       "positions": this.positions,
-      "world_angles": this.world_angles,
+      "angles": this.angles,
       "body_x": this.body_x,
       "timestamp": this.timestamp,
       "exit_directions": this.exit_directions,
@@ -232,7 +232,7 @@ postureGraph = (function() {
       activation: p.activation,
       configuration: p.configuration,
       positions: p.positions,
-      world_angles: p.world_angles
+      angles: p.angles
     };
     this.arborGraph.addNode(p.name, data);
     return node_name;
@@ -295,7 +295,7 @@ postureGraph = (function() {
       nn.activation = n.activation;
       nn.exit_directions = n.exit_directions;
       nn.positions = n.positions;
-      nn.world_angles = n.world_angles;
+      nn.angles = n.angles;
       this.nodes.push(nn);
     }
     _ref1 = t.edges;
@@ -344,7 +344,7 @@ postureGraph = (function() {
             activation: n.activation,
             configuration: n.configuration,
             positions: n.positions,
-            world_angles: n.world_angles
+            angles: n.angles
           };
           _results1.push(target_node.data = {
             label: nn.csl_mode,
@@ -352,7 +352,7 @@ postureGraph = (function() {
             activation: nn.activation,
             configuration: nn.configuration,
             positions: nn.positions,
-            world_angles: nn.world_angles
+            angles: nn.angles
           });
         }
         return _results1;
@@ -420,7 +420,7 @@ postureGraph = (function() {
       nn.activation = vals[4][0] / 100;
       nn.exit_directions = vals[1];
       nn.positions = [0, 0, 0];
-      nn.world_angles = [((vals[3][0] - 240) / 1023) * 2 * Math.PI, ((vals[3][1] - 361) / 1023) * 0.818 * 2 * Math.PI, ((vals[3][2] - 640) / 1023) * 0.818 * 2 * Math.PI];
+      nn.angles = [((vals[3][0] - 250) / 1023) * 2 * Math.PI, ((vals[3][1] - 361) / 1023) * 0.818 * 2 * Math.PI, ((vals[3][2] - 640) / 1023) * 0.818 * 2 * Math.PI];
       this.nodes.push(nn);
     }
     for (_l = 0, _len2 = data.length; _l < _len2; _l++) {
@@ -477,7 +477,7 @@ postureGraph = (function() {
             activation: n.activation,
             configuration: n.configuration,
             positions: n.positions,
-            world_angles: n.world_angles
+            angles: n.angles
           };
           _results1.push(target_node.data = {
             label: nn.csl_mode,
@@ -485,7 +485,7 @@ postureGraph = (function() {
             activation: nn.activation,
             configuration: nn.configuration,
             positions: nn.positions,
-            world_angles: nn.world_angles
+            angles: nn.angles
           });
         }
         return _results1;
@@ -828,14 +828,14 @@ abc = (function() {
         init_node.data.number = start_node.name;
         init_node.data.activation = start_node.activation;
         init_node.data.positions = start_node.positions;
-        init_node.data.world_angles = start_node.world_angles;
+        init_node.data.angles = start_node.angles;
       }
       source_node = this.graph.getNode(n0);
       this.graph.current_node = current_node = this.graph.getNode(n1);
       current_node.data.label = target_node.csl_mode;
       current_node.data.number = target_node.name;
       current_node.data.positions = target_node.positions;
-      current_node.data.world_angles = target_node.world_angles;
+      current_node.data.angles = target_node.angles;
       current_node.data.activation = target_node.activation;
       source_node.data.activation = start_node.activation;
       this.graph.start(true);
@@ -862,14 +862,14 @@ abc = (function() {
       this.last_posture.exit_directions[this.last_dir_index] = p.name;
     }
     p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()];
-    p.world_angles = [physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()];
+    p.angles = [physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()];
     p.body_x = physics.body.GetWorldCenter().x;
     p.timestamp = Date.now();
     if (this.last_posture && this.posture_graph.length() > 1) {
       this.addEdge(this.last_posture, p);
       a_p = this.graph.getNode(p.name);
       this.graph.current_node = a_p;
-      a_p.data.world_angles = p.world_angles;
+      a_p.data.angles = p.angles;
       a_p.data.positions = p.positions;
       return this.graph.renderer.draw_once();
     }

@@ -122,8 +122,8 @@ class physics
     @fixDef.shape = new b2PolygonShape
     pend_vertices = new Array(
       #don't "touch" the ground so we don't get collisions while rotating
-      new b2Vec2(@ground_bodyDef.position.x+(@ground_width/2)+1.4, @ground_bodyDef.position.y - @ground_height - 0.005),
-      new b2Vec2(@ground_bodyDef.position.x+(@ground_width/2)+1.4, @ground_bodyDef.position.y - @ground_height - pend_length)
+      new b2Vec2(@ground_bodyDef.position.x+1, @ground_bodyDef.position.y - @ground_height - 0.005),
+      new b2Vec2(@ground_bodyDef.position.x+1, @ground_bodyDef.position.y - @ground_height - pend_length)
     )
     @fixDef.shape.SetAsArray pend_vertices, 2
     bodyDef.linearDamping = damping
@@ -162,8 +162,8 @@ class physics
 
   createDoublePendulum: =>
     #create pendulum line
-    pend_length = 0.5
-    mass_size = 0.04
+    pend_length = 0.2
+    mass_size = 0.02
     damping = 0
 
     bodyDef = new b2BodyDef
@@ -172,8 +172,8 @@ class physics
     @fixDef.shape = new b2PolygonShape
     pend_vertices = new Array(
       #0.005 -> don't "touch" the ground so we don't get collisions while rotating
-      new b2Vec2(@ground_bodyDef.position.x+(@ground_width/2)+1.4, @ground_bodyDef.position.y - @ground_height - 0.005),
-      new b2Vec2(@ground_bodyDef.position.x+(@ground_width/2)+1.4, @ground_bodyDef.position.y - @ground_height - pend_length)
+      new b2Vec2(@ground_bodyDef.position.x+1, @ground_bodyDef.position.y - @ground_height - 0.005),
+      new b2Vec2(@ground_bodyDef.position.x+1, @ground_bodyDef.position.y - @ground_height - pend_length)
     )
     @fixDef.shape.SetAsArray pend_vertices, 2
     bodyDef.linearDamping = damping
@@ -209,8 +209,8 @@ class physics
 
     #second line
     pend_vertices = new Array(
-      new b2Vec2(@ground_bodyDef.position.x+(@ground_width/2)+1.4, @ground_bodyDef.position.y - @ground_height - pend_length - 0.005),
-      new b2Vec2(@ground_bodyDef.position.x+(@ground_width/2)+1.4, @ground_bodyDef.position.y - @ground_height - (2*pend_length))
+      new b2Vec2(@ground_bodyDef.position.x+1, @ground_bodyDef.position.y - @ground_height - pend_length - 0.005),
+      new b2Vec2(@ground_bodyDef.position.x+1, @ground_bodyDef.position.y - @ground_height - (2*pend_length))
     )
     @fixDef.shape = new b2PolygonShape
     @fixDef.shape.SetAsArray pend_vertices, 2
@@ -623,7 +623,7 @@ class physics
     #w2 = -0.2   #-1 bias
     #mode = @w0 * Math.abs(@angle) + @w1 * @angle_speed + @w2
 
-    mode = @calcMode(bodyJoint.motor_torque, bodyJoint.angle_diff_csl)
+    mode = @calcMode(bodyJoint.motor_torque, bodyJoint.angle_diff)
     #mode = @clip(mode, 1.3)
     mode = @clip(mode, 3)
     @ui.map_mode bodyJoint, mode
