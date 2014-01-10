@@ -201,6 +201,8 @@ postureGraph = (function() {
 
     this.saveGaphToFile = __bind(this.saveGaphToFile, this);
 
+    this.meanActivation = __bind(this.meanActivation, this);
+
     this.length = __bind(this.length, this);
 
     this.getNodeByName = __bind(this.getNodeByName, this);
@@ -252,6 +254,17 @@ postureGraph = (function() {
 
   postureGraph.prototype.length = function() {
     return this.nodes.length;
+  };
+
+  postureGraph.prototype.meanActivation = function() {
+    var act, n, _i, _len, _ref;
+    act = 0;
+    _ref = this.nodes;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      n = _ref[_i];
+      act += n.activation;
+    }
+    return act / this.length();
   };
 
   postureGraph.prototype.saveGaphToFile = function() {
@@ -437,11 +450,13 @@ postureGraph = (function() {
         e = _ref3[_n];
         if (e > 0 && e <= this.nodes.length) {
           nn = this.getNodeByName(e);
-          ee = new transition(n, nn);
-          ee.csl_mode = csl_mode_to_string_mode(vals[2]);
-          ee.distance = 0;
-          ee.timedelta = 0;
-          n.edges_out.push(ee);
+          if (n && nn) {
+            ee = new transition(n, nn);
+            ee.csl_mode = csl_mode_to_string_mode(vals[2]);
+            ee.distance = 0;
+            ee.timedelta = 0;
+            n.edges_out.push(ee);
+          }
         }
       }
     }

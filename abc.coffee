@@ -130,6 +130,13 @@ class postureGraph
   length: =>
     @nodes.length
 
+  meanActivation: =>
+    act = 0
+    for n in @nodes
+      act += n.activation
+
+    return act / @length()
+
   saveGaphToFile: =>
     graph_as_string = ""
     edges = []
@@ -292,11 +299,12 @@ class postureGraph
       for e in vals[1]
         if e > 0 and e <= @nodes.length
           nn = @getNodeByName e
-          ee = new transition(n, nn)
-          ee.csl_mode = csl_mode_to_string_mode vals[2]
-          ee.distance = 0
-          ee.timedelta = 0
-          n.edges_out.push(ee)
+          if n and nn
+            ee = new transition(n, nn)
+            ee.csl_mode = csl_mode_to_string_mode vals[2]
+            ee.distance = 0
+            ee.timedelta = 0
+            n.edges_out.push(ee)
 
     #refresh display graph
     ag = @arborGraph
