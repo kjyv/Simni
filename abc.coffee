@@ -458,7 +458,7 @@ class postureGraph
         physics.abc.graph.renderer.redraw()
 
   diffuseLearnProgress: =>
-    #for each node, get activation through all outgoing edges and sum up
+    #for each node, get activation through all outgoing edges and sum them up
     #loop over nodes twice to properly deal with recurrent loops
     unless @nodes.length > 1
       return
@@ -554,7 +554,7 @@ class abc
         Math.abs(a[i][0] - b[j][0]) < eps and Math.abs(a[i][1] - b[j][1]) < eps and Math.abs(a[i][2] - b[j][2]) < eps
       #console.log(d)
 
-      if d.length > 3    #need to find sample a few times to be periodic
+      if d.length > 2    #need to find sample a few times to be periodic
         #found a posture, call user method
         configuration = @trajectory.pop()
         action(configuration, @)
@@ -743,7 +743,7 @@ class abc
 
     #check if there is a posture that we would have expected from the last posture and the last direction we went
     expected_node = undefined
-    if @last_posture? and @last_posture.exit_directions[@last_dir_index] isnt 0
+    if @last_posture? and @last_dir_index and @last_posture.exit_directions[@last_dir_index] isnt 0
       expected_node = @posture_graph.getNodeByName(@last_posture.exit_directions[@last_dir_index])
 
     #search for detected posture in all the nodes that we already have (using larger threshold)

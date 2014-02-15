@@ -784,7 +784,7 @@ abc = (function() {
       d = this.searchSubarray(last, this.trajectory, function(a, i, b, j) {
         return Math.abs(a[i][0] - b[j][0]) < eps && Math.abs(a[i][1] - b[j][1]) < eps && Math.abs(a[i][2] - b[j][2]) < eps;
       });
-      if (d.length > 3) {
+      if (d.length > 2) {
         configuration = this.trajectory.pop();
         action(configuration, this);
         this.trajectory = [];
@@ -940,7 +940,7 @@ abc = (function() {
       }
     }
     expected_node = void 0;
-    if ((this.last_posture != null) && this.last_posture.exit_directions[this.last_dir_index] !== 0) {
+    if ((this.last_posture != null) && this.last_dir_index && this.last_posture.exit_directions[this.last_dir_index] !== 0) {
       expected_node = this.posture_graph.getNodeByName(this.last_posture.exit_directions[this.last_dir_index]);
     }
     if (!found) {

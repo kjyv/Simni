@@ -485,7 +485,7 @@ ui = (function() {
   ui.prototype.getPostureGraphAsFile = function() {
     var svg;
     svg = $("#viewport_svg").clone();
-    svg.find("defs").append("<style>\n   line {\n      stroke-width: 1;\n      stroke: black;\n      fill: none;\n  }\n\n  text {\n    font-family: Verdana; sans-serif;\n    font-size: 7pt;\n    text-anchor: middle;\n    fill: #333333;\n  }\n</style>");
+    svg.find("defs").append("<style>\n   line {\n      stroke-width: 1;\n      stroke: black;\n      fill: none;\n  }\n</style>");
     return location.href = 'data:text;charset=utf-8,' + encodeURI('<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + svg.html());
   };
 
@@ -535,6 +535,9 @@ ui = (function() {
 
   ui.prototype.powerColor = function(value) {
     var b, h, s;
+    if (value > 0.9) {
+      value = 0.9;
+    }
     h = (0.9 - value) * 0.4;
     s = 0.9;
     b = 0.9;

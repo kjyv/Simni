@@ -5,15 +5,22 @@
 \usepackage[parfill]{parskip}
 \usepackage{url}
 \usepackage{todonotes}
+\usepackage{amsmath}
 
 \usepackage{tikz}
 \usepackage{signalflowdiagram}
 \usetikzlibrary{arrows,shapes,positioning,matrix,chains,calc}
+\usepackage{pgfplots}
 
 \setlength{\topmargin}{-.5in}
 \setlength{\textheight}{9in}
 \setlength{\oddsidemargin}{.125in}
 \setlength{\textwidth}{6.25in}
+
+\usepackage{listings}
+
+%%%
+
 \begin{document}
 \title{Simni Short Manual}
 \author{Stefan Bethge\\
@@ -42,6 +49,16 @@ It provides phase space and motor voltage plots and a graph representation of th
 
 \section{Usage}
 
+To open up the simulator, run
+\begin{lstlisting}[language=bash]
+python serve.py
+\end{lstlisting}
+to start a simple local webserver and open \url{http://127.0.0.1:8000/simulator.html} in your
+browser.
+You should get a window with a Semni outline in the top left and some controls and boxes under
+neath it. Using your mouse, you can interact with the simulation (for now, you need to be scrolled
+all the way up for that to properly work).
+
 \subsection{Data plotters}
 
 The data plotters are in the top right of the page.
@@ -49,20 +66,51 @@ To see current data and a history of the last 1000 time steps (96 Hz control loo
 
 \subsection{Buttons, Toggles and Shortcuts}
 
-There are a number of controls in the interface that are grouped by usage.\
-The ``Simulation Controls'' allow the selection of morphologies, at the moment single and double pendulum and Semni. "Simulate in Realtime" is intended to make the physics move the robot at about 60 fps which corresponds to about the same speed as realtime. Otherwise the simulation will run as fast as possible.
-"Pause/Run Simulation" toggles between halting and running again. The graph layouting and other processes independent from the physics will not be paused. While paused, progressing one step can be achieved by pressing "Next step(s)". This means however 10 physics simulation steps and one controller step, c.f. Section \ref{sim_internal}.
-The buttons "toggle CSL" and "toggle bounce controller" each enable or disable motor controllers for both joints. The CSL controller will use the paramters below the buttons, the bounce controller (using constant velocity and changing direction on stall) has default parameters.
+There are a number of controls in the interface that are grouped by usage.\ The ``Simulation
+Controls'' allow the selection of morphologies, at the moment single and double pendulum and Semni.
+``Simulate in Realtime'' is intended to make the physics move the robot at about 60 fps which
+corresponds to about the same speed as realtime. Otherwise the simulation will run as fast as
+possible. ``Pause/Run Simulation'' toggles between halting and running again. The graph layouting and
+other processes independent from the physics will not be paused. While paused, progressing one step
+can be achieved by pressing ``Next step(s)''. This means however 10 physics simulation steps and one
+controller step, c.f. Section~\ref{sim_internal}. The buttons ``toggle CSL'' and ``toggle bounce
+controller'' each enable or disable motor controllers for both joints. The CSL controller will use
+the paramters below the buttons, the bounce controller (using constant velocity and changing
+direction on stall) has default parameters.
 
-The "ABC learning" group contains controls related to the learning framework. "toggle explore" will also toggle the CSL controller and will start exploring. It will use the set "next mode strategy" setting to determine what next csl mode to set when a fixpoint was detected. This change will be reflected in the select boxes and the CSL parameters on the left.
-The buttons "Save graph as SVG", "Save graph as JSON" and "Load graph from JSON" should be self explanatory. ```Load graph from Semni'' loads a list of nodes as they are printed over a serial console from the associated ABC implementation on a hardware Semni robot.
-All progress will be displayed in the graph below all of the controls after postures are detected. The group "Graph properties" holds settings for the visual graph representation. Repulsion and stiffness relate to the spring simulation between nodes and changes the way the layouting looks and behaves. These will need a browser with support for html range elements. "Animate graph" will toggle whether the graph is continuously redrawn or only once when a new posture is detected or when the user moves or hovers nodes in the graph with the mouse. "Pause graph layouting between new poses" will make the layout algorithm be stopped after a few seconds of processing whenever a posture was found. Otherwise it will run continuously and might slow down the physics simulation. If the page was loaded from a remote url, web workers will be used for the layouting which runs the layouting on a different CPU core than the physics (if possible) and will make this setting unnecessary.
-"Show node activation" will show the numerical value that indicates how much there is to explore or to still be learned at each node. This is used with the unseen mode strategy to determine which edge to follow when for one node, all possible directions have been taken already. The same information is shown by colour if "Show node activation colors" is activated. "Show Semni postures" will trigger the display of small semni images above each node in the graph. "Show transition labels" will show the CSL mode that was set during a transition from one node to another, in addition to the mode on the node, as these may differ. Finally, "Save graph with every new posture" will save the whole graph as JSON file whenever a new pose is found to have an automatic history of what happened.
-Further details of the learning process can be found in the web browser's console.
+The ``ABC learning'' group contains controls related to the learning framework. ``toggle explore'' will
+also toggle the CSL controller and will start exploring. It will use the set ``next mode strategy''
+setting to determine what next csl mode to set when a fixpoint was detected. This change will be
+reflected in the select boxes and the CSL parameters on the left.  The buttons ``Save graph as SVG'',
+``Save graph as JSON'' and ``Load graph from JSON'' should be self explanatory. ``Load graph from
+Semni'' loads a list of nodes as they are printed over a serial console from the associated ABC
+implementation on a hardware Semni robot.  All progress will be displayed in the graph below all of
+the controls after postures are detected. The group ``Graph properties'' holds settings for the visual
+graph representation. Repulsion and stiffness relate to the spring simulation between nodes and
+changes the way the layouting looks and behaves. These will need a browser with support for html
+range elements. ``Animate graph'' will toggle whether the graph is continuously redrawn or only once
+when a new posture is detected or when the user moves or hovers nodes in the graph with the mouse.
+``Pause graph layouting between new poses'' will make the layout algorithm be stopped after a few
+seconds of processing whenever a posture was found. Otherwise it will run continuously and might
+slow down the physics simulation. If the page was loaded from a remote url, web workers will be used
+for the layouting which runs the layouting on a different CPU core than the physics (if possible)
+and will make this setting unnecessary. ``Show node activation'' will show the numerical value that
+indicates how much there is to explore or to still be learned at each node. This is used with the
+unseen mode strategy to determine which edge to follow when for one node, all possible directions
+have been taken already. The same information is shown by colour if ``Show node activation colors'' is
+activated. ``Show Semni postures'' will trigger the display of small semni images above each node in
+the graph. ``Show transition labels'' will show the CSL mode that was set during a transition from one
+node to another, in addition to the mode on the node, as these may differ. Finally, ``Save graph with
+every new posture'' will save the whole graph as JSON file whenever a new pose is found to have an
+automatic history of what happened.  Further details of the learning process can be found in the web
+browser's console.
 
-The more frequent buttons have one letter shortcuts as depicted by the [ ] brackets in their button label, so pressing this letter key will call that action.
+The more frequent buttons have one letter shortcuts as depicted by the [ ] brackets in their button
+label, so pressing this letter key will call that action.
 
-Next to the simulation visualization, there are options to zoom the view, show current angles and center of mass (COM) and drop in test objects. It is also possible to save and load the current position and angles of the semni robot.
+Next to the simulation visualization, there are options to zoom the view, show current angles and
+center of mass (COM) and drop in test objects. It is also possible to save and load the current
+position and angles of the semni robot.
 
 \section{Morphologies}
 \subsection{Included}
@@ -84,7 +132,8 @@ can be applied directly to a joint.
 The morphology is drawn on an html5 canvas, the graph is drawn directly with svg.
 The html5 range element provides sliders for certain values (make sure your browser supports them).
 
-Apart from the basic physics simulation, there is a simple motor model and a simple fluid friction model for the joint servos.
+Apart from the basic physics simulation, there is a simple motor model and a simple fluid friction
+model for the joint servos.
 
 \begin{figure}[H]
     \centering
@@ -92,18 +141,20 @@ Apart from the basic physics simulation, there is a simple motor model and a sim
     \caption{The components of the simulation CSL controller, motor model and
     friction model and Box2D. Empty circles denote a multiplication, circles with plus sign
     an addition. Plus or minus on an arrow give the sign for an addition.
-    Values in square brackets give the symbol for an dimension. In this way, $U$ means
-    a voltage, $M$ a Torque and $dot{\phi}$ an angular velocity.}
+    Values in square brackets give the symbol for an dimension. In this way, $u$ denotes
+    a voltage, $M$ a Torque and $\dot{\phi}$ an angular velocity.}
     \label{fig:controllermodell}
 \end{figure}
 
 \subsection{Friction}
 
-In addition to the movements of the objects themselves, frition forces occur between two bodies that are in contact. These are directed against the forces that produce the motion and can be considered threefold.
-If the two bodies remain completely still, \textit{static friction} occurs, which is dependent on the materials and the pressure and prevents movement up to a maximum force $F_H^{Max}$.
-So it can be though ofa force $F_H$ equal to the moving force $F$ being applied in opposite direction.
-Let $mu_H$ be the friction coefficient of static friction and $F_N$ be the force perpendicular to the
-surface. Then for $v = 0$:
+In addition to the movements of the objects themselves, frition forces occur between two bodies that
+are in contact. These are directed against the forces that produce the motion and can be considered
+threefold.  If the two bodies remain completely still, \textit{static friction} occurs, which is
+dependent on the materials and the pressure and prevents movement up to a maximum force $F_H^{Max}$.
+So it can be though ofa force $F_H$ equal to the moving force $F$ being applied in opposite
+direction.  Let $mu_H$ be the friction coefficient of static friction and $F_N$ be the force
+perpendicular to the surface. Then for $v = 0$:
 \begin{eqnarray}
     F_H & = & -F \\
     F_H \le \vec F_H^{Max} & = & \mu_H \cdot F_N
@@ -128,3 +179,7 @@ angular velocity $\omega$ respectively and a separate coefficient $\mu_V$.
 \end{eqnarray}
 
 \end{document}
+
+\section{ABC learning}
+    \subsection{CSL modes}
+    \subsection{Posture Graph}

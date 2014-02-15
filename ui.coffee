@@ -472,13 +472,6 @@ class ui
           stroke: black;
           fill: none;
       }
-
-      text {
-        font-family: Verdana; sans-serif;
-        font-size: 7pt;
-        text-anchor: middle;
-        fill: #333333;
-      }
     </style>
     """
     location.href = 'data:text;charset=utf-8,'+encodeURI ('<?xml version="1.0" encoding="UTF-8" standalone="no"?>')+svg.html()
@@ -521,6 +514,8 @@ class ui
 
   powerColor: (value) =>
     #for a value from 0..1 return color from green to red
+    if value > 0.9
+      value = 0.9
     h = (0.9-value) * 0.4   #hue, 0.4 = green
     s = 0.9           #saturation
     b = 0.9           #brightness

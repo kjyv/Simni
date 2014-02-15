@@ -42,6 +42,17 @@ class RendererSVG
       .append("svg:path")
         .attr("d", "M-7,3L0,0L-7,-3L-5.6,0")
 
+    @svg.append("svg:defs").append("svg:marker")
+        .attr("id", "Arrow2Mend")
+        .style("overflow", "visible")
+        .attr("refX", 0)
+        .attr("refY", 0)
+        .attr("orient", "auto")
+        .attr("stroke", "gray")
+      .append("svg:path")
+        .attr("style", "font-size:12.0;fill-rule:evenodd;stroke-width:0.62500000;stroke-linejoin:round;")
+        .attr("d", "M-7,3L0,0L-7,-3L-5.6,0")
+
   init: (system) =>
     # the particle system will call the init function once, right before the
     # first frame is to be drawn. it's a good place to set up the canvas and
@@ -191,7 +202,7 @@ class RendererSVG
 
       if label
         if activation?
-          a = activation.toFixed(1)
+          a = activation.toFixed(2)
 
           if parent.draw_color_activation
             c = physics.ui.powerColor a
@@ -201,23 +212,43 @@ class RendererSVG
         else
           a = ""
         if node.data.label_svg == undefined
+          font_size = "7pt"
+          font_family = "Verdana; sans-serif;"
+          text_anchor = "middle"
+          fill = "#333333"
+
           #id
           node.data.label_svg = parent.svg.append("svg:text")
           node.data.label_svg[0][0].textContent = number.toString()
+          node.data.label_svg
+                .style("font-size", font_size)
+                .style("font-family", font_family)
+                .style("text-anchor", text_anchor)
+                .style("fill", fill)
 
           #mode
           node.data.label_svg2 = parent.svg.append("svg:text")
           node.data.label_svg2[0][0].textContent = label || ""
+          node.data.label_svg2
+                .style("font-size", font_size)
+                .style("font-family", font_family)
+                .style("text-anchor", text_anchor)
+                .style("fill", fill)
 
           #activation
           node.data.label_svg3 = parent.svg.append("svg:text")
+          node.data.label_svg3
+                .style("font-size", font_size)
+                .style("font-family", font_family)
+                .style("text-anchor", text_anchor)
+                .style("fill", fill)
 
         node.data.label_svg.attr("x",pt.x).attr("y",pt.y-3)
         node.data.label_svg2.attr("x",pt.x).attr("y",pt.y+4)
 
         if parent.draw_activation
-          node.data.label_svg3.attr("x",pt.x).attr("y",pt.y+11)
-          node.data.label_svg3[0][0].textContent = "a:"+a
+          node.data.label_svg3.attr("x",pt.x).attr("y",pt.y+11.5)
+          node.data.label_svg3[0][0].textContent = a
         else
           node.data.label_svg3[0][0].textContent = ""
 
@@ -265,11 +296,15 @@ class RendererSVG
         #add svg element if not existing
         if parent.svg_edges[edge.data.name] == undefined
           parent.svg_edges[edge.data.name] = parent.svg.append("svg:line")
+          parent.svg_edges[edge.data.name]
+                .attr("stroke-width", "1")
+                .attr("stroke", "black")
+                .attr("fill", "none")
 
         #refresh coordinates
         parent.svg_edges[edge.data.name].attr("x1", tail.x).attr("y1", tail.y)
                                         .attr("x2", head.x).attr("y2", head.y)
-                                        .attr("marker-end", "url(#arrowtip)")
+                                        .attr("marker-end", "url(#Arrow2Mend)")
 
         if edge.source.data.hovered
           parent.svg_edges[edge.data.name].attr("stroke", "orange")
@@ -379,5 +414,5 @@ class RendererSVG
 
 if not window.simni?
   window.simni = {}
-  
+
 window.simni.RendererSVG = RendererSVG
