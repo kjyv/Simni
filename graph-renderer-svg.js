@@ -101,13 +101,14 @@ RendererSVG = (function() {
     parent = this;
     graph = this.graph;
     this.particleSystem.eachNode(function(node, pt) {
-      var a, activation, angles, c, crect, fill, font_family, font_size, hovered, image, label, number, positions, strokeStyle, strokeWidth, text_anchor, w, w2;
+      var a, activation, c, configuration, crect, fill, font_family, font_size, hovered, image, label, number, positions, strokeStyle, strokeWidth, subManifoldId, text_anchor, w, w2;
       label = node.data.label;
       number = node.data.number;
       image = node.data.imageData;
       positions = node.data.positions;
-      angles = node.data.angles;
+      configuration = node.data.configuration;
       activation = node.data.activation;
+      subManifoldId = node.data.subManifoldId;
       hovered = node.data.hovered;
       if (label) {
         w = 26;
@@ -116,8 +117,8 @@ RendererSVG = (function() {
         w = 8;
         w2 = 4;
       }
-      if (!node.data.semni && positions && positions.length && angles) {
-        node.data.semni = ui.getSemniOutlineSVG(positions[0], angles[0], angles[1], angles[2], parent.svg);
+      if (!node.data.semni && positions && positions.length && configuration) {
+        node.data.semni = ui.getSemniOutlineSVG(positions[0], configuration[0], configuration[1], configuration[2], parent.svg);
       }
       if (!parent.draw_semni && node.data.semni) {
         node.data.semni.remove();
@@ -161,7 +162,23 @@ RendererSVG = (function() {
             c = physics.ui.powerColor(a);
             parent.svg_nodes[number].style("fill", "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")");
           } else {
-            parent.svg_nodes[number].style("fill", "none");
+            switch (subManifoldId) {
+              case 1:
+                c = [255, 150, 0];
+                break;
+              case 2:
+                c = [0, 195, 80];
+                break;
+              case 3:
+                c = [0, 173, 244];
+                break;
+              case 4:
+                c = [197, 0, 169];
+                break;
+              default:
+                c = [0, 0, 0];
+            }
+            parent.svg_nodes[number].style("fill", "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")");
           }
         } else {
           a = "";

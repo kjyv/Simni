@@ -21,7 +21,6 @@ class posture   #i.e. node
     @configuration = configuration  # [body angle, hip joint angle, knee joint angle]
     @mean_n = 1   #count the amount of configurations we have merged into this one
     @positions = []  #positions of the body part for svg drawing
-    @angles = []  #body and joint angles for svg drawing
     @body_x = x_pos
     @timestamp = timestamp
     @edges_out = []
@@ -30,6 +29,7 @@ class posture   #i.e. node
     @length = 1  #quirk for searchSubarray
     @activation = 1
     @thresholdDistance = 0.15       #the euclidian distance that is considered to be small enough to say two postures are the same
+    @subManifoldId = 0
 
   asJSON: =>
     #prevent circular references
@@ -39,7 +39,7 @@ class posture   #i.e. node
         new_edges.push e.target_node.name
       new_edges
 
-    JSON.stringify {"name": @name, "csl_mode":@csl_mode, "configuration":@configuration, "mean_n":@mean_n, "positions":@positions, "angles":@angles, "body_x": @body_x, "timestamp": @timestamp, "exit_directions": @exit_directions, "activation": @activation, "edges_out": replacer(@edges_out)}, null, 4
+    JSON.stringify {"name": @name, "csl_mode":@csl_mode, "configuration":@configuration, "mean_n":@mean_n, "positions":@positions, "body_x": @body_x, "timestamp": @timestamp, "exit_directions": @exit_directions, "activation": @activation, "edges_out": replacer(@edges_out)}, null, 4
 
   getEdgeTo: (target) =>
     for edge in @edges_out
@@ -67,6 +67,30 @@ class posture   #i.e. node
     #TODO: also consider e.g. r+,s+ and r+,c equal. test that properly, might produce weird results...
     a.isClose(b[j], 0.45)
 
+  getSubmanifold: =>
+    # 0   1   2    3    4     5     6      7     8      9    10   11    12     13   14    15 16
+    # idx grp hip- hip+ knee- knee+ z_body y_hip x_knee stab ener t_hip t_knee mode xleft dx COGpos
+
+    #test_p = new posture([0,0,0], @csl_mode, @body_x, @timestamp)
+    old_dist = 2
+    grp = 0
+    for p in semni_manifold
+      #test_p.configuration[0] = physics.abc.wrapAngle -p[6]
+      #test_p.configuration[1] = physics.abc.wrapAngle -p[7]
+      #test_p.configuration[2] = physics.abc.wrapAngle -p[8]
+      #dist = @euclidDistance(test_p)
+      dist = squared(physics.abc.wrapAngle @configuration[0] - physics.abc.wrapAngle -p[6]) +
+             squared(@configuration[1] - -p[7]) +
+             squared(@configuration[2] - -p[8])
+      if dist < old_dist
+        old_dist = dist
+        grp = p[1]
+        #console.log(p[0] + " distance: " + dist + " grp: " + grp)
+    return grp
+
+
+#end class posture
+
 class transition  #i.e. edge
   constructor: (start_node, target_node) ->
     @start_node = start_node
@@ -88,6 +112,8 @@ class transition  #i.e. edge
       return true if @start_node is t.start_node and @target_node is t.target_node
     return false
 
+#end class transition
+
 class postureGraph
   #class holding the abc learning graph structure
   #because arbor (library for drawing graphs) has it's own internal structure, there are two graphs in memory,
@@ -100,6 +126,7 @@ class postureGraph
   addNode: (node) =>
     node.name = @nodes.length+1
     @nodes.push node
+    node.subManifoldId = node.getSubmanifold()
     return node.name
 
   addPosture: (p) =>
@@ -114,7 +141,7 @@ class postureGraph
       activation: p.activation
       configuration: p.configuration
       positions: p.positions
-      angles: p.angles
+      subManifoldId: p.subManifoldId
     @arborGraph.addNode p.name, data
     return node_name
 
@@ -171,7 +198,8 @@ class postureGraph
       nn.activation = n.activation
       nn.exit_directions = n.exit_directions
       nn.positions = n.positions
-      nn.angles = n.angles
+      nn.configuration = n.configuration
+      nn.subManifoldId = nn.getSubmanifold()
       @nodes.push nn
 
     #put in edges
@@ -211,7 +239,7 @@ class postureGraph
           activation: n.activation
           configuration: n.configuration
           positions: n.positions
-          angles: n.angles
+          subManifoldId: n.subManifoldId
 
         target_node.data =
           label: nn.csl_mode
@@ -219,7 +247,8 @@ class postureGraph
           activation: nn.activation
           configuration: nn.configuration
           positions: nn.positions
-          angles: nn.angles
+          subManifoldId: nn.subManifoldId
+    return
 
   loadGraphFromFile: (files) =>
     readFile = (file, callback) ->
@@ -286,7 +315,8 @@ class postureGraph
       #TODO: use
       #body_angle = Math.atan2(accely, accelz)
 
-      nn.angles = [((((vals[3][0])-250)/1023)*2*Math.PI), ((vals[3][1]-361)/1023)*0.818*2*Math.PI, ((vals[3][2]-640)/1023)*0.818*2*Math.PI]
+      nn.configuration = [((((vals[3][0])-250)/1023)*2*Math.PI), ((vals[3][1]-361)/1023)*0.818*2*Math.PI, ((vals[3][2]-640)/1023)*0.818*2*Math.PI]
+      nn.subManifoldId = nn.getSubmanifold()
       @nodes.push nn
 
     #put in edges
@@ -331,7 +361,7 @@ class postureGraph
           activation: n.activation
           configuration: n.configuration
           positions: n.positions
-          angles: n.angles
+          subManifoldId: n.subManifoldId
 
         target_node.data =
           label: nn.csl_mode
@@ -339,7 +369,10 @@ class postureGraph
           activation: nn.activation
           configuration: nn.configuration
           positions: nn.positions
-          angles: nn.angles
+          subManifoldId: nn.subManifoldId
+
+    #return empty so we dont collect results in for loop (coffee-script...)
+    return
 
   loadGraphFromSemniFile: (files) =>
     readFile = (file, callback) ->
@@ -481,6 +514,9 @@ class postureGraph
     for node in @nodes
       node.activation = node.activation_tmp
       @arborGraph.getNode(node.name).data.activation = node.activation
+    return
+
+#end class postureGraph
 
 class abc
   constructor: ->
@@ -531,10 +567,12 @@ class abc
     return angle - twoPi * Math.floor( angle / twoPi )
     #return Math.acos(Math.cos(angle))
 
-  ##detect if we are currently in a fixpoint or periodic attractor -> posture
+
   MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
   time = MAX_UNIX_TIME
+
   detectAttractor: (body, upper_joint, lower_joint, action) =>
+    ##detect if we are currently in a fixpoint or periodic attractor -> posture
     p_body = @wrapAngle body.GetAngle()     #p = φ
     p_hip = upper_joint.GetJointAngle()
     p_knee = lower_joint.GetJointAngle()
@@ -563,7 +601,6 @@ class abc
         @trajectory = []
 
       time = Date.now()
-
 
   addEdge: (start_node, target_node, edge_list=start_node.edges_out) =>
     #add an edge between two nodes in logical and drawing graphs, may add one or two new nodes to drawing graph
@@ -610,23 +647,20 @@ class abc
         init_node.data.number = start_node.name
         init_node.data.activation = start_node.activation
         init_node.data.positions = start_node.positions
-        init_node.data.angles = start_node.angles
+        init_node.data.configuration = start_node.configuration
 
       source_node = @graph.getNode n0
       @graph.current_node = current_node = @graph.getNode(n1)
       current_node.data.label = target_node.csl_mode
       current_node.data.number = target_node.name
       current_node.data.positions = target_node.positions
-      current_node.data.angles = target_node.angles
+      current_node.data.configuration = target_node.configuration
       current_node.data.activation = target_node.activation
       source_node.data.activation = start_node.activation
 
       #re-enable suspended graph layouting for a bit to find new layout
       @graph.start(true)
       @graph.renderer.click_time = Date.now()
-
-  #temp
-  #for(i=1; i<physics.abc.posture_graph.length(); i++){if (physics.abc.posture_graph.nodes[i].edges_out.length>4){console.log(i)}}
 
   switch_to_random_release_after_position: (joint) =>
     @last_posture = null
@@ -651,7 +685,7 @@ class abc
 
     #set/update body positions for svg drawing
     p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]
-    p.angles = [physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()]
+    p.configuration = [physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()]
     p.body_x = physics.body.GetWorldCenter().x
     p.timestamp = Date.now()
 
@@ -663,7 +697,7 @@ class abc
       #update graph render stuff
       a_p = @graph.getNode p.name
       @graph.current_node = a_p
-      a_p.data.angles = p.angles
+      a_p.data.configuration = p.configuration
       a_p.data.positions = p.positions
       @graph.renderer.draw_once()
 
@@ -758,8 +792,8 @@ class abc
         bb = parent.posture_graph.getNodeByIndex(b)
         aa.euclidDistance(p) - bb.euclidDistance(p)
 
-      #if the closest existing posture is further away than safe error range (0.25) but was found with larger error range
-      #we try to reach it with the position controller
+      #if the closest existing posture is further away than safe error range (0.25) but was found
+      #with larger error range we try to reach it with the position controller
       pp = @posture_graph.getNodeByIndex(found[0])
       if p.thresholdDistance < pp.euclidDistance(p)
         #enable position control
@@ -772,9 +806,10 @@ class abc
         @last_detected = p
         return
 
-    #if we found no posture (so we would create a new one) but expected one or the one we found is not the one we expected from
-    #the graph, we try to reach it explicitly (i.e. we are close to the attractor already)
-    if not found or (@last_posture? and expected_node? and @posture_graph.getNodeByIndex(found[0]).name isnt expected_node.name)
+    #if we found no posture (so we would create a new one) but expected one or the one we found is not the
+    #one we expected from the graph, we try to reach it explicitly (i.e. we are close to the attractor already)
+    if not found or (@last_posture? and expected_node? and
+          @posture_graph.getNodeByIndex(found[0]).name isnt expected_node.name)
       if expected_node
         console.log("we should have arrived in node "+ expected_node.name + ", but thresholding didn't find it")
         console.log("trying to collect with position controller")
@@ -973,7 +1008,8 @@ class abc
         else
           #we went all directions already, take one with largest activation
           if not next_dir_index? or @last_posture.exit_directions[next_dir_index] is -1
-            #next_dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four by # of joints - 0.01
+            #next_dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four
+            #by # of joints - 0.01
             #get edge with largest activation at target
             go_this_edge = @last_posture.edges_out[0]
             for e in @last_posture.edges_out
@@ -1036,7 +1072,6 @@ class abc
       else if mc < -limit
         ui.set_csl_mode_lower "s-"
 
-
   update: (body, upper_joint, lower_joint) =>
     @limitCSL upper_joint, lower_joint
     if @explore_active
@@ -1079,7 +1114,11 @@ class abc
             #we found a matching edge so there should be no other with the current posture
             break
 
+        return
         #TODO: if we're here, there was no matching edge in the circle which means we are not there yet
         #find a path from the current posture (we found one) to one posture on the circle (the shortest/safest please)
+
+#end class abc
+
 
 window.simni.Abc = abc

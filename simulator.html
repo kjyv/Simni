@@ -37,6 +37,7 @@ Neurorobotics Research Laboratory, Berlin
         <script src="libs/FileSaver.js"></script>
         <script src="graph-renderer-svg.js"></script>
         <script src="data/semni.data.js"></script>
+        <script src="data/semni.manifold.js"></script>
         <script src="physics.js"></script>
         <script src="abc.js"></script>
         <script src="logging.js"></script>
@@ -352,7 +353,8 @@ Neurorobotics Research Laboratory, Berlin
                 <label for="graph_activation">Show node activation (discovery possibilities)</label>
                 <input type="checkbox" id="graph_activation" value="yes" onchange="ui.set_activation(this.checked)"/></br>
 
-                <label for="graph_color_activation">Show node activation colors</label>
+                <label for="graph_color_activation">Show node activation colors (or manifold colors
+                    otherwise)</label>
                 <input type="checkbox" id="graph_color_activation" value="yes" checked onchange="ui.set_color_activation(this.checked)"/></br>
 
                 <label for="graph_draw_semnis">Show semni postures</label>

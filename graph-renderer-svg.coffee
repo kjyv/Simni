@@ -137,8 +137,9 @@ class RendererSVG
       number = node.data.number
       image = node.data.imageData
       positions = node.data.positions
-      angles = node.data.angles
+      configuration = node.data.configuration
       activation = node.data.activation
+      subManifoldId = node.data.subManifoldId
       hovered = node.data.hovered
 
       if label
@@ -149,9 +150,9 @@ class RendererSVG
         w2 = 4
 
       #draw semni contour and posture
-      if not node.data.semni and positions and positions.length and angles
+      if not node.data.semni and positions and positions.length and configuration
         #put new svg elements with nodes posture if not existent
-        node.data.semni = ui.getSemniOutlineSVG(positions[0], angles[0], angles[1], angles[2], parent.svg)
+        node.data.semni = ui.getSemniOutlineSVG(positions[0], configuration[0], configuration[1], configuration[2], parent.svg)
 
       if not parent.draw_semni and node.data.semni
         node.data.semni.remove()
@@ -208,7 +209,14 @@ class RendererSVG
             c = physics.ui.powerColor a
             parent.svg_nodes[number].style("fill","rgb("+c[0]+","+c[1]+","+c[2]+")")
           else
-            parent.svg_nodes[number].style("fill", "none")
+            #parent.svg_nodes[number].style("fill", "none")
+            switch subManifoldId
+              when 1 then c = [255,150,0]
+              when 2 then c = [0,195,80]
+              when 3 then c = [0,173,244]
+              when 4 then c = [197,0,169]
+              else c = [0,0,0]
+            parent.svg_nodes[number].style("fill","rgb("+c[0]+","+c[1]+","+c[2]+")")
         else
           a = ""
         if node.data.label_svg == undefined
