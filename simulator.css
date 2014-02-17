@@ -100,7 +100,11 @@ input[type="range"] {
 
 #graph_controls {
     float: left;
-    width: 416px;
+    width: 370px;
+}
+
+#manifold_view {
+    float:left;
 }
 
 #simulation canvas {

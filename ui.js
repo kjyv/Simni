@@ -340,7 +340,7 @@ ui = (function() {
     release_gf = 0;
     release_gi = 0;
     contract_gf_hip = 1.01;
-    contract_gi = 7;
+    contract_gi = 8;
     stall_gb = 0.2;
     stall_gf = 0;
     if (hipCSL === "r+") {
@@ -391,7 +391,7 @@ ui = (function() {
     release_gf = 0;
     release_gi = 0;
     contract_gf_knee = 1.03;
-    contract_gi = 25;
+    contract_gi = 32;
     stall_gb = 0.2;
     stall_gf = 0;
     if (kneeCSL === "r+") {

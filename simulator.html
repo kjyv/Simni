@@ -38,10 +38,13 @@ Neurorobotics Research Laboratory, Berlin
         <script src="graph-renderer-svg.js"></script>
         <script src="data/semni.data.js"></script>
         <script src="data/semni.manifold.js"></script>
+        <script src="libs/three.min.js"></script>
+        <script src="libs/three.OrbitControls.js"></script>
         <script src="physics.js"></script>
         <script src="abc.js"></script>
         <script src="logging.js"></script>
         <script src="ui.js"></script>
+        <script src="manifolds.js"></script>
         <link rel="stylesheet" type="text/css" href="libs/jsxgraph.css" />
         <link rel="stylesheet" type="text/css" href="simulator.css" />
     </head>
@@ -366,6 +369,9 @@ Neurorobotics Research Laboratory, Berlin
                 <label for="graph_save_periodically">Save graph with every new posture</label>
                 <input type="checkbox" id="graph_save_periodically" value="no" onchange="ui.set_save_periodically(this.checked)"/></br>
             </div>
+            <div id="manifold_view">
+                <canvas id="webglCanvas" width=320 height=260></canvas>
+            </div>
             <!--<div id="semni_svg" style="width: 300px; height: 300px; float: left;"></div>-->
             <div id="posture-graph">
                 <canvas width="1400" height="900" id="viewport"></canvas>
@@ -623,7 +629,6 @@ Neurorobotics Research Laboratory, Berlin
         <script>
             $(document).ready(function(){
                 //key bindings
-
                 $('.toggle-button').on('click', function(){
                     if($(this).css('color') == 'rgb(255, 0, 0)')
                         $(this).css('color', 'black')

@@ -334,7 +334,7 @@ class ui
     release_gf = 0
     release_gi = 0
     contract_gf_hip = 1.01 #1.0025 #1.006
-    contract_gi = 7 #30 #27 #50
+    contract_gi = 8 #30 #27 #50
     stall_gb = 0.2
     stall_gf = 0 #0.8
 
@@ -387,7 +387,7 @@ class ui
     release_gf = 0
     release_gi = 0
     contract_gf_knee = 1.03 #1.0015 #1.006
-    contract_gi = 25 #35 #26 #50
+    contract_gi = 32 #25 #35 #26 #50
     stall_gb = 0.2
     stall_gf = 0 #0.8
 

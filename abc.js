@@ -787,7 +787,7 @@ abc = (function() {
       d = this.searchSubarray(last, this.trajectory, function(a, i, b, j) {
         return Math.abs(a[i][0] - b[j][0]) < eps && Math.abs(a[i][1] - b[j][1]) < eps && Math.abs(a[i][2] - b[j][2]) < eps;
       });
-      if (d.length > 2) {
+      if (d.length > 3) {
         configuration = this.trajectory.pop();
         action(configuration, this);
         this.trajectory = [];
@@ -919,6 +919,8 @@ abc = (function() {
         this.switch_to_random_release_after_position(uj);
         this.switch_to_random_release_after_position(lj);
         this.last_expected_node = null;
+        this.last_detected = null;
+        this.last_posture = null;
         return;
       }
       this.last_expected_node = null;
@@ -959,7 +961,7 @@ abc = (function() {
       });
       pp = this.posture_graph.getNodeByIndex(found[0]);
       if (p.thresholdDistance < pp.euclidDistance(p)) {
-        console.log("found an existing posture (" + pp.name + ") that is possibly the same we just detected. trying with position controller.");
+        console.log("found an existing posture (" + pp.name + ") that is a bit far away but possibly right. trying with position controller if we can reach it from here.");
         uj.set_position = pp.configuration[1];
         lj.set_position = pp.configuration[2];
         physics.togglePositionController(uj);
@@ -971,8 +973,8 @@ abc = (function() {
     }
     if (!found || ((this.last_posture != null) && (expected_node != null) && this.posture_graph.getNodeByIndex(found[0]).name !== expected_node.name)) {
       if (expected_node) {
-        console.log("we should have arrived in node " + expected_node.name + ", but thresholding didn't find it");
-        console.log("trying to collect with position controller");
+        console.log("we should have arrived in node " + expected_node.name + ", but we didn't (or arrived to far)");
+        console.log("trying to reach it with position controller");
         uj.set_position = expected_node.configuration[1];
         lj.set_position = expected_node.configuration[2];
         physics.togglePositionController(uj);

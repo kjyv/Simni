@@ -592,7 +592,7 @@ class abc
         Math.abs(a[i][0] - b[j][0]) < eps and Math.abs(a[i][1] - b[j][1]) < eps and Math.abs(a[i][2] - b[j][2]) < eps
       #console.log(d)
 
-      if d.length > 2    #need to find sample a few times to be periodic
+      if d.length > 3    #need to find sample a few times to be periodic
         #found a posture, call user method
         configuration = @trajectory.pop()
         action(configuration, @)
@@ -744,6 +744,8 @@ class abc
         @switch_to_random_release_after_position uj
         @switch_to_random_release_after_position lj
         @last_expected_node = null
+        @last_detected = null
+        @last_posture = null
         return
 
       @last_expected_node = null
@@ -792,12 +794,12 @@ class abc
         bb = parent.posture_graph.getNodeByIndex(b)
         aa.euclidDistance(p) - bb.euclidDistance(p)
 
-      #if the closest existing posture is further away than safe error range (0.25) but was found
-      #with larger error range we try to reach it with the position controller
+      #if the closest existing posture is further away than safe error range (but it was found
+      #with the larger error range that isCloseExplore uses) we try to reach it with position controller
       pp = @posture_graph.getNodeByIndex(found[0])
       if p.thresholdDistance < pp.euclidDistance(p)
         #enable position control
-        console.log("found an existing posture (" + pp.name + ") that is possibly the same we just detected. trying with position controller.")
+        console.log("found an existing posture (" + pp.name + ") that is a bit far away but possibly right. trying with position controller if we can reach it from here.")
         uj.set_position = pp.configuration[1]
         lj.set_position = pp.configuration[2]
         physics.togglePositionController(uj)
@@ -811,8 +813,8 @@ class abc
     if not found or (@last_posture? and expected_node? and
           @posture_graph.getNodeByIndex(found[0]).name isnt expected_node.name)
       if expected_node
-        console.log("we should have arrived in node "+ expected_node.name + ", but thresholding didn't find it")
-        console.log("trying to collect with position controller")
+        console.log("we should have arrived in node "+ expected_node.name + ", but we didn't (or arrived to far)")
+        console.log("trying to reach it with position controller")
 
         #try to go to this posture with pos controller and see if next detected posture is the expected one
         uj.set_position = expected_node.configuration[1]
@@ -864,13 +866,16 @@ class abc
       graph_func = -> ui.getPostureGraphAsFile()
       setTimeout graph_func, 1000
 
+
   compareModes: (a, b) =>
     if not a or not b
       return false
     a[0] == b[0] && a[1] == b[1]
 
+
   set_strategy: (strategy) =>
     @mode_strategy = strategy
+
 
   newCSLMode: =>
     #random: randomly select next mode + different mode than the current one
@@ -880,7 +885,8 @@ class abc
 
     #TODO: try more strategies
     #- alternate between c and r modes
-    #- only save contraction modes for a start, derive r modes between those
+    #- always use certain direction/joint first, no random
+    #- 
 
     ### helpers ###
     set_random_mode = (current_mode) ->
