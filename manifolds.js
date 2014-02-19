@@ -92,6 +92,9 @@ manifoldRenderer = (function() {
       fog: true,
       vertexColors: THREE.VertexColors
     });
+    if (navigator.appVersion.indexOf("Win") !== -1) {
+      particle_material.size = 0.3;
+    }
     ps = new THREE.ParticleSystem(geom, particle_material);
     this.scene.add(ps);
     return this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);

@@ -14,6 +14,9 @@ if (typeof String::startsWith != 'function')
 squared = (val) ->
   val*val
 
+thresholdDistance = 0.15       #the euclidian distance that is considered to be small enough to say two postures are the same
+thresholdExplore = 0.45        #distance for finding possibly equal postures, has to be verified with position control though
+
 class posture   #i.e. node
   constructor: (configuration, csl_mode=[], x_pos=0, timestamp=Date.now()) ->
     @name = -99
@@ -28,7 +31,6 @@ class posture   #i.e. node
     @exit_directions = [0,0,0,0]   #h+,h-,k+,k- : list of the target nodes for each direction of each joint
     @length = 1  #quirk for searchSubarray
     @activation = 1
-    @thresholdDistance = 0.15       #the euclidian distance that is considered to be small enough to say two postures are the same
     @subManifoldId = 0
 
   asJSON: =>
@@ -60,13 +62,13 @@ class posture   #i.e. node
     squared(@configuration[2] - to.configuration[2])
 
   #detect if postures are close enough to be possibly the same
-  isClose: (to, eps=@thresholdDistance) =>
+  isClose: (to, eps=thresholdDistance) =>
     @euclidDistance(to) < eps and @csl_mode[0] == to.csl_mode[0] and @.csl_mode[1] == to.csl_mode[1]
 
   #comparator for exploring
   isCloseExplore: (a,i, b,j) =>
     #TODO: also consider e.g. r+,s+ and r+,c equal. test that properly, might produce weird results...
-    a.isClose(b[j], 0.45)
+    a.isClose(b[j], thresholdExplore)
 
   getSubmanifold: =>
     # 0   1   2    3    4     5     6      7     8      9    10   11    12     13   14    15 16
@@ -164,6 +166,13 @@ class postureGraph
       act += n.activation
 
     return act / @length()
+
+  findDuplicates: =>
+    for n in @nodes
+      for nn in @nodes
+        if n.name isnt nn.name and n.isClose(nn, thresholdExplore)
+          console.log("duplicates "+ n.name+" and " + nn.name + ". distance " + n.euclidDistance(nn))
+    return
 
   saveGaphToFile: =>
     graph_as_string = ""
@@ -568,8 +577,8 @@ class abc
     return angle - twoPi * (Math.floor( angle / twoPi))
 
   wrapAngleManifold: (bodyangle) =>
-    #wrap angle between -1.7 * PI and +0.5 * PI, useful with manifold data
-    while bodyangle < -1.85*Math.PI
+    #wrap angle in asymmetric range around 0, useful with manifold data
+    while bodyangle < -1.75*Math.PI
       bodyangle+= 2*Math.PI
     while bodyangle > 0.8*Math.PI
       bodyangle-= 2*Math.PI
@@ -790,7 +799,7 @@ class abc
 
     #check if there is a posture that we would have expected from the last posture and the last direction we went
     expected_node = undefined
-    if @last_posture? and @last_dir_index and @last_posture.exit_directions[@last_dir_index] isnt 0
+    if @last_posture? and @last_dir_index? and @last_posture.exit_directions[@last_dir_index] isnt 0
       expected_node = @posture_graph.getNodeByName(@last_posture.exit_directions[@last_dir_index])
 
     #search for detected posture in all the nodes that we already have (using larger threshold)
@@ -808,7 +817,7 @@ class abc
       #if the closest existing posture is further away than safe error range (but it was found
       #with the larger error range that isCloseExplore uses) we try to reach it with position controller
       pp = @posture_graph.getNodeByIndex(found[0])
-      if p.thresholdDistance < pp.euclidDistance(p)
+      if thresholdDistance < pp.euclidDistance(p)
         #enable position control
         console.log("found an existing posture (" + pp.name + ") that is a bit far away but possibly right. trying with position controller if we can reach it from here.")
         uj.set_position = pp.configuration[1]

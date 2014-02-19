@@ -77,6 +77,9 @@ class manifoldRenderer
       vertexColors: THREE.VertexColors
     )
 
+    if navigator.appVersion.indexOf("Win") isnt -1
+      particle_material.size = 0.3
+
     #mesh = new THREE.Mesh(geom, mesh_material)
     #scene.add mesh
     ps = new THREE.ParticleSystem(geom, particle_material)
@@ -110,7 +113,6 @@ class manifoldRenderer
     @scene.add @current_state
 
   updateCurrentState: (state) =>
-    # state: {x,y,z}
     @current_state.position.x = state.x
     @current_state.position.y = state.y
     @current_state.position.z = state.z
