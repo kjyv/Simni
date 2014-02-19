@@ -54,7 +54,8 @@ class posture   #i.e. node
 
   #methods to determine if this posture is near another one
   euclidDistance: (to) =>
-    squared(@configuration[0] - to.configuration[0]) +
+    squared(physics.abc.smallestAngleDistance(physics.abc.wrapAngle(@configuration[0]),
+         physics.abc.wrapAngle(to.configuration[0]))) +
     squared(@configuration[1] - to.configuration[1]) +
     squared(@configuration[2] - to.configuration[2])
 
@@ -79,7 +80,7 @@ class posture   #i.e. node
       #test_p.configuration[1] = physics.abc.wrapAngle -p[7]
       #test_p.configuration[2] = physics.abc.wrapAngle -p[8]
       #dist = @euclidDistance(test_p)
-      dist = squared(physics.abc.wrapAngle @configuration[0] - physics.abc.wrapAngle -p[6]) +
+      dist = squared(physics.abc.wrapAngleManifold @configuration[0] - physics.abc.wrapAngleManifold -p[6]) +
              squared(@configuration[1] - -p[7]) +
              squared(@configuration[2] - -p[8])
       if dist < old_dist
@@ -564,16 +565,26 @@ class abc
 
   wrapAngle: (angle) =>
     twoPi = 2*Math.PI
-    return angle - twoPi * Math.floor( angle / twoPi )
-    #return Math.acos(Math.cos(angle))
+    return angle - twoPi * (Math.floor( angle / twoPi))
 
+  wrapAngleManifold: (bodyangle) =>
+    #wrap angle between -1.7 * PI and +0.5 * PI, useful with manifold data
+    while bodyangle < -1.85*Math.PI
+      bodyangle+= 2*Math.PI
+    while bodyangle > 0.8*Math.PI
+      bodyangle-= 2*Math.PI
+    return bodyangle
+
+  smallestAngleDistance: (a1, a2) =>
+    #get the shorter of the positive or negative facing angle
+    angle = Math.PI - Math.abs(Math.abs(a1 - a2) - Math.PI)
 
   MAX_UNIX_TIME = 1924988399 #31/12/2030 23:59:59
   time = MAX_UNIX_TIME
 
   detectAttractor: (body, upper_joint, lower_joint, action) =>
     ##detect if we are currently in a fixpoint or periodic attractor -> posture
-    p_body = @wrapAngle body.GetAngle()     #p = φ
+    p_body = body.GetAngle()     #p = φ
     p_hip = upper_joint.GetJointAngle()
     p_knee = lower_joint.GetJointAngle()
 

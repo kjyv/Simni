@@ -23,7 +23,7 @@ RendererSVG = (function() {
     this.abc = abc;
     $("canvas#viewport").hide();
     this.draw_graph_animated = true;
-    this.draw_color_activation = true;
+    this.draw_color_activation = false;
     this.draw_edge_labels = false;
     this.draw_activation = false;
     this.draw_semni = true;
@@ -336,6 +336,8 @@ RendererSVG = (function() {
           }
           parent.previous_hover = hover.node;
           redraw = true;
+          manifoldRenderer.updateCurrentState(manifoldRenderer.internalToManifold(hover.node.data.configuration));
+          window.stopStateUpdate = true;
         } else {
           if (parent.previous_hover && parent.previous_hover.data.hovered) {
             parent.previous_hover.data.hovered = false;
@@ -344,6 +346,7 @@ RendererSVG = (function() {
           if (hover) {
             hover.node.data.hovered = false;
           }
+          window.stopStateUpdate = false;
         }
         if (redraw) {
           return parent.draw_once();

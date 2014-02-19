@@ -330,7 +330,7 @@ class ui
 
   set_csl_mode_upper: (hipCSL, change_select=true) =>
     #set ABC learning modes for exploration
-    release_bias_hip = 0.03
+    release_bias_hip = 0.04
     release_gf = 0
     release_gi = 0
     contract_gf_hip = 1.01 #1.0025 #1.006
@@ -550,6 +550,11 @@ class ui
 
   set_pause_drawing: (value) =>
     physics.abc.graph.renderer.pause_drawing = value
+
+  set_render_manifold: (value) =>
+    manifoldRenderer.do_render = value
+    if value
+      manifoldRenderer.animate()
 
   set_save_periodically: (value) =>
     physics.abc.save_periodically = value

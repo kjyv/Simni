@@ -9,6 +9,8 @@ ui = (function() {
 
     this.set_save_periodically = __bind(this.set_save_periodically, this);
 
+    this.set_render_manifold = __bind(this.set_render_manifold, this);
+
     this.set_pause_drawing = __bind(this.set_pause_drawing, this);
 
     this.set_draw_semni = __bind(this.set_draw_semni, this);
@@ -336,7 +338,7 @@ ui = (function() {
     if (change_select == null) {
       change_select = true;
     }
-    release_bias_hip = 0.03;
+    release_bias_hip = 0.04;
     release_gf = 0;
     release_gi = 0;
     contract_gf_hip = 1.01;
@@ -576,6 +578,13 @@ ui = (function() {
 
   ui.prototype.set_pause_drawing = function(value) {
     return physics.abc.graph.renderer.pause_drawing = value;
+  };
+
+  ui.prototype.set_render_manifold = function(value) {
+    manifoldRenderer.do_render = value;
+    if (value) {
+      return manifoldRenderer.animate();
+    }
   };
 
   ui.prototype.set_save_periodically = function(value) {

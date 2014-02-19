@@ -120,7 +120,7 @@ posture = (function() {
   };
 
   posture.prototype.euclidDistance = function(to) {
-    return squared(this.configuration[0] - to.configuration[0]) + squared(this.configuration[1] - to.configuration[1]) + squared(this.configuration[2] - to.configuration[2]);
+    return squared(physics.abc.smallestAngleDistance(physics.abc.wrapAngle(this.configuration[0]), physics.abc.wrapAngle(to.configuration[0]))) + squared(this.configuration[1] - to.configuration[1]) + squared(this.configuration[2] - to.configuration[2]);
   };
 
   posture.prototype.isClose = function(to, eps) {
@@ -140,7 +140,7 @@ posture = (function() {
     grp = 0;
     for (_i = 0, _len = semni_manifold.length; _i < _len; _i++) {
       p = semni_manifold[_i];
-      dist = squared(physics.abc.wrapAngle(this.configuration[0] - physics.abc.wrapAngle(-p[6]))) + squared(this.configuration[1] - -p[7]) + squared(this.configuration[2] - -p[8]);
+      dist = squared(physics.abc.wrapAngleManifold(this.configuration[0] - physics.abc.wrapAngleManifold(-p[6]))) + squared(this.configuration[1] - -p[7]) + squared(this.configuration[2] - -p[8]);
       if (dist < old_dist) {
         old_dist = dist;
         grp = p[1];
@@ -709,6 +709,10 @@ abc = (function() {
 
     this.detectAttractor = __bind(this.detectAttractor, this);
 
+    this.smallestAngleDistance = __bind(this.smallestAngleDistance, this);
+
+    this.wrapAngleManifold = __bind(this.wrapAngleManifold, this);
+
     this.wrapAngle = __bind(this.wrapAngle, this);
 
     this.searchSubarray = __bind(this.searchSubarray, this);
@@ -765,7 +769,22 @@ abc = (function() {
   abc.prototype.wrapAngle = function(angle) {
     var twoPi;
     twoPi = 2 * Math.PI;
-    return angle - twoPi * Math.floor(angle / twoPi);
+    return angle - twoPi * (Math.floor(angle / twoPi));
+  };
+
+  abc.prototype.wrapAngleManifold = function(bodyangle) {
+    while (bodyangle < -1.85 * Math.PI) {
+      bodyangle += 2 * Math.PI;
+    }
+    while (bodyangle > 0.8 * Math.PI) {
+      bodyangle -= 2 * Math.PI;
+    }
+    return bodyangle;
+  };
+
+  abc.prototype.smallestAngleDistance = function(a1, a2) {
+    var angle;
+    return angle = Math.PI - Math.abs(Math.abs(a1 - a2) - Math.PI);
   };
 
   MAX_UNIX_TIME = 1924988399;
@@ -774,7 +793,7 @@ abc = (function() {
 
   abc.prototype.detectAttractor = function(body, upper_joint, lower_joint, action) {
     var configuration, d, eps, last, p_body, p_hip, p_knee;
-    p_body = this.wrapAngle(body.GetAngle());
+    p_body = body.GetAngle();
     p_hip = upper_joint.GetJointAngle();
     p_knee = lower_joint.GetJointAngle();
     if (this.trajectory.length === 10000) {

@@ -18,7 +18,7 @@ class RendererSVG
     $("canvas#viewport").hide()
 
     @draw_graph_animated = true
-    @draw_color_activation = true
+    @draw_color_activation = false
     @draw_edge_labels = false
     @draw_activation = false
     @draw_semni = true
@@ -406,12 +406,16 @@ class RendererSVG
             parent.previous_hover.data.hovered = false
           parent.previous_hover = hover.node
           redraw = true
+
+          manifoldRenderer.updateCurrentState manifoldRenderer.internalToManifold hover.node.data.configuration
+          window.stopStateUpdate = true
         else
           if parent.previous_hover and parent.previous_hover.data.hovered
             parent.previous_hover.data.hovered = false
             redraw = true
           if hover
             hover.node.data.hovered = false
+          window.stopStateUpdate = false
 
         if redraw
           parent.draw_once()
