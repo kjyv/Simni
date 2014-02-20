@@ -593,7 +593,7 @@ class abc
 
   detectAttractor: (body, upper_joint, lower_joint, action) =>
     ##detect if we are currently in a fixpoint or periodic attractor -> posture
-    p_body = body.GetAngle()     #p = φ
+    p_body = @wrapAngle body.GetAngle()     #p = φ
     p_hip = upper_joint.GetJointAngle()
     p_knee = lower_joint.GetJointAngle()
 
@@ -668,6 +668,7 @@ class abc
         init_node.data.activation = start_node.activation
         init_node.data.positions = start_node.positions
         init_node.data.configuration = start_node.configuration
+        init_node.data.subManifoldId = start_node.subManifoldId
 
       source_node = @graph.getNode n0
       @graph.current_node = current_node = @graph.getNode(n1)
@@ -676,6 +677,7 @@ class abc
       current_node.data.positions = target_node.positions
       current_node.data.configuration = target_node.configuration
       current_node.data.activation = target_node.activation
+      current_node.data.subManifoldId = target_node.subManifoldId
       source_node.data.activation = start_node.activation
 
       #re-enable suspended graph layouting for a bit to find new layout
@@ -726,6 +728,7 @@ class abc
       return
     #create temporary posture object
     p = new posture(configuration, [upper_csl, lower_csl], body.GetWorldCenter().x)
+    p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]
 
     uj = physics.upper_joint
     lj = physics.lower_joint
@@ -787,17 +790,21 @@ class abc
         #create previous posture as new node
         console.log("candidate was not a reachable posture, creating new posture for previously found one")
         node_name = @posture_graph.addPosture @last_detected
+        console.log("connecting new posture "+node_name+ " with previous posture "+@last_posture.name)
         @connectLastPosture(@last_detected)
         @graph.renderer.redraw()
 
         #continue with csl whereever we landed instead
         @switch_to_random_release_after_position uj
         @switch_to_random_release_after_position lj
+        @last_posture = @posture_graph.getNodeByName(node_name)
         @last_test_posture = null
         @last_detected = null
         return
 
     #check if there is a posture that we would have expected from the last posture and the last direction we went
+    #TODO: this is using exit_directions while the node we actually went could be a wrong edge with
+    #a different target
     expected_node = undefined
     if @last_posture? and @last_dir_index? and @last_posture.exit_directions[@last_dir_index] isnt 0
       expected_node = @posture_graph.getNodeByName(@last_posture.exit_directions[@last_dir_index])
@@ -806,7 +813,6 @@ class abc
     if not found
       found = @searchSubarray(p, @posture_graph.nodes, p.isCloseExplore)
 
-    #take closest found posture and try to reach it with position control
     if found.length and not expected_node?
       parent = @
       found.sort (a,b) ->
@@ -828,12 +834,12 @@ class abc
         @last_detected = p
         return
 
-    #if we found no posture (so we would create a new one) but expected one or the one we found is not the
+    #if we found no close posture (so we would create a new one) but expected one or the one we found is not the
     #one we expected from the graph, we try to reach it explicitly (i.e. we are close to the attractor already)
     if not found or (@last_posture? and expected_node? and
           @posture_graph.getNodeByIndex(found[0]).name isnt expected_node.name)
       if expected_node
-        console.log("we should have arrived in node "+ expected_node.name + ", but we didn't (or arrived to far)")
+        console.log("we should have arrived in node "+ expected_node.name + ", but we didn't (or arrived too far away)")
         console.log("trying to reach it with position controller")
 
         #try to go to this posture with pos controller and see if next detected posture is the expected one
@@ -860,7 +866,16 @@ class abc
 
       #update to mean of old and current configurations
       #(counter is used for proper weighting)
-      p.configuration[0] = (new_p.configuration[0] + p.configuration[0]*p.mean_n) / (p.mean_n+1)
+      #body angle is wrapped because one turn around of one position and none of the other gives
+      #weird results
+      bodyAngle_p = @wrapAngle(p.configuration[0])
+      bodyAngle_new_p = @wrapAngle(new_p.configuration[0])
+      if (bodyAngle_p < 1 and bodyAngle_new_p > 3) or (bodyAngle_p > 3 and bodyAngle_new_p < 1)
+        #wrapping means we need to make sure that angles of e.g 0.1 and 3.1 don't produce wrong
+        #results (0.0something instead of 1.6), so don't calc any means here
+        p.configuration[0] = bodyAngle_new_p
+      else
+        p.configuration[0] = (bodyAngle_new_p + bodyAngle_p*p.mean_n) / (p.mean_n+1)
       p.configuration[1] = (new_p.configuration[1] + p.configuration[1]*p.mean_n) / (p.mean_n+1)
       p.configuration[2] = (new_p.configuration[2] + p.configuration[2]*p.mean_n) / (p.mean_n+1)
       p.mean_n += 1
@@ -879,6 +894,8 @@ class abc
     @previous_posture = @last_posture
     @last_posture = p
     @newCSLMode()
+
+    @graph.renderer.redraw()
 
     if @save_periodically
       #save svg and json
@@ -906,7 +923,7 @@ class abc
     #TODO: try more strategies
     #- alternate between c and r modes
     #- always use certain direction/joint first, no random
-    #- 
+    #-
 
     ### helpers ###
     set_random_mode = (current_mode) ->
@@ -943,7 +960,7 @@ class abc
       [s_h, s_k] = start_mode
       [t_h, t_k] = target_mode
 
-      if s_h is t_h
+      if (s_h is t_h) or ("s" in s_h and "c" in t_h) or ("c" in s_h and "s" in t_h)
         #it's a change in the knee joint, now get direction
         a = s_k
         b = t_k
