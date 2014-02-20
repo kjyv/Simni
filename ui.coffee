@@ -8,10 +8,23 @@ class ui
     @halftime = true   #draw only every second frame of the physic bodies
     @svg_scale = 200
     @realtime = false
+    @canvas_old_x = @canvas_old_y = 0
+    @canvas_trans_x = @canvas_trans_y = 0
 
   update: =>
     if @draw_graphics and @halftime
-      @physics.world.DrawDebugData()
+      if @canvas_trans_x isnt 0 or @canvas_trans_y isnt 0
+        ctx = @physics.debugDraw.m_ctx
+        ctx.save()
+        @physics.debugDraw.m_sprite.graphics.clear()
+        ctx.translate(@canvas_trans_x, @canvas_trans_y)
+        @canvas_old_x = window.mousePixelX
+        @canvas_old_y = window.mousePixelY
+        @physics.world.DrawDebugData()
+        ctx.scale( 1, -1 ) #invert the y coord
+        ctx.restore()
+      else
+        @physics.world.DrawDebugData()
 
       ###
       #draw semni as svg
@@ -184,10 +197,12 @@ class ui
       y: y
 
     canvas = $('#simulation canvas')[0]
-    canvasPosition = getElementPosition(canvas)
+    window.canvasPosition = canvas.getBoundingClientRect() #getElementPosition(canvas)
     canvas.addEventListener "mousedown", ((e) ->
       window.isMouseDown = true
       handleMouseMove e
+      physics.ui.canvas_old_x = mousePixelX
+      physics.ui.canvas_old_y = mousePixelY
       document.addEventListener "mousemove", handleMouseMove, true
     ), true
     document.addEventListener "mouseup", (->
@@ -198,14 +213,17 @@ class ui
     ), true
 
     handleMouseMove = (e) ->
-      window.mouseX = (e.clientX - canvasPosition.x) / physics.debugDraw.GetDrawScale()
-      window.mouseY = (e.clientY - canvasPosition.y) / physics.debugDraw.GetDrawScale()
+      window.mouseX = (e.clientX - canvasPosition.left + window.scrollX - physics.ui.canvas_trans_x) / physics.debugDraw.GetDrawScale()
+      window.mouseY = (e.clientY - canvasPosition.top + window.scrollY - physics.ui.canvas_trans_y) / physics.debugDraw.GetDrawScale()
+      window.mousePixelX = e.clientX - canvasPosition.left
+      window.mousePixelY = e.clientY - canvasPosition.top
 
     window.getBodyAtMouse = ->
       window.mousePVec = new b2Vec2(mouseX, mouseY)
       aabb = new Box2D.Collision.b2AABB()
       aabb.lowerBound.Set mouseX - 0.001, mouseY - 0.001
       aabb.upperBound.Set mouseX + 0.001, mouseY + 0.001
+      console.log(mouseY)
 
       # Query the world for overlapping shapes.
       window.selectedBody = null
@@ -322,8 +340,8 @@ class ui
     p.world.DestroyJoint p.upper_joint
     p.world.DestroyBody p.body
 
-    x0 = 0.516
-    y0 = 0.76
+    x0 = 0.6
+    y0 = 0.4
 
     #p.body.SetPositionAndAngle(new b2Vec2(x0,y0), 0)
     p.createSemni(x0,y0)

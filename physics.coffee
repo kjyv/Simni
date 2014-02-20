@@ -22,7 +22,7 @@ b2MassData = Box2D.Collision.Shapes.b2MassData
 b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
 b2CircleShape = Box2D.Collision.Shapes.b2CircleShape
 b2RevoluteJointDef = Box2D.Dynamics.Joints.b2RevoluteJointDef
-b2DebugDraw = Box2D.Dynamics.b2DebugDraw
+window.b2DebugDraw = Box2D.Dynamics.b2DebugDraw
 
 class physics
   constructor: ->
@@ -703,6 +703,10 @@ class physics
           md.frequencyHz = 20
           window.mouseJoint = @world.CreateJoint(md)
           body.SetAwake true
+        else    #clicked somewhere else: pan around
+          @ui.canvas_trans_x += (mousePixelX - @ui.canvas_old_x)
+          @ui.canvas_trans_y += (mousePixelY - @ui.canvas_old_y)
+
       if mouseJoint
         if isMouseDown
           mouseJoint.SetTarget new b2Vec2(mouseX, mouseY)
