@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<meta charset="UTF-8">
 <!--
 
 Simulate various actuated shapes with a simple motor model and a CSL implementation.
@@ -74,14 +75,21 @@ Neurorobotics Research Laboratory, Berlin
                 <input type="file" id="set_posture_file" style="display:none" onchange="ui.setSemniTransformAsFile(this.files)">
                 <br/>
 
-                Log:
+                TrajLog:
                 <button id="start_log" class="toggle-button" onclick="logging.toggleRecorder()">Start</button>
                 <button id="get_log" onclick="logging.getLogfile()">Get</button>
             </div>
-
-            <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;<sub>hip</sub>/&phi;<sub>knee</sub><button id="clear_phase">clear</button></div>
-            <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled">motor torque hip (green) and knee (blue)</div>
-            <div id="state_to_mode_mapping" style="display:none;"><input type="checkbox" id="phase_space_2_enabled">phase space U/&phi;'<br/></div>
+            <div id="right_side">
+                <div id="simni_title">
+                    <span id="title_text">
+                        <span id="title_title">Simni</span>
+                        <a href="documentation/documentation.pdf" target="_blank">Documentation</a><br/>
+                    </span>
+                </div>
+                <div id="phase_space_plot"><input type="checkbox" id="phase_space_enabled">phase space &phi;<sub>hip</sub>/&phi;<sub>knee</sub><button id="clear_phase">clear</button></div>
+                <div id="motor_torque_plot"><input type="checkbox" id="motor_torque_enabled">motor torque hip (green) and knee (blue)</div>
+                <div id="state_to_mode_mapping" style="display:none;"><input type="checkbox" id="phase_space_2_enabled">phase space U/&phi;'<br/></div>
+            </div>
         </div>
         <div id="bottom-panel">
             <div id="controls" class="box">
@@ -92,7 +100,7 @@ Neurorobotics Research Laboratory, Berlin
                     <option value="3" selected="selected">Semni</option>
                 </select>
                 <input type="checkbox" id="animate_realtime" value="no" onchange="ui.set_realtime(this.checked)"/>
-                <label for="animate_realtime">Simulate in realtime (~60 fps)</label>
+                <label for="animate_realtime">realtime (~60 fps)</label>
                 <br/>
                 <script type="text/coffeescript">
                     $ ->
@@ -176,8 +184,25 @@ Neurorobotics Research Laboratory, Berlin
 
                 </script>
                 <button id="toggle_pause" class="toggle-button" onClick="physics.run = !physics.run; physics.update();">pause/run simulation [p]</button>
-                <button id="next_step" onClick="physics.step = true; physics.update();">next step(s) [n]</button><br/>
+                <button id="next_step" onClick="physics.step = true; physics.update();">next step
+                    (when paused) [n]</button><br/>
                 <button id="toggle_csl" class="toggle-button">toggle CSL [c]</button>
+                <label for="csl_mode_hip">Hip</label>:
+                <select id="csl_mode_hip" onchange="ui.set_csl_mode_upper($('#csl_mode_hip').val())">
+                    <option value="r+" checked="checked">r+</option>
+                    <option value="r-">r-</option>
+                    <option value="c">c</option>
+                    <option value="s+">s+</option>
+                    <option value="s-">s-</option>
+                </select>
+                <label for="csl_mode_knee">Knee</label>:
+                <select id="csl_mode_knee" onchange="ui.set_csl_mode_lower($('#csl_mode_knee').val())">
+                    <option value="r+" checked="checked">r+</option>
+                    <option value="r-">r-</option>
+                    <option value="c">c</option>
+                    <option value="s+">s+</option>
+                    <option value="s-">s-</option>
+                </select><br/>
                 <button id="toggle_bounce" class="toggle-button">toggle bounce controller [b]</button>
                 <script type="text/coffeescript">
                     $ ->
@@ -242,9 +267,6 @@ Neurorobotics Research Laboratory, Berlin
                 <label for="mode_param_lower">csl mode knee</label> <input id="mode_param_lower" type="range" min="-2" max="3" value="1.01" step="0.005" onchange="ui.map_mode(physics.lower_joint)" />
                 <span id="mode_val_lower"></span> <span id="csl_mode_name_lower">contraction</span><br/>
                 <br/>
-                <span id="help">
-                    <a href="documentation/documentation.pdf" target="_blank">Documentation</a><br/>
-                </span>
             </div>
 
             <div id="map_state_to_mode_panel" style="display:none;" class="box">
@@ -307,28 +329,12 @@ Neurorobotics Research Laboratory, Berlin
                             physics.abc.toggleExplore()
                 </script>
                 <br/>
-                <label for="csl_mode_hip">Hip</label>:
-                <select id="csl_mode_hip" onchange="ui.set_csl_mode_upper($('#csl_mode_hip').val())">
-                    <option value="r+" checked="checked">r+</option>
-                    <option value="r-">r-</option>
-                    <option value="c">c</option>
-                    <option value="s+">s+</option>
-                    <option value="s-">s-</option>
-                </select>
-                <label for="csl_mode_knee">Knee</label>:
-                <select id="csl_mode_knee" onchange="ui.set_csl_mode_lower($('#csl_mode_knee').val())">
-                    <option value="r+" checked="checked">r+</option>
-                    <option value="r-">r-</option>
-                    <option value="c">c</option>
-                    <option value="s+">s+</option>
-                    <option value="s-">s-</option>
-                </select><br/>
-                <label for="csl_strategy">Next mode strategy</label>:
                 <select id="csl_strategy" onchange="physics.abc.set_strategy($('#csl_strategy').val())">
                     <option value="manual">manual</option>
                     <option value="random">random</option>
                     <option value="unseen" selected="selected">unseen</option>
-                </select><br/>
+                </select>
+                <label for="csl_strategy">heuristic</label><br/>
                 <br/>
                 <!--
                 <button id="find_circles" onclick="physics.abc.posture_graph.findElementaryCircles(); console.log(physics.abc.posture_graph.circles);">Find circles</button>
@@ -340,47 +346,50 @@ Neurorobotics Research Laboratory, Berlin
                 <input type="file" id="set_graph_json_file" style="display:none" onchange="physics.abc.posture_graph.loadGraphFromFile(this.files)">
                 <button id="set_graph_semni" onclick="$('#set_graph_semni_file').click()">Load graph from Semni (serial)</button><br/>
                 <input type="file" id="set_graph_semni_file" style="display:none" onchange="physics.abc.posture_graph.loadGraphFromSemniFile(this.files)">
-
             </div>
             <div id="graph_controls" class="box">
                 <h1>Graph properties</h1>
-                <label for="graph_repulsion">Repulsion:</label><input id="graph_repulsion"
-                type="range" min="100" max="2000" value="600" step="1" onchange="physics.abc.graph.parameters({'repulsion': parseInt(this.value)})" /></br>
-                <label for="graph_stiffness">Stiffness:</label><input id="graph_stiffness"
-                type="range" min="10" max="200" value="150" step="1" onchange="physics.abc.graph.parameters({'stiffness': parseInt(this.value)})" /><br/>
+                <input id="graph_repulsion" type="range" min="100" max="2000"
+                        value="600" step="1" onchange="physics.abc.graph.parameters({'repulsion': parseInt(this.value)})" />
+                <label for="graph_repulsion">Repulsion</label></br>
 
-                <label for="graph_animated">Animate graph (slow) [a]</label>
-                <input type="checkbox" id="graph_animated" value="yes" checked onchange="ui.set_graph_animated(this.checked)"/></br>
+                <input id="graph_stiffness" type="range" min="10" max="200"
+                        value="150" step="1" onchange="physics.abc.graph.parameters({'stiffness': parseInt(this.value)})" />
+                <label for="graph_stiffness">Stiffness</label><br/>
 
-                <label for="graph_pause_drawing">Pause graph layouting between new poses</label>
-                <input type="checkbox" id="graph_pause_drawing" value="yes" checked onchange="ui.set_pause_drawing(this.checked)"/></br>
+                <input type="checkbox" id="graph_animated" value="yes" checked onchange="ui.set_graph_animated(this.checked)"/>
+                <label for="graph_animated">Animate graph (slow) [a]</label></br>
 
-                <label for="render_manifold">Show current state in manifold view</label>
-                <input type="checkbox" id="render_manifold" value="yes" checked onchange="ui.set_render_manifold(this.checked)"/></br>
+                <input type="checkbox" id="graph_pause_drawing" value="yes" checked onchange="ui.set_pause_drawing(this.checked)"/>
+                <label for="graph_pause_drawing">Pause graph layouting between new poses</label></br>
 
-                <label for="graph_activation">Show node activation (discovery possibilities)</label>
-                <input type="checkbox" id="graph_activation" value="no" onchange="ui.set_activation(this.checked)"/></br>
+                <input type="checkbox" id="graph_activation" value="no" onchange="ui.set_activation(this.checked)"/>
+                <label for="graph_activation">Show node activation (discovery possibilities)</label></br>
 
-                <label for="graph_color_activation">Show node activation colors (or manifold colors
+                <input type="checkbox" id="graph_color_activation" value="no" onchange="ui.set_color_activation(this.checked)"/>
+                <label for="graph_color_activation">Show node activation colors (manifold colors
                     otherwise)</label>
-                <input type="checkbox" id="graph_color_activation" value="no" onchange="ui.set_color_activation(this.checked)"/></br>
+                </br>
 
-                <label for="graph_draw_semnis">Show semni postures</label>
-                <input type="checkbox" id="graph_draw_semnis" value="yes" checked onchange="ui.set_draw_semni(this.checked)"/></br>
+                <input type="checkbox" id="graph_draw_semnis" value="yes" checked onchange="ui.set_draw_semni(this.checked)"/>
+                <label for="graph_draw_semnis">Show semni postures</label></br>
 
-                <label for="graph_draw_edge_labels">Show transition labels</label>
-                <input type="checkbox" id="graph_draw_edge_labels" value="no" onchange="ui.set_draw_edge_labels(this.checked)"/></br>
+                <input type="checkbox" id="graph_draw_edge_labels" value="no" onchange="ui.set_draw_edge_labels(this.checked)"/>
+                <label for="graph_draw_edge_labels">Show transition labels</label></br>
 
-                <label for="graph_save_periodically">Save graph with every new posture</label>
-                <input type="checkbox" id="graph_save_periodically" value="no" onchange="ui.set_save_periodically(this.checked)"/></br>
+                <input type="checkbox" id="graph_save_periodically" value="no" onchange="ui.set_save_periodically(this.checked)"/>
+                <label for="graph_save_periodically">Save graph with each new posture</label></br>
+                <hr/>
+                <input type="checkbox" id="render_manifold" value="yes" checked onchange="ui.set_render_manifold(this.checked)"/>
+                <label for="render_manifold">Update current state in manifold view</label></br>
             </div>
-            <div id="manifold_view">
-                <canvas id="webglCanvas" width=320 height=260></canvas>
+            <div id="manifold_view" class="box">
+                <canvas id="webglCanvas" width=300 height=257></canvas>
             </div>
             <!--<div id="semni_svg" style="width: 300px; height: 300px; float: left;"></div>-->
             <div id="posture-graph">
-                <canvas width="1400" height="900" id="viewport"></canvas>
-                <canvas width="300" height="300" id="tempimage" style="display:none;"></canvas>
+                <!--<canvas width="1400" height="900" id="viewport"></canvas>
+                <canvas width="300" height="300" id="tempimage" style="display:none;"></canvas>-->
                 <div id="viewport_svg"></div>
             </div>
         </div>

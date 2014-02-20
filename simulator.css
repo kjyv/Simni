@@ -72,6 +72,20 @@ input[type="range"] {
     width: 435px;
 }
 
+#right_side {
+    float:left;
+}
+
+#simni_title #title_text {
+    text-align: right;
+    width: 100%;
+    float: right;
+}
+
+#simni_title #title_title {
+    font-size: 12pt;
+}
+
 #phase_space_plot {
     width:300px;
     height:300px;
@@ -91,6 +105,7 @@ input[type="range"] {
 
 #semni_posture_controls {
     float: left;
+    width: 230px;
 }
 
 #posture-graph {
@@ -105,6 +120,8 @@ input[type="range"] {
 
 #manifold_view {
     float:left;
+    padding: 0px 0px 0px 0px;
+    width: 303px;
 }
 
 #simulation canvas {
