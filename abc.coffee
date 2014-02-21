@@ -580,7 +580,7 @@ class abc
     #wrap angle in asymmetric range around 0, useful with manifold data
     while bodyangle < -1.75*Math.PI
       bodyangle+= 2*Math.PI
-    while bodyangle > 0.8*Math.PI
+    while bodyangle > 0.77*Math.PI
       bodyangle-= 2*Math.PI
     return bodyangle
 
@@ -704,10 +704,12 @@ class abc
   connectLastPosture: (p) =>
     if @last_posture
       @last_posture.exit_directions[@last_dir_index] = p.name
+      if p.name == @last_posture.name
+        console.log("warning: added self loop for posture "+ p.name)
 
     #set/update body positions for svg drawing
     p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()]
-    p.configuration = [physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()]
+    p.configuration = [@wrapAngle(physics.body.GetAngle()), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()]
     p.body_x = physics.body.GetWorldCenter().x
     p.timestamp = Date.now()
 
@@ -870,9 +872,9 @@ class abc
       #weird results
       bodyAngle_p = @wrapAngle(p.configuration[0])
       bodyAngle_new_p = @wrapAngle(new_p.configuration[0])
-      if (bodyAngle_p < 1 and bodyAngle_new_p > 3) or (bodyAngle_p > 3 and bodyAngle_new_p < 1)
-        #wrapping means we need to make sure that angles of e.g 0.1 and 3.1 don't produce wrong
-        #results (0.0something instead of 1.6), so don't calc any means here
+      if (bodyAngle_p < 1 and bodyAngle_new_p > 6) or (bodyAngle_p > 6 and bodyAngle_new_p < 1)
+        #wrapping means we need to make sure that angles of e.g 0.1 and 6.2 don't produce wrong
+        #results (0.0something instead of 3.1), so don't calc any means for now
         p.configuration[0] = bodyAngle_new_p
       else
         p.configuration[0] = (bodyAngle_new_p + bodyAngle_p*p.mean_n) / (p.mean_n+1)

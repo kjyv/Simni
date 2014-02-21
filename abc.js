@@ -797,7 +797,7 @@
       while (bodyangle < -1.75 * Math.PI) {
         bodyangle += 2 * Math.PI;
       }
-      while (bodyangle > 0.8 * Math.PI) {
+      while (bodyangle > 0.77 * Math.PI) {
         bodyangle -= 2 * Math.PI;
       }
       return bodyangle;
@@ -920,9 +920,12 @@
       var a_p;
       if (this.last_posture) {
         this.last_posture.exit_directions[this.last_dir_index] = p.name;
+        if (p.name === this.last_posture.name) {
+          console.log("warning: added self loop for posture " + p.name);
+        }
       }
       p.positions = [physics.body.GetPosition(), physics.body2.GetPosition(), physics.body3.GetPosition()];
-      p.configuration = [physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()];
+      p.configuration = [this.wrapAngle(physics.body.GetAngle()), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()];
       p.body_x = physics.body.GetWorldCenter().x;
       p.timestamp = Date.now();
       if (this.last_posture && this.posture_graph.length() > 1) {
@@ -1038,7 +1041,7 @@
         console.log("re-visiting node " + p.name);
         bodyAngle_p = this.wrapAngle(p.configuration[0]);
         bodyAngle_new_p = this.wrapAngle(new_p.configuration[0]);
-        if ((bodyAngle_p < 1 && bodyAngle_new_p > 3) || (bodyAngle_p > 3 && bodyAngle_new_p < 1)) {
+        if ((bodyAngle_p < 1 && bodyAngle_new_p > 6) || (bodyAngle_p > 6 && bodyAngle_new_p < 1)) {
           p.configuration[0] = bodyAngle_new_p;
         } else {
           p.configuration[0] = (bodyAngle_new_p + bodyAngle_p * p.mean_n) / (p.mean_n + 1);

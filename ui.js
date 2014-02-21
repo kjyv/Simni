@@ -24,9 +24,7 @@
 
       this.set_realtime = __bind(this.set_realtime, this);
 
-      this.powerColor = __bind(this.powerColor, this);
-
-      this.hsvToRgb = __bind(this.hsvToRgb, this);
+      this.activation2color = __bind(this.activation2color, this);
 
       this.getPostureGraphAsFile = __bind(this.getPostureGraphAsFile, this);
 
@@ -250,7 +248,6 @@
         aabb = new Box2D.Collision.b2AABB();
         aabb.lowerBound.Set(mouseX - 0.001, mouseY - 0.001);
         aabb.upperBound.Set(mouseX + 0.001, mouseY + 0.001);
-        console.log(mouseY);
         window.selectedBody = null;
         this.physics.world.QueryAABB(getBodyCB, aabb);
         return window.selectedBody;
@@ -508,63 +505,31 @@
     ui.prototype.getPostureGraphAsFile = function() {
       var svg;
       svg = $("#viewport_svg").clone();
-      svg.find("defs").append("<style>\n   line {\n      stroke-width: 1;\n      stroke: black;\n      fill: none;\n  }\n</style>");
+      /*
+          svg.find("defs").append """
+          <style>
+             line {
+                stroke-width: 1;
+                stroke: black;
+                fill: none;
+            }
+          </style>
+          """
+      */
+
       return location.href = 'data:text;charset=utf-8,' + encodeURI('<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + svg.html());
     };
 
-    ui.prototype.hsvToRgb = function(h, s, v) {
-      var b, f, g, i, p, q, r, t;
-      r = void 0;
-      g = void 0;
-      b = void 0;
-      i = Math.floor(h * 6);
-      f = h * 6 - i;
-      p = v * (1 - s);
-      q = v * (1 - f * s);
-      t = v * (1 - (1 - f) * s);
-      switch (i % 6) {
-        case 0:
-          r = v;
-          g = t;
-          b = p;
-          break;
-        case 1:
-          r = q;
-          g = v;
-          b = p;
-          break;
-        case 2:
-          r = p;
-          g = v;
-          b = t;
-          break;
-        case 3:
-          r = p;
-          g = q;
-          b = v;
-          break;
-        case 4:
-          r = t;
-          g = p;
-          b = v;
-          break;
-        case 5:
-          r = v;
-          g = p;
-          b = q;
+    ui.prototype.activation2color = function(value) {
+      var c, color, h, l;
+      if (value > 1.0) {
+        value = 1.0;
       }
-      return [Math.floor(r * 255), Math.floor(g * 255), Math.floor(b * 255)];
-    };
-
-    ui.prototype.powerColor = function(value) {
-      var b, h, s;
-      if (value > 0.9) {
-        value = 0.9;
-      }
-      h = (0.9 - value) * 0.4;
-      s = 0.9;
-      b = 0.9;
-      return this.hsvToRgb(h, s, b);
+      l = 80;
+      c = 210;
+      h = 40 + ((1 - value) * (140 - 40));
+      color = new Color(l, c, h, ColorMode.CIELCh);
+      return color.getHex();
     };
 
     ui.prototype.set_realtime = function(value) {

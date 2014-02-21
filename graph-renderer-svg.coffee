@@ -206,8 +206,8 @@ class RendererSVG
           a = activation.toFixed(2)
 
           if parent.draw_color_activation
-            c = physics.ui.powerColor a
-            parent.svg_nodes[number].style("fill","rgb("+c[0]+","+c[1]+","+c[2]+")")
+            c = physics.ui.activation2color a
+            parent.svg_nodes[number].style("fill", c)
           else
             #parent.svg_nodes[number].style("fill", "none")
             switch subManifoldId
@@ -221,7 +221,7 @@ class RendererSVG
           a = ""
         if node.data.label_svg == undefined
           font_size = "7pt"
-          font_family = "Verdana; sans-serif;"
+          font_family = "Verdana"
           text_anchor = "middle"
           fill = "#333333"
 
@@ -306,7 +306,7 @@ class RendererSVG
           parent.svg_edges[edge.data.name] = parent.svg.append("svg:line")
           parent.svg_edges[edge.data.name]
                 .attr("stroke-width", "1")
-                .attr("stroke", "black")
+                .attr("stroke", "#808080")
                 .attr("fill", "none")
 
         #refresh coordinates
@@ -319,7 +319,7 @@ class RendererSVG
         else if edge.target.data.hovered
           parent.svg_edges[edge.data.name].attr("stroke", "blue")
         else
-          parent.svg_edges[edge.data.name].attr("stroke", "gray")
+          parent.svg_edges[edge.data.name].attr("stroke", "#808080")
 
         #draw a label
         if label? and parent.draw_edge_labels

@@ -223,7 +223,6 @@ class ui
       aabb = new Box2D.Collision.b2AABB()
       aabb.lowerBound.Set mouseX - 0.001, mouseY - 0.001
       aabb.upperBound.Set mouseX + 0.001, mouseY + 0.001
-      console.log(mouseY)
 
       # Query the world for overlapping shapes.
       window.selectedBody = null
@@ -483,6 +482,7 @@ class ui
 
   getPostureGraphAsFile: =>
     svg = $("#viewport_svg").clone()
+    ###
     svg.find("defs").append """
     <style>
        line {
@@ -492,53 +492,30 @@ class ui
       }
     </style>
     """
+    ###
     location.href = 'data:text;charset=utf-8,'+encodeURI ('<?xml version="1.0" encoding="UTF-8" standalone="no"?>')+svg.html()
 
-  hsvToRgb: (h, s, v) =>
-    r = undefined
-    g = undefined
-    b = undefined
-    i = Math.floor(h * 6)
-    f = h * 6 - i
-    p = v * (1 - s)
-    q = v * (1 - f * s)
-    t = v * (1 - (1 - f) * s)
-    switch i % 6
-      when 0
-        r = v
-        g = t
-        b = p
-      when 1
-        r = q
-        g = v
-        b = p
-      when 2
-        r = p
-        g = v
-        b = t
-      when 3
-        r = p
-        g = q
-        b = v
-      when 4
-        r = t
-        g = p
-        b = v
-      when 5
-        r = v
-        g = p
-        b = q
-    [Math.floor(r * 255), Math.floor(g * 255), Math.floor(b * 255)]
-
-  powerColor: (value) =>
+  activation2color: (value) =>
     #for a value from 0..1 return color from green to red
-    if value > 0.9
-      value = 0.9
-    h = (0.9-value) * 0.4   #hue, 0.4 = green
-    s = 0.9           #saturation
-    b = 0.9           #brightness
 
-    @hsvToRgb h,s,b
+    #using hsv model
+    #if value > 0.9
+    #  value = 0.9
+    #h = (0.9-value) * 0.4   #hue, 0.4 = green
+    #s = 0.9           #saturation
+    #b = 0.9           #brightness
+
+    #color = new Color(h, s, b, ColorMode.HSV)
+    #return color.getHex()
+
+    #using cie-lch model
+    if value > 1.0
+      value = 1.0
+    l = 80                          #lightness
+    c = 210                         #chroma
+    h = 40+((1-value) *(140-40))    #hue angle
+    color = new Color(l, c, h, ColorMode.CIELCh)
+    color.getHex()
 
   set_realtime: (value) =>
     @realtime = value
