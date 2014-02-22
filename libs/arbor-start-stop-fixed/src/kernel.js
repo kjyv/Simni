@@ -25,6 +25,7 @@
       system:pSystem,
       tween:null,
       nodes:{},
+      paused:_paused,
 
       init:function(){ 
         if (typeof(Tween)!='undefined') _tween = Tween()
@@ -54,7 +55,6 @@
         return that
       },
 
-      //
       // updates from the ParticleSystem
       graphChanged:function(changes){
         // a node or edge was added or deleted
@@ -66,6 +66,7 @@
       particleModified:function(id, mods){
         // a particle's position or mass is changed
         // trace('mod',objkeys(mods))
+        if (_paused) return;
         if (USE_WORKER) _physics.postMessage({type:"modify", id:id, mods:mods})
         else _physics.modifyNode(id, mods)
         that.start() // <- is this just to kick things off in the non-worker mode? (yes)
@@ -87,6 +88,7 @@
         }
 
         // a change to the physics parameters 
+        if (_paused) return;
         if (USE_WORKER) _physics.postMessage({type:'sys',param:param})
         else _physics.modifyPhysics(param)
         that.start() // <- is this just to kick things off in the non-worker mode? (yes)

@@ -231,6 +231,8 @@
 
       this.getNodeByIndex = __bind(this.getNodeByIndex, this);
 
+      this.deletePosture = __bind(this.deletePosture, this);
+
       this.addPosture = __bind(this.addPosture, this);
 
       this.addNode = __bind(this.addNode, this);
@@ -263,6 +265,52 @@
       return node_name;
     };
 
+    postureGraph.prototype.deletePosture = function(p_name) {
+      var an, d, e, edges, en, n, _i, _j, _k, _l, _len, _len1, _len2, _m, _ref, _ref1, _ref2;
+      an = this.arborGraph.getNode(p_name);
+      edges = [];
+      _ref = this.getNodeByName(p_name).edges_out;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        e = _ref[_i];
+        if (e != null) {
+          edges.push(e);
+        }
+      }
+      _ref1 = this.nodes;
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        n = _ref1[_j];
+        if ((n != null) && n.edges_out.length) {
+          for (e = _k = 0, _ref2 = n.edges_out.length - 1; 0 <= _ref2 ? _k <= _ref2 : _k >= _ref2; e = 0 <= _ref2 ? ++_k : --_k) {
+            en = n.edges_out[e];
+            if (en != null) {
+              if (en.target_node.name === p_name) {
+                edges.push(en);
+                for (d = _l = 0; _l <= 3; d = ++_l) {
+                  if (n.exit_directions[d] === p_name) {
+                    n.exit_directions[d] = 0;
+                  }
+                }
+                delete n.edges_out[e];
+              }
+            }
+          }
+        }
+      }
+      an.data.semni.remove();
+      an.data.label_svg.remove();
+      an.data.label_svg2.remove();
+      an.data.label_svg3.remove();
+      this.arborGraph.renderer.svg_nodes[p_name].remove();
+      delete this.arborGraph.renderer.svg_nodes[p_name];
+      for (_m = 0, _len2 = edges.length; _m < _len2; _m++) {
+        e = edges[_m];
+        this.arborGraph.renderer.svg_edges[e.start_node.name + "-" + e.target_node.name].remove();
+        delete this.arborGraph.renderer.svg_edges[e.start_node.name + "-" + e.target_node.name];
+      }
+      this.arborGraph.pruneNode(an);
+      return delete this.nodes[p_name - 1];
+    };
+
     postureGraph.prototype.getNodeByIndex = function(index) {
       return this.nodes[index];
     };
@@ -285,7 +333,9 @@
       _ref = this.nodes;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         n = _ref[_i];
-        act += n.activation;
+        if (n != null) {
+          act += n.activation;
+        }
       }
       return act / this.length();
     };
@@ -295,11 +345,15 @@
       _ref = this.nodes;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         n = _ref[_i];
-        _ref1 = this.nodes;
-        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-          nn = _ref1[_j];
-          if (n.name !== nn.name && n.isClose(nn, thresholdExplore)) {
-            console.log("duplicates " + n.name + " and " + nn.name + ". distance " + n.euclidDistance(nn));
+        if (n != null) {
+          _ref1 = this.nodes;
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            nn = _ref1[_j];
+            if (nn != null) {
+              if (n.name !== nn.name && n.isClose(nn, thresholdExplore)) {
+                console.log("duplicates " + n.name + " and " + nn.name + ". distance " + n.euclidDistance(nn));
+              }
+            }
           }
         }
       }
@@ -669,36 +723,42 @@
       _ref = this.nodes;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         node = _ref[_i];
-        if (__indexOf.call(node.csl_mode[0], "s") >= 0 && __indexOf.call(node.csl_mode[1], "s") >= 0) {
-          divisor = 0.5;
-        } else if (__indexOf.call(node.csl_mode[0], "s") >= 0 || __indexOf.call(node.csl_mode[1], "s") >= 0) {
-          divisor = 1 / 3;
-        } else {
-          divisor = 0.25;
-        }
-        activation_in = 0;
-        node.activation_self = divisor * node.exit_directions.reduce((function(x, y) {
-          if (y === 0) {
-            return x + 1;
+        if (node != null) {
+          if (__indexOf.call(node.csl_mode[0], "s") >= 0 && __indexOf.call(node.csl_mode[1], "s") >= 0) {
+            divisor = 0.5;
+          } else if (__indexOf.call(node.csl_mode[0], "s") >= 0 || __indexOf.call(node.csl_mode[1], "s") >= 0) {
+            divisor = 1 / 3;
           } else {
-            return x;
+            divisor = 0.25;
           }
-        }), 0);
-        if (node.edges_out.length) {
-          _ref1 = node.edges_out;
-          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-            e = _ref1[_j];
-            activation_in += e.target_node.activation;
+          activation_in = 0;
+          node.activation_self = divisor * node.exit_directions.reduce((function(x, y) {
+            if (y === 0) {
+              return x + 1;
+            } else {
+              return x;
+            }
+          }), 0);
+          if (node.edges_out.length) {
+            _ref1 = node.edges_out;
+            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+              e = _ref1[_j];
+              if (e != null) {
+                activation_in += e.target_node.activation;
+              }
+            }
+            activation_in /= node.edges_out.length;
           }
-          activation_in /= node.edges_out.length;
+          node.activation_tmp = node.activation_self * 0.7 + activation_in * 0.3;
         }
-        node.activation_tmp = node.activation_self * 0.7 + activation_in * 0.3;
       }
       _ref2 = this.nodes;
       for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
         node = _ref2[_k];
-        node.activation = node.activation_tmp;
-        this.arborGraph.getNode(node.name).data.activation = node.activation;
+        if (node != null) {
+          node.activation = node.activation_tmp;
+          this.arborGraph.getNode(node.name).data.activation = node.activation;
+        }
       }
     };
 
@@ -771,7 +831,7 @@
       found = [];
       for (i = _i = 0, _ref = array.length - sub.length; _i <= _ref; i = _i += 1) {
         for (j = _j = 0, _ref1 = sub.length - 1; _j <= _ref1; j = _j += 1) {
-          if (!cmp(sub, j, array, i + j)) {
+          if (!((sub[j] != null) && (array[i + j] != null) && cmp(sub, j, array, i + j))) {
             break;
           }
         }

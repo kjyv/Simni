@@ -546,6 +546,13 @@ class ui
   set_pause_drawing: (value) =>
     physics.abc.graph.renderer.pause_drawing = value
 
+  set_pause_layouting: (value) =>
+    physics.abc.graph.renderer.pause_layout = value
+    if value
+      physics.abc.graph.stop()
+    else
+      physics.abc.graph.start(true)
+
   set_render_manifold: (value) =>
     manifoldRenderer.do_render = value
     if value

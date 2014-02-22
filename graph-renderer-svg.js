@@ -29,6 +29,7 @@
       this.draw_activation = false;
       this.draw_semni = true;
       this.pause_drawing = true;
+      this.pause_layout = false;
       this.previous_hover = null;
       arrowLength = 6 + 1;
       arrowWidth = 2 + 1;
@@ -280,7 +281,9 @@
 
         Handler.clicked = function(e) {
           var pos, _mouseP;
-          parent.graph.start(true);
+          if (!parent.pause_layout) {
+            parent.graph.start(true);
+          }
           pos = $(parent.svg[0][0]).offset();
           _mouseP = arbor.Point(e.pageX - pos.left, e.pageY - pos.top);
           dragged = parent.particleSystem.nearest(_mouseP);
@@ -294,7 +297,9 @@
 
         Handler.dragged = function(e) {
           var p, pos, s;
-          parent.graph.start(true);
+          if (!parent.pause_layout) {
+            parent.graph.start(true);
+          }
           pos = $(parent.svg[0][0]).offset();
           s = arbor.Point(e.pageX - pos.left, e.pageY - pos.top);
           if (dragged && dragged.node !== null) {
@@ -309,7 +314,9 @@
           if (dragged === null || dragged.node === void 0) {
             return;
           }
-          parent.graph.start(true);
+          if (!parent.pause_layout) {
+            parent.graph.start(true);
+          }
           if (dragged.node !== null) {
             dragged.node.fixed = false;
           }

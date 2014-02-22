@@ -23,6 +23,7 @@ class RendererSVG
     @draw_activation = false
     @draw_semni = true
     @pause_drawing = true
+    @pause_layout = false
 
     @previous_hover = null
 
@@ -355,7 +356,8 @@ class RendererSVG
     parent = this
     class Handler
       @clicked: (e) ->
-        parent.graph.start(true)
+        if not parent.pause_layout
+          parent.graph.start(true)
         pos = $(parent.svg[0][0]).offset()
         _mouseP = arbor.Point(e.pageX-pos.left, e.pageY-pos.top)
         dragged = parent.particleSystem.nearest(_mouseP)
@@ -370,7 +372,8 @@ class RendererSVG
         return false
 
       @dragged: (e) ->
-        parent.graph.start(true)
+        if not parent.pause_layout
+          parent.graph.start(true)
         pos = $(parent.svg[0][0]).offset()
         s = arbor.Point(e.pageX-pos.left, e.pageY-pos.top)
 
@@ -383,7 +386,8 @@ class RendererSVG
       @dropped: (e) ->
         if (dragged is null or dragged.node is undefined)
           return
-        parent.graph.start(true)
+        if not parent.pause_layout
+          parent.graph.start(true)
         if dragged.node isnt null
           dragged.node.fixed = false
         dragged.node.tempMass = 1000

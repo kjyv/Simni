@@ -148,6 +148,42 @@ class postureGraph
     @arborGraph.addNode p.name, data
     return node_name
 
+  deletePosture: (p_name) =>
+    an = @arborGraph.getNode(p_name)
+
+    #get outgoing edges
+    edges = []
+    for e in @getNodeByName(p_name).edges_out
+      if e?
+        edges.push e
+    for n in @nodes   #search for incoming edges
+      if n? and n.edges_out.length
+        for e in [0..n.edges_out.length-1]
+          en = n.edges_out[e]
+          if en?
+            if en.target_node.name is p_name  #found one
+              edges.push en
+              #delete start node references to edge
+              for d in [0..3]
+                if n.exit_directions[d] is p_name
+                  n.exit_directions[d] = 0
+              delete n.edges_out[e]
+
+    #delete svg elements
+    an.data.semni.remove()
+    an.data.label_svg.remove()
+    an.data.label_svg2.remove()
+    an.data.label_svg3.remove()
+    @arborGraph.renderer.svg_nodes[p_name].remove()
+    delete @arborGraph.renderer.svg_nodes[p_name]
+    for e in edges
+      @arborGraph.renderer.svg_edges[e.start_node.name+"-"+e.target_node.name].remove()
+      delete @arborGraph.renderer.svg_edges[e.start_node.name+"-"+e.target_node.name]
+
+    #delete posture and arbor node
+    @arborGraph.pruneNode(an)
+    delete @nodes[p_name-1]
+
   getNodeByIndex: (index) =>
     @nodes[index]
 
@@ -163,15 +199,18 @@ class postureGraph
   meanActivation: =>
     act = 0
     for n in @nodes
-      act += n.activation
+      if n?
+        act += n.activation
 
     return act / @length()
 
   findDuplicates: =>
     for n in @nodes
-      for nn in @nodes
-        if n.name isnt nn.name and n.isClose(nn, thresholdExplore)
-          console.log("duplicates "+ n.name+" and " + nn.name + ". distance " + n.euclidDistance(nn))
+      if n?
+        for nn in @nodes
+          if nn?
+            if n.name isnt nn.name and n.isClose(nn, thresholdExplore)
+              console.log("duplicates "+ n.name+" and " + nn.name + ". distance " + n.euclidDistance(nn))
     return
 
   saveGaphToFile: =>
@@ -506,24 +545,28 @@ class postureGraph
     unless @nodes.length > 1
       return
     for node in @nodes
-      #divide self activation by proper amount of possible edges,
-      #e.g. s+,r+ only has 3 possible outgoing edges, s-,s- only has two, otherwise we have 4
-      if "s" in node.csl_mode[0] and "s" in node.csl_mode[1]
-        divisor = 0.5
-      else if "s" in node.csl_mode[0] or "s" in node.csl_mode[1]
-        divisor = 1/3
-      else
-        divisor = 0.25
+      if node?
+        #divide self activation by proper amount of possible edges,
+        #e.g. s+,r+ only has 3 possible outgoing edges, s-,s- only has two, otherwise we have 4
+        if "s" in node.csl_mode[0] and "s" in node.csl_mode[1]
+          divisor = 0.5
+        else if "s" in node.csl_mode[0] or "s" in node.csl_mode[1]
+          divisor = 1/3
+        else
+          divisor = 0.25
 
-      activation_in = 0
-      node.activation_self = divisor * node.exit_directions.reduce ((x, y) -> if y is 0 then x+1 else x), 0
-      if node.edges_out.length
-        activation_in += e.target_node.activation for e in node.edges_out
-        activation_in /= node.edges_out.length
-      node.activation_tmp = node.activation_self * 0.7 + activation_in * 0.3
+        activation_in = 0
+        node.activation_self = divisor * node.exit_directions.reduce ((x, y) -> if y is 0 then x+1 else x), 0
+        if node.edges_out.length
+          for e in node.edges_out
+            if e?
+              activation_in += e.target_node.activation
+          activation_in /= node.edges_out.length
+        node.activation_tmp = node.activation_self * 0.7 + activation_in * 0.3
     for node in @nodes
-      node.activation = node.activation_tmp
-      @arborGraph.getNode(node.name).data.activation = node.activation
+      if node?
+        node.activation = node.activation_tmp
+        @arborGraph.getNode(node.name).data.activation = node.activation
     return
 
 #end class postureGraph
@@ -561,7 +604,7 @@ class abc
     found = []
     for i in [0..array.length-sub.length] by 1
       for j in [0..sub.length-1] by 1
-        unless cmp(sub,j, array,i+j)
+        unless sub[j]? and array[i+j]? and cmp(sub,j, array,i+j)
           break
       if j == sub.length
         found.push i

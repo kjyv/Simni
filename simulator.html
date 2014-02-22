@@ -364,6 +364,9 @@ Neurorobotics Research Laboratory, Berlin
                 <input type="checkbox" id="graph_pause_drawing" value="yes" checked onchange="ui.set_pause_drawing(this.checked)"/>
                 <label for="graph_pause_drawing">Pause graph layouting between new poses</label></br>
 
+                <input type="checkbox" id="graph_pause_layouting" value="no" onchange="ui.set_pause_layouting(this.checked)"/>
+                <label for="graph_pause_layouting">Pause graph layouting</label></br>
+
                 <input type="checkbox" id="graph_activation" value="no" onchange="ui.set_activation(this.checked)"/>
                 <label for="graph_activation">Show node activation (discovery possibilities)</label></br>
 
@@ -696,6 +699,14 @@ Neurorobotics Research Laboratory, Berlin
 
                 $(document).bind('keydown', 'a', function (evt){
                     $('#graph_animated').click(); return false;
+                });
+
+                $(document).bind('keydown', 'd', function (evt){
+                    if (physics.abc.graph.renderer.previous_hover) {
+                        n = physics.abc.graph.renderer.previous_hover.data.number
+                        physics.abc.posture_graph.deletePosture(n);
+                    }
+                    return false;
                 });
             })
         </script>

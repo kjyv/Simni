@@ -12,6 +12,8 @@
 
       this.set_render_manifold = __bind(this.set_render_manifold, this);
 
+      this.set_pause_layouting = __bind(this.set_pause_layouting, this);
+
       this.set_pause_drawing = __bind(this.set_pause_drawing, this);
 
       this.set_draw_semni = __bind(this.set_draw_semni, this);
@@ -564,6 +566,15 @@
 
     ui.prototype.set_pause_drawing = function(value) {
       return physics.abc.graph.renderer.pause_drawing = value;
+    };
+
+    ui.prototype.set_pause_layouting = function(value) {
+      physics.abc.graph.renderer.pause_layout = value;
+      if (value) {
+        return physics.abc.graph.stop();
+      } else {
+        return physics.abc.graph.start(true);
+      }
     };
 
     ui.prototype.set_render_manifold = function(value) {

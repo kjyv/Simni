@@ -582,7 +582,8 @@
     
     state.kernel = Kernel(that)
     state.tween = state.kernel.tween || null
-    
+    that.state = state
+
     // some magic attrs to make the Node objects phone-home their physics-relevant changes
     Node.prototype.__defineGetter__("p", function() { 
       var self = this
