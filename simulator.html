@@ -330,12 +330,22 @@ Neurorobotics Research Laboratory, Berlin
                             physics.abc.toggleExplore()
                 </script>
                 <br/>
-                <select id="csl_strategy" onchange="physics.abc.set_strategy($('#csl_strategy').val())">
+                <select id="csl_heuristic" onchange="physics.abc.set_heuristic($('#csl_heuristic').val())">
                     <option value="manual">manual</option>
                     <option value="random">random</option>
                     <option value="unseen" selected="selected">unseen</option>
                 </select>
-                <label for="csl_strategy">heuristic</label><br/>
+                <label for="csl_heuristic">heuristic</label><br/>
+
+                <input type="checkbox" id="heuristic_keep_dir" value="yes" checked
+                onchange="physics.abc.set_heuristic_keep_dir(this.checked)"/>
+                <label for="heuristic_keep_dir">Keep direction if possible (or always try to change)
+                </label></br>
+
+                <input type="checkbox" id="heuristic_keep_joint" value="no"
+                onchange="physics.abc.set_heuristic_keep_joint(this.checked)"/>
+                <label for="heuristic_keep_joint">Keep joint if possible (or always try to change)</label></br>
+
                 <br/>
                 <!--
                 <button id="find_circles" onclick="physics.abc.posture_graph.findElementaryCircles(); console.log(physics.abc.posture_graph.circles);">Find circles</button>
@@ -385,10 +395,10 @@ Neurorobotics Research Laboratory, Berlin
                 <label for="graph_save_periodically">Save graph with each new posture</label></br>
                 <hr/>
                 <input type="checkbox" id="render_manifold" value="yes" checked onchange="ui.set_render_manifold(this.checked)"/>
-                <label for="render_manifold">Update current state in manifold view</label></br>
+                <label for="render_manifold">Update current state in manifold view [m]</label></br>
             </div>
             <div id="manifold_view" class="box">
-                <canvas id="webglCanvas" width=300 height=257></canvas>
+                <canvas id="webglCanvas" width=300 height=256></canvas>
             </div>
             <!--<div id="semni_svg" style="width: 300px; height: 300px; float: left;"></div>-->
             <div id="posture-graph">
@@ -699,6 +709,10 @@ Neurorobotics Research Laboratory, Berlin
 
                 $(document).bind('keydown', 'a', function (evt){
                     $('#graph_animated').click(); return false;
+                });
+
+                $(document).bind('keydown', 'm', function (evt){
+                    $('#render_manifold').click(); return false;
                 });
 
                 $(document).bind('keydown', 'd', function (evt){

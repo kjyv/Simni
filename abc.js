@@ -135,7 +135,11 @@
     };
 
     posture.prototype.isCloseExplore = function(a, i, b, j) {
-      return a.isClose(b[j], thresholdExplore);
+      if ((a != null) && b && b[j]) {
+        return a.isClose(b[j], thresholdExplore);
+      } else {
+        return false;
+      }
     };
 
     posture.prototype.getSubmanifold = function() {
@@ -776,7 +780,11 @@
 
       this.newCSLMode = __bind(this.newCSLMode, this);
 
-      this.set_strategy = __bind(this.set_strategy, this);
+      this.set_heuristic_keep_joint = __bind(this.set_heuristic_keep_joint, this);
+
+      this.set_heuristic_keep_dir = __bind(this.set_heuristic_keep_dir, this);
+
+      this.set_heuristic = __bind(this.set_heuristic, this);
 
       this.compareModes = __bind(this.compareModes, this);
 
@@ -803,7 +811,7 @@
       this.graph.parameters({
         repulsion: 1000,
         stiffness: 100,
-        friction: .5,
+        friction: 0.5,
         gravity: true
       });
       this.graph.renderer = new simni.RendererSVG("#viewport_svg", this.graph, this);
@@ -811,7 +819,9 @@
       this.last_posture = null;
       this.previous_posture = null;
       this.trajectory = [];
-      this.mode_strategy = "unseen";
+      this.heuristic = "unseen";
+      this.heuristic_keep_dir = true;
+      this.heuristic_keep_joint = false;
       this.explore_active = false;
       this.save_periodically = false;
     }
@@ -823,6 +833,8 @@
       this.explore_active = !this.explore_active;
       if (this.explore_active) {
         return console.log("start explore run at " + new Date);
+      } else {
+        return console.log("stop explore at " + new Date);
       }
     };
 
@@ -831,7 +843,7 @@
       found = [];
       for (i = _i = 0, _ref = array.length - sub.length; _i <= _ref; i = _i += 1) {
         for (j = _j = 0, _ref1 = sub.length - 1; _j <= _ref1; j = _j += 1) {
-          if (!((sub[j] != null) && (array[i + j] != null) && cmp(sub, j, array, i + j))) {
+          if (!cmp(sub, j, array, i + j)) {
             break;
           }
         }
@@ -897,7 +909,7 @@
     };
 
     abc.prototype.addEdge = function(start_node, target_node, edge_list) {
-      var current_node, distance, edge, init_node, n0, n1, offset, offset_x, offset_y, source_node, timedelta;
+      var current_node, distance, edge, init_node, n0, n1, nn1, offset, offset_x, offset_y, source_node, timedelta;
       if (edge_list == null) {
         edge_list = start_node.edges_out;
       }
@@ -917,23 +929,23 @@
         n1 = target_node.name;
         if (this.posture_graph.length() > 2) {
           source_node = this.graph.getNode(n0);
-          offset = 0.3;
-          offset_x = Math.floor(Math.random() / 0.5);
-          if (offset_x) {
+          offset = 0.2;
+          if (Math.floor(Math.random() * 2)) {
             offset_x = offset;
           } else {
             offset_x = -offset;
           }
-          offset_y = Math.floor(Math.random() / 0.5);
-          if (offset_y) {
+          if (Math.floor(Math.random() * 2)) {
             offset_y = offset;
           } else {
             offset_y = -offset;
           }
-          this.graph.getNode(n1) || this.graph.addNode(n1, {
-            'x': source_node.p.x + offset_x,
-            'y': source_node.p.y + offset_y
-          });
+          nn1 = this.graph.getNode(n1);
+          if (nn1 == null) {
+            nn1 = this.graph.addNode(n1);
+          }
+          nn1.p.x = source_node.p.x + offset_x;
+          nn1.p.y = source_node.p.y + offset_y;
         }
         this.graph.addEdge(n0, n1, {
           distance: distance.toFixed(3),
@@ -1136,15 +1148,23 @@
       return a[0] === b[0] && a[1] === b[1];
     };
 
-    abc.prototype.set_strategy = function(strategy) {
-      return this.mode_strategy = strategy;
+    abc.prototype.set_heuristic = function(heuristic) {
+      return this.heuristic = heuristic;
+    };
+
+    abc.prototype.set_heuristic_keep_dir = function(value) {
+      return this.heuristic_keep_dir = value;
+    };
+
+    abc.prototype.set_heuristic_keep_joint = function(value) {
+      return this.heuristic_keep_joint = value;
     };
 
     abc.prototype.newCSLMode = function() {
       /* helpers
       */
 
-      var current_mode, dir, dir_index_for_dir_and_joint, dir_index_for_modes, direction, e, found_index, go_this_edge, joint, joint_from_dir_index, joint_index, next_dir_index, next_mode, next_mode_for_direction, previous_mode, set_random_mode, stall_index_for_mode, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+      var current_mode, dir, dir_from_index, dir_index_for_dir_and_joint, dir_index_for_modes, direction, e, go_this_edge, joint, joint_from_dir_index, joint_index, next_dir_index, next_mode, next_mode_for_direction, other_dir, other_joint, previous_mode, set_random_mode, stall_index_for_mode, trial_level, try_dir_index, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
       set_random_mode = function(current_mode) {
         var mode, which;
         which = Math.floor(Math.random() * 2);
@@ -1167,7 +1187,7 @@
         }
       };
       next_mode_for_direction = function(old_mode, direction) {
-        if (direction === "+") {
+        if (direction === 0) {
           switch (old_mode) {
             case "r+":
               return "c";
@@ -1180,7 +1200,7 @@
             case "s+":
               return "s+";
           }
-        } else if (direction === "-") {
+        } else if (direction === 1) {
           switch (old_mode) {
             case "r+":
               return "r-";
@@ -1249,7 +1269,19 @@
       joint_from_dir_index = function(index) {
         return Math.ceil((index + 1) / 2) - 1;
       };
+      dir_from_index = function(index) {
+        return index % 2;
+      };
+      other_joint = function(joint) {
+        return (joint + 1) % 2;
+      };
+      other_dir = function(dir) {
+        return (dir + 1) % 2;
+      };
       /* end helpers
+      */
+
+      /* get some values
       */
 
       current_mode = this.last_posture.csl_mode;
@@ -1265,67 +1297,99 @@
           this.last_posture.exit_directions[stall_index_for_mode(current_mode[joint], joint)] = -1;
         }
       }
-      if (this.mode_strategy === "unseen") {
-        /*
-              if @last_dir and @last_joint_index in [0, 1]
-                back_dir = if @last_dir is "+" then "-" else "+"         #reverse direction
-                back_dir_offset = if @last_dir is "+" then 0 else 1      #offset for index
-                next_dir_index = @last_joint_index+back_dir_offset            #get index for reverse direction
-                if @last_posture.exit_directions[next_dir_index] is 0         #if we have not gone this direction from here, we go back
-                  next_mode = next_mode_for_direction current_mode[@last_joint_index], back_dir
-                  direction = back_dir
-                  joint_index = @last_joint_index
-                else
-                  next_dir_index = undefined
-        */
+      if (!this.last_dir_index) {
+        this.last_dir = 0;
+        this.last_joint_index = 0;
+        this.last_dir_index = 0;
+      }
+      /* heuristics
+      */
 
-        if (!next_mode) {
-          if (__indexOf.call(this.last_posture.exit_directions, 0) >= 0) {
-            next_dir_index = this.last_posture.exit_directions.indexOf(0);
-            found_index = next_dir_index;
-            while (found_index > -1) {
-              if (joint_from_dir_index(found_index) !== this.last_joint_index) {
-                next_dir_index = found_index;
-                if (Math.floor(Math.random() / 0.5)) {
+      if (this.heuristic === "unseen") {
+        if (__indexOf.call(this.last_posture.exit_directions, 0) >= 0) {
+          trial_level = 0;
+          while (!(next_dir_index != null)) {
+            if (this.heuristic_keep_dir && this.heuristic_keep_joint) {
+              switch (trial_level) {
+                case 0:
+                  try_dir_index = this.last_dir_index;
                   break;
-                }
+                case 1:
+                  try_dir_index = this.last_dir + 2 * other_joint(this.last_joint_index);
+                  break;
+                case 2:
+                  try_dir_index = other_dir(this.last_dir) + 2 * this.last_joint_index;
               }
-              found_index = this.last_posture.exit_directions.indexOf(0, found_index + 1);
+            } else if (this.heuristic_keep_dir && !this.heuristic_keep_joint) {
+              switch (trial_level) {
+                case 0:
+                  try_dir_index = this.last_dir + 2 * other_joint(this.last_joint_index);
+                  break;
+                case 1:
+                  try_dir_index = other_dir(this.last_dir) + 2 * other_joint(this.last_joint_index);
+                  break;
+                case 2:
+                  try_dir_index = this.last_dir + 2 * this.last_joint_index;
+              }
+            } else if (!this.heuristic_keep_dir && this.heuristic_keep_joint) {
+              switch (trial_level) {
+                case 0:
+                  try_dir_index = other_dir(this.last_dir) + 2 * this.last_joint_index;
+                  break;
+                case 1:
+                  try_dir_index = this.last_dir + 2 * this.last_joint_index;
+                  break;
+                case 2:
+                  try_dir_index = other_dir(this.last_dir) + 2 * other_joint(this.last_joint_index);
+              }
+            } else if (!this.heuristic_keep_dir && !this.heuristic_keep_joint) {
+              switch (trial_level) {
+                case 0:
+                  try_dir_index = other_dir(this.last_dir) + 2 * other_joint(this.last_joint_index);
+                  break;
+                case 1:
+                  try_dir_index = this.last_dir + 2 * other_joint(this.last_joint_index);
+                  break;
+                case 2:
+                  try_dir_index = other_dir(this.last_dir) + 2 * this.last_joint_index;
+              }
             }
-            console.log("leaving node in direction " + next_dir_index);
-          } else {
-            if (!(next_dir_index != null) || this.last_posture.exit_directions[next_dir_index] === -1) {
-              go_this_edge = this.last_posture.edges_out[0];
-              _ref1 = this.last_posture.edges_out;
-              for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-                e = _ref1[_j];
-                if (e.target_node.activation > go_this_edge.target_node.activation) {
-                  go_this_edge = e;
-                }
-              }
-              if (!go_this_edge) {
-                _ref2 = this.last_posture.exit_directions;
-                for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-                  dir = _ref2[_k];
-                  if (dir > -1) {
-                    next_dir_index = dir;
-                  }
-                }
-                console.log("warning: take first non stalling direction, this should probably not happen");
-              } else {
-                next_dir_index = dir_index_for_modes(this.last_posture.csl_mode, go_this_edge.target_node.csl_mode);
-                console.log("following the edge " + go_this_edge.start_node.name + "->" + go_this_edge.target_node.name + " because of largest activation.");
-              }
+            if (this.last_posture.exit_directions[try_dir_index] === 0) {
+              next_dir_index = try_dir_index;
+            } else {
+              trial_level++;
+            }
+            if (trial_level === 3) {
+              next_dir_index = this.last_posture.exit_directions.indexOf(0);
             }
           }
-          joint_index = joint_from_dir_index(next_dir_index);
-          if (next_dir_index % 2) {
-            direction = "-";
-          } else {
-            direction = "+";
+          console.log("leaving node in direction " + next_dir_index);
+        } else {
+          go_this_edge = this.last_posture.edges_out[0];
+          _ref1 = this.last_posture.edges_out;
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            e = _ref1[_j];
+            if (e.target_node.activation > go_this_edge.target_node.activation) {
+              go_this_edge = e;
+            }
           }
-          next_mode = next_mode_for_direction(current_mode[joint_index], direction);
+          if (!go_this_edge) {
+            _ref2 = this.last_posture.exit_directions;
+            for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+              dir = _ref2[_k];
+              if (dir > -1) {
+                next_dir_index = dir;
+              }
+            }
+            console.log("warning: take first non stalling direction, this should probably not happen");
+          } else {
+            next_dir_index = dir_index_for_modes(this.last_posture.csl_mode, go_this_edge.target_node.csl_mode);
+            console.log("following the edge " + go_this_edge.start_node.name + "->" + go_this_edge.target_node.name + " because of largest activation.");
+          }
         }
+        joint_index = joint_from_dir_index(next_dir_index);
+        direction = dir_from_index(next_dir_index);
+        next_mode = next_mode_for_direction(current_mode[joint_index], direction);
         if (joint_index === 0) {
           ui.set_csl_mode_upper(next_mode);
         } else {
@@ -1337,9 +1401,9 @@
         this.transition_mode = current_mode.clone();
         this.transition_mode[joint_index] = next_mode;
         return this.graph.renderer.redraw();
-      } else if (this.mode_strategy === "random") {
+      } else if (this.heuristic === "random") {
         return set_random_mode(current_mode);
-      } else if (this.mode_strategy === "manual") {
+      } else if (this.heuristic === "manual") {
         this.manual_noop = true;
         return 1;
       }

@@ -56,8 +56,9 @@ class posture   #i.e. node
 
   #methods to determine if this posture is near another one
   euclidDistance: (to) =>
-    squared(physics.abc.smallestAngleDistance(physics.abc.wrapAngle(@configuration[0]),
-         physics.abc.wrapAngle(to.configuration[0]))) +
+    squared(physics.abc.smallestAngleDistance(
+      physics.abc.wrapAngle(@configuration[0])
+      physics.abc.wrapAngle(to.configuration[0]))) +
     squared(@configuration[1] - to.configuration[1]) +
     squared(@configuration[2] - to.configuration[2])
 
@@ -68,7 +69,10 @@ class posture   #i.e. node
   #comparator for exploring
   isCloseExplore: (a,i, b,j) =>
     #TODO: also consider e.g. r+,s+ and r+,c equal. test that properly, might produce weird results...
-    a.isClose(b[j], thresholdExplore)
+    if a? and b and b[j]
+      a.isClose(b[j], thresholdExplore)
+    else
+      false
 
   getSubmanifold: =>
     # 0   1   2    3    4     5     6      7     8      9    10   11    12     13   14    15 16
@@ -83,8 +87,8 @@ class posture   #i.e. node
       #test_p.configuration[2] = physics.abc.wrapAngle -p[8]
       #dist = @euclidDistance(test_p)
       dist = squared(physics.abc.wrapAngleManifold @configuration[0] - physics.abc.wrapAngleManifold -p[6]) +
-             squared(@configuration[1] - -p[7]) +
-             squared(@configuration[2] - -p[8])
+      squared(@configuration[1] - -p[7]) +
+      squared(@configuration[2] - -p[8])
       if dist < old_dist
         old_dist = dist
         grp = p[1]
@@ -483,7 +487,11 @@ class postureGraph
           t = 0
           for n in [1..point_stack.length]
             #we're at the last node of the path, insert edge to first node
-            if n is point_stack.length then m = n-1; n = 0; else m = n-1
+            if n is point_stack.length
+              m = n-1
+              n = 0
+            else
+              m = n-1
             edge = parent.nodes[point_stack[m]].getEdgeTo parent.nodes[point_stack[n]]
             path.push edge
             d += edge.distance
@@ -577,7 +585,7 @@ class abc
     @graph.parameters                # use center-gravity to make the graph settle nicely (ymmv)
       repulsion: 1000 #500
       stiffness: 100 #20
-      friction: .5
+      friction: 0.5
       gravity: true
 
     @graph.renderer = new simni.RendererSVG("#viewport_svg", @graph, @)
@@ -587,7 +595,10 @@ class abc
     @trajectory = []                            #last n state points
 
     #defaults
-    @mode_strategy = "unseen"
+    @heuristic = "unseen"
+    @heuristic_keep_dir = true
+    @heuristic_keep_joint = false
+
     @explore_active = false
     @save_periodically = false
 
@@ -597,6 +608,8 @@ class abc
     @explore_active = not @explore_active
     if @explore_active
       console.log "start explore run at "+new Date
+    else
+      console.log "stop explore at "+new Date
 
   searchSubarray: (sub, array, cmp) =>
     #returns index(es) if subarray is found in array using cmp (list1, index1, list2, index2) as comparator
@@ -604,7 +617,7 @@ class abc
     found = []
     for i in [0..array.length-sub.length] by 1
       for j in [0..sub.length-1] by 1
-        unless sub[j]? and array[i+j]? and cmp(sub,j, array,i+j)
+        unless cmp(sub,j, array,i+j)
           break
       if j == sub.length
         found.push i
@@ -690,13 +703,15 @@ class abc
       #position new node close to previous one (if there is one)
       if @posture_graph.length() > 2
         source_node = @graph.getNode n0
-
-        offset = 0.3
-        offset_x = Math.floor(Math.random() / 0.5)
-        if offset_x then offset_x = offset else offset_x = -offset
-        offset_y = Math.floor(Math.random() / 0.5)
-        if offset_y then offset_y = offset else offset_y = -offset
-        @graph.getNode(n1) or @graph.addNode n1, {'x': source_node.p.x + offset_x, 'y': source_node.p.y + offset_y}
+        offset = 0.2
+        #randomly place left or right / above or below source node
+        if Math.floor(Math.random() * 2) then offset_x = offset else offset_x = -offset
+        if Math.floor(Math.random() * 2) then offset_y = offset else offset_y = -offset
+        nn1 = @graph.getNode(n1)
+        unless nn1?
+          nn1 = @graph.addNode n1
+        nn1.p.x = source_node.p.x + offset_x
+        nn1.p.y = source_node.p.y + offset_y
 
       @graph.addEdge n0, n1,
         distance: distance.toFixed(3)
@@ -955,14 +970,19 @@ class abc
     a[0] == b[0] && a[1] == b[1]
 
 
-  set_strategy: (strategy) =>
-    @mode_strategy = strategy
+  set_heuristic: (heuristic) =>
+    @heuristic = heuristic
 
+  set_heuristic_keep_dir: (value) =>
+    @heuristic_keep_dir = value
+
+  set_heuristic_keep_joint: (value) =>
+    @heuristic_keep_joint = value
 
   newCSLMode: =>
     #random: randomly select next mode + different mode than the current one
     #unseen: try new mode that is not in neighbors of the current one, prefer previous mode. if all are seen,
-    #        use direction of largest expected learn progress
+    #        use direction of largest expected learn progress through diffuse
     #manual: detect postures and add nodes but don't set new modes automatically
 
     #TODO: try more strategies
@@ -985,14 +1005,14 @@ class abc
         ui.set_csl_mode_lower mode
 
     next_mode_for_direction = (old_mode, direction) ->
-      if direction is "+"
+      if direction is 0
         switch old_mode
           when "r+" then return "c"
           when "r-" then return "r+"
           when "c" then return "r+"
           when "s-" then return "r+"
-          when "s+" then return "s+"  #this one should not be taken anyway
-      else if direction is "-"
+          when "s+" then return "s+"
+      else if direction is 1
         switch old_mode
           when "r+" then return "r-"
           when "r-" then return "c"
@@ -1041,9 +1061,24 @@ class abc
         1+joint_index*2
 
     joint_from_dir_index = (index) ->
+      #get joint number for index (0: first joint, 1: second, ...)
       Math.ceil((index+1) / 2) - 1
+
+    dir_from_index = (index) ->
+      #if index % 2 then "-" else "+"
+      index%2
+
+    other_joint = (joint) ->
+      #get the number if the other joint for a given index
+      (joint+1)%2
+
+    other_dir = (dir) ->
+      #get the number of the other direction for a given index
+      (dir+1)%2
+
     ### end helpers ###
 
+    ### get some values ###
     current_mode = @last_posture.csl_mode
     if @previous_posture
       previous_mode = @previous_posture.csl_mode
@@ -1056,69 +1091,78 @@ class abc
       if "s" in current_mode[joint]
         @last_posture.exit_directions[stall_index_for_mode current_mode[joint], joint] = -1
 
-    if @mode_strategy is "unseen"
-      #use list of +/- possibilities for each joint: -1 stall, 0 not visited, >0 visited count
-      #[h+,h-,k+,k-]
+    #initialise some stuff
+    unless @last_dir_index
+      @last_dir = 0
+      @last_joint_index = 0
+      @last_dir_index = 0
 
-      #try to go back to previous mode (same joint)
-      ###
-      if @last_dir and @last_joint_index in [0, 1]
-        back_dir = if @last_dir is "+" then "-" else "+"         #reverse direction
-        back_dir_offset = if @last_dir is "+" then 0 else 1      #offset for index
-        next_dir_index = @last_joint_index+back_dir_offset            #get index for reverse direction
-        if @last_posture.exit_directions[next_dir_index] is 0         #if we have not gone this direction from here, we go back
-          next_mode = next_mode_for_direction current_mode[@last_joint_index], back_dir
-          direction = back_dir
-          joint_index = @last_joint_index
+    ### heuristics ###
+
+    if @heuristic is "unseen"
+      #for each joint: -1 stall, 0 not visited, >0 visited count
+      #exit directions: [h+,h-,k+,k-]
+
+      if 0 in @last_posture.exit_directions
+        trial_level = 0
+        while not next_dir_index?     #we can't simply go back again, look for possible new edges
+          #depending on heuristic options, try indexes in certain order
+          if          @heuristic_keep_dir and     @heuristic_keep_joint   #1
+            #go through various alternatives if options directly don't result in edge we haven't gone before
+            switch trial_level
+              when 0 then try_dir_index = @last_dir_index
+              when 1 then try_dir_index = @last_dir + 2*other_joint(@last_joint_index)
+              when 2 then try_dir_index = other_dir(@last_dir) + 2*@last_joint_index
+          else if     @heuristic_keep_dir and not @heuristic_keep_joint   #2
+            switch trial_level
+              when 0 then try_dir_index = @last_dir + 2*other_joint(@last_joint_index)
+              when 1 then try_dir_index = other_dir(@last_dir) + 2*other_joint(@last_joint_index)
+              when 2 then try_dir_index = @last_dir + 2*@last_joint_index
+          else if not @heuristic_keep_dir and     @heuristic_keep_joint   #3
+            switch trial_level
+              when 0 then try_dir_index = other_dir(@last_dir) + 2*@last_joint_index
+              when 1 then try_dir_index = @last_dir + 2*@last_joint_index
+              when 2 then try_dir_index = other_dir(@last_dir) + 2*other_joint(@last_joint_index)
+          else if not @heuristic_keep_dir and not @heuristic_keep_joint   #4
+            switch trial_level
+              when 0 then try_dir_index = other_dir(@last_dir) + 2*other_joint(@last_joint_index)
+              when 1 then try_dir_index = @last_dir + 2*other_joint(@last_joint_index)
+              when 2 then try_dir_index = other_dir(@last_dir) + 2*@last_joint_index
+
+          if @last_posture.exit_directions[try_dir_index] is 0
+            next_dir_index = try_dir_index
+          else
+            trial_level++
+
+          if trial_level == 3
+            #there are no alternatives matching the options, simply take the first open edge
+            next_dir_index = @last_posture.exit_directions.indexOf 0
+
+        console.log("leaving node in direction " + next_dir_index)
+      else   #we went all directions already
+        #take random edge
+        #next_dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four
+        #by # of joints - 0.01
+
+        #take edge with largest activation
+        #get edge with largest activation at target
+        go_this_edge = @last_posture.edges_out[0]
+        for e in @last_posture.edges_out
+          if e.target_node.activation > go_this_edge.target_node.activation
+            go_this_edge = e
+
+        if not go_this_edge
+          #if we didn't find an edge (i.e. there are no outgoing edges),
+          #get first one that isn't stalling
+          next_dir_index = dir for dir in @last_posture.exit_directions when dir > -1
+          console.log("warning: take first non stalling direction, this should probably not happen")
         else
-          next_dir_index = undefined
-      ###
+          next_dir_index = dir_index_for_modes @last_posture.csl_mode, go_this_edge.target_node.csl_mode
+          console.log("following the edge "+go_this_edge.start_node.name+"->"+go_this_edge.target_node.name+" because of largest activation.")
 
-      unless next_mode
-        #we are not going back again
-
-        if 0 in @last_posture.exit_directions
-          #we have not seen one of the directions yet, get first unvisited
-          next_dir_index = @last_posture.exit_directions.indexOf 0
-
-          #go through all unvisted directions and check if it is possible to switch another joint now
-          #if not, use the joint we have used before
-          found_index = next_dir_index
-          while found_index > -1
-            if joint_from_dir_index(found_index) != @last_joint_index
-              next_dir_index = found_index
-              #we now have the first unvisited direction of the other joint
-              #if there are more, we should randomly decide between those, so maybe go on
-              if Math.floor(Math.random() / 0.5)
-                break
-            found_index = @last_posture.exit_directions.indexOf 0, found_index+1
-          console.log("leaving node in direction " + next_dir_index)
-        else
-          #we went all directions already, take one with largest activation
-          if not next_dir_index? or @last_posture.exit_directions[next_dir_index] is -1
-            #next_dir_index = Math.floor(Math.random()*3.99)  #choose a random one of four, replace four
-            #by # of joints - 0.01
-            #get edge with largest activation at target
-            go_this_edge = @last_posture.edges_out[0]
-            for e in @last_posture.edges_out
-              if e.target_node.activation > go_this_edge.target_node.activation
-                go_this_edge = e
-
-            if not go_this_edge
-              #if we didn't find an edge (i.e. there are no outgoing edges),
-              #get first one that isn't stalling
-              next_dir_index = dir for dir in @last_posture.exit_directions when dir > -1
-              console.log("warning: take first non stalling direction, this should probably not happen")
-            else
-              next_dir_index = dir_index_for_modes @last_posture.csl_mode, go_this_edge.target_node.csl_mode
-              console.log("following the edge "+go_this_edge.start_node.name+"->"+go_this_edge.target_node.name+" because of largest activation.")
-
-        joint_index = joint_from_dir_index next_dir_index
-        if next_dir_index % 2
-          direction = "-"  #odds are -, evens are +
-        else
-          direction = "+"
-        next_mode = next_mode_for_direction current_mode[joint_index], direction
+      joint_index = joint_from_dir_index next_dir_index
+      direction = dir_from_index next_dir_index
+      next_mode = next_mode_for_direction current_mode[joint_index], direction
 
       if joint_index is 0
         ui.set_csl_mode_upper next_mode
@@ -1135,10 +1179,10 @@ class abc
 
       @graph.renderer.redraw()
 
-    else if @mode_strategy is "random"
+    else if @heuristic is "random"
       set_random_mode current_mode
 
-    else if @mode_strategy is "manual"
+    else if @heuristic is "manual"
       #don't do anything
       @manual_noop = true
       1

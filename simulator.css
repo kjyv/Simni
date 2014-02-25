@@ -13,7 +13,7 @@ h1 {
     padding: 0px 10px 10px 10px;
     border: 1px solid darkgray;
     border-radius: 4px;
-    min-height: 250px;
+    height: 250px;
 }
 
 #simulation {
@@ -120,7 +120,7 @@ input[type="range"] {
 
 #manifold_view {
     float:left;
-    padding: 0px 0px 0px 0px;
+    padding: 0px 0px 10px 0px;
     width: 303px;
 }
 

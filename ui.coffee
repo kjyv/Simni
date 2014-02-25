@@ -545,6 +545,10 @@ class ui
 
   set_pause_drawing: (value) =>
     physics.abc.graph.renderer.pause_drawing = value
+    if value
+      console.log "pause explore at "+new Date
+    else
+      console.log "unpause explore at "+new Date
 
   set_pause_layouting: (value) =>
     physics.abc.graph.renderer.pause_layout = value

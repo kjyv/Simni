@@ -565,7 +565,12 @@
     };
 
     ui.prototype.set_pause_drawing = function(value) {
-      return physics.abc.graph.renderer.pause_drawing = value;
+      physics.abc.graph.renderer.pause_drawing = value;
+      if (value) {
+        return console.log("pause explore at " + new Date);
+      } else {
+        return console.log("unpause explore at " + new Date);
+      }
     };
 
     ui.prototype.set_pause_layouting = function(value) {
