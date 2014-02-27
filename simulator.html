@@ -184,7 +184,7 @@ Neurorobotics Research Laboratory, Berlin
                         $("#friction_param").trigger("change")
 
                 </script>
-                <button id="toggle_pause" class="toggle-button" onClick="physics.run = !physics.run; physics.update();">pause/run simulation [p]</button>
+                <button id="toggle_pause" class="toggle-button" onClick="ui.set_pause_explore();">pause/run simulation [p]</button>
                 <button id="next_step" onClick="physics.step = true; physics.update();">next step
                     (when paused) [n]</button><br/>
                 <button id="toggle_csl" class="toggle-button">toggle CSL [c]</button>
@@ -378,7 +378,7 @@ Neurorobotics Research Laboratory, Berlin
                 <label for="graph_pause_layouting">Pause graph layouting</label></br>
 
                 <input type="checkbox" id="graph_activation" value="no" onchange="ui.set_activation(this.checked)"/>
-                <label for="graph_activation">Show node activation (discovery possibilities)</label></br>
+                <label for="graph_activation">Show node activation</label></br>
 
                 <input type="checkbox" id="graph_color_activation" value="no" onchange="ui.set_color_activation(this.checked)"/>
                 <label for="graph_color_activation">Show node activation colors (manifold colors
@@ -402,8 +402,6 @@ Neurorobotics Research Laboratory, Berlin
             </div>
             <!--<div id="semni_svg" style="width: 300px; height: 300px; float: left;"></div>-->
             <div id="posture-graph">
-                <!--<canvas width="1400" height="900" id="viewport"></canvas>
-                <canvas width="300" height="300" id="tempimage" style="display:none;"></canvas>-->
                 <div id="viewport_svg"></div>
             </div>
         </div>

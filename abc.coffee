@@ -150,6 +150,7 @@ class postureGraph
       positions: p.positions
       subManifoldId: p.subManifoldId
     @arborGraph.addNode p.name, data
+
     return node_name
 
   deletePosture: (p_name) =>
@@ -274,12 +275,14 @@ class postureGraph
     @arborGraph.renderer.svg_nodes = {}
     @arborGraph.renderer.svg_edges = {}
 
-    $("#viewport_svg svg g").remove()
+    $("#viewport_svg svg g").slice(1).remove()
     $("#viewport_svg svg rect").remove()
     $("#viewport_svg svg text").remove()
     $("#viewport_svg svg line").remove()
+    @arborGraph.renderer.initManifoldBar()
 
     for n in @nodes
+      physics.abc.drawManifoldStripe(n)
       for e in n.edges_out
         nn = e.target_node
         ag.addEdge(n.name, nn.name, {"label": e.csl_mode, "distance": e.distance, "timedelta": e.timedelta})
@@ -396,12 +399,14 @@ class postureGraph
     @arborGraph.renderer.svg_nodes = {}
     @arborGraph.renderer.svg_edges = {}
 
-    $("#viewport_svg svg g").remove()
+    $("#viewport_svg svg g").slice(1).remove()
     $("#viewport_svg svg rect").remove()
     $("#viewport_svg svg text").remove()
     $("#viewport_svg svg line").remove()
+    @arborGraph.renderer.initManifoldBar()
 
     for n in @nodes
+      physics.abc.drawManifoldStripe(n)
       for e in n.edges_out
         nn = e.target_node
         ag.addEdge(n.name, nn.name, {"label": e.csl_mode, "distance": e.distance, "timedelta": e.timedelta})
@@ -443,7 +448,6 @@ class postureGraph
     @arborGraph.start(true)
     @arborGraph.renderer.click_time = Date.now()
     @arborGraph.renderer.redraw()
-
 
   findElementaryCircles: =>
     #implement Tarjan's algorithm for finding circles in directed graphs
@@ -634,7 +638,7 @@ class abc
 
   wrapAngleManifold: (bodyangle) =>
     #wrap angle in asymmetric range around 0, useful with manifold data
-    while bodyangle < -1.75*Math.PI
+    while bodyangle < -1.74*Math.PI
       bodyangle+= 2*Math.PI
     while bodyangle > 0.77*Math.PI
       bodyangle-= 2*Math.PI
@@ -663,12 +667,12 @@ class abc
     if @trajectory.length > 200 and (Date.now() - time) > 2000
       #take last 50 points
       last = @trajectory.slice(-50)
-      eps=0.020
+      eps=0.01
       d = @searchSubarray last, @trajectory, (a,i, b,j) ->
         Math.abs(a[i][0] - b[j][0]) < eps and Math.abs(a[i][1] - b[j][1]) < eps and Math.abs(a[i][2] - b[j][2]) < eps
       #console.log(d)
 
-      if d.length > 3    #need to find sample a few times to be periodic
+      if d.length > 2    #need to find sample a few times to be periodic
         #found a posture, call user method
         configuration = @trajectory.pop()
         action(configuration, @)
@@ -852,6 +856,8 @@ class abc
         node_name = @posture_graph.addPosture @last_detected
         console.log("connecting new posture "+node_name+ " with previous posture "+@last_posture.name)
         @connectLastPosture(@last_detected)
+
+        @drawManifoldStripe(p)
         @graph.renderer.redraw()
 
         #continue with csl whereever we landed instead
@@ -953,8 +959,10 @@ class abc
 
     @previous_posture = @last_posture
     @last_posture = p
+
     @newCSLMode()
 
+    @drawManifoldStripe(p)
     @graph.renderer.redraw()
 
     if @save_periodically
@@ -963,22 +971,12 @@ class abc
       graph_func = -> ui.getPostureGraphAsFile()
       setTimeout graph_func, 1000
 
-
   compareModes: (a, b) =>
     if not a or not b
       return false
     a[0] == b[0] && a[1] == b[1]
 
-
-  set_heuristic: (heuristic) =>
-    @heuristic = heuristic
-
-  set_heuristic_keep_dir: (value) =>
-    @heuristic_keep_dir = value
-
-  set_heuristic_keep_joint: (value) =>
-    @heuristic_keep_joint = value
-
+  ## next mode heuristics
   newCSLMode: =>
     #random: randomly select next mode + different mode than the current one
     #unseen: try new mode that is not in neighbors of the current one, prefer previous mode. if all are seen,
@@ -1186,6 +1184,37 @@ class abc
       #don't do anything
       @manual_noop = true
       1
+
+
+  ### ui helpers ###
+  set_heuristic: (heuristic) =>
+    @heuristic = heuristic
+
+  set_heuristic_keep_dir: (value) =>
+    @heuristic_keep_dir = value
+
+  set_heuristic_keep_joint: (value) =>
+    @heuristic_keep_joint = value
+
+  drawManifoldStripe: (p) =>
+    #add manifold stripes for this posture
+    m = @graph.renderer
+    m.mt_count++
+    w = m.mt_width/m.mt_count
+    selection = m.manifold_over_time.selectAll("rect").each (d,i) ->
+      if i > 0
+        d3.select(this)
+          .attr("width", w)
+          .attr("x", (m.mt_x)+(w*(i-1)))
+
+    m.manifold_over_time.append("rect")
+        .attr("width", w)
+        .attr("height", m.mt_height)
+        .attr("x", (m.mt_x)+(w* (m.mt_count-1)))
+        .attr("y", m.mt_y)
+        .attr("fill", ui.getSubmanifoldColor(p.subManifoldId))
+
+  ### end ui helpers ###
 
   limitCSL: (upper_joint, lower_joint) =>
     # if csl goes against limit, set to stall mode (hold with small bias)

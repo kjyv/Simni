@@ -10,7 +10,9 @@
 
       this.init = __bind(this.init, this);
 
-      var MAX_UNIX_TIME, arrowLength, arrowWidth;
+      this.initManifoldBar = __bind(this.initManifoldBar, this);
+
+      var MAX_UNIX_TIME;
       this.width = 1400;
       this.height = 850;
       this.svg = d3.select(container).append("svg:svg").attr("width", this.width).attr("height", this.height).attr("xmlns", "http://www.w3.org/2000/svg");
@@ -22,7 +24,6 @@
       this.click_time = MAX_UNIX_TIME;
       this.graph = parent;
       this.abc = abc;
-      $("canvas#viewport").hide();
       this.draw_graph_animated = true;
       this.draw_color_activation = false;
       this.draw_edge_labels = false;
@@ -31,11 +32,19 @@
       this.pause_drawing = true;
       this.pause_layout = false;
       this.previous_hover = null;
-      arrowLength = 6 + 1;
-      arrowWidth = 2 + 1;
-      this.svg.append("svg:defs").append("svg:marker").attr("id", "arrowtip").attr("viewBox", "-10 -5 10 10").attr("refX", 0).attr("refY", 0).attr("markerWidth", 10).attr("markerHeight", 10).attr("orient", "auto").attr("stroke", "gray").append("svg:path").attr("d", "M-7,3L0,0L-7,-3L-5.6,0");
       this.svg.append("svg:defs").append("svg:marker").attr("id", "Arrow2Mend").style("overflow", "visible").attr("refX", 0).attr("refY", 0).attr("orient", "auto").attr("stroke", "gray").append("svg:path").attr("style", "font-size:12.0;fill-rule:evenodd;stroke-width:0.62500000;stroke-linejoin:round;").attr("d", "M-7,3L0,0L-7,-3L-5.6,0");
+      this.initManifoldBar();
     }
+
+    RendererSVG.prototype.initManifoldBar = function() {
+      this.mt_width = 400;
+      this.mt_height = 20;
+      this.mt_x = 980;
+      this.mt_y = 30;
+      this.mt_count = 0;
+      this.manifold_over_time = this.svg.append("g");
+      return this.manifold_over_time.append("rect").attr("x", this.mt_x).attr("y", this.mt_y).attr("width", this.mt_width).attr("height", this.mt_height).style("stroke", "gray").style("stroke-width", "1px").style("fill", "none");
+    };
 
     RendererSVG.prototype.init = function(system) {
       this.particleSystem = system;
@@ -103,7 +112,7 @@
       parent = this;
       graph = this.graph;
       this.particleSystem.eachNode(function(node, pt) {
-        var a, activation, c, configuration, crect, fill, font_family, font_size, hovered, image, label, number, positions, strokeStyle, strokeWidth, subManifoldId, text_anchor, w, w2;
+        var a, activation, c, configuration, fill, font_family, font_size, hovered, image, label, number, positions, strokeStyle, strokeWidth, subManifoldId, text_anchor, w, w2;
         label = node.data.label;
         number = node.data.number;
         image = node.data.imageData;
@@ -121,14 +130,14 @@
         }
         if (!node.data.semni && positions && positions.length && configuration) {
           node.data.semni = ui.getSemniOutlineSVG(positions[0], configuration[0], configuration[1], configuration[2], parent.svg);
+          node.data.semni_crect = node.data.semni[0][0].getBBox();
         }
         if (!parent.draw_semni && node.data.semni) {
           node.data.semni.remove();
           node.data.semni = void 0;
         }
         if (node.data.semni) {
-          crect = node.data.semni[0][0].getBBox();
-          node.data.semni.attr("transform", "translate(" + (pt.x - crect.width - crect.x + 20) + "," + (pt.y - crect.height - crect.y - 10) + ")");
+          node.data.semni.attr("transform", "translate(" + (pt.x - node.data.semni_crect.width - node.data.semni_crect.x + 20) + "," + (pt.y - node.data.semni_crect.height - node.data.semni_crect.y - 10) + ")");
           if (hovered) {
             node.data.semni.attr("stroke", "orange");
           } else {
@@ -137,6 +146,7 @@
         }
         if (parent.svg_nodes[number] === void 0) {
           parent.svg_nodes[number] = parent.svg.append("svg:rect");
+          parent.svg_nodes[number].attr("width", w).attr("height", w).style("fill", "none");
         }
         if (graph.current_node === node) {
           strokeStyle = "red";
@@ -148,7 +158,7 @@
           strokeStyle = "black";
           strokeWidth = "1px";
         }
-        parent.svg_nodes[number].attr("x", pt.x - w2).attr("y", pt.y - w2).attr("width", w).attr("height", w).style("fill", "none").style("stroke", strokeStyle).style("stroke-width", strokeWidth);
+        parent.svg_nodes[number].attr("x", pt.x - w2).attr("y", pt.y - w2).style("stroke", strokeStyle).style("stroke-width", strokeWidth);
         /*
                 if parent.abc.posture_graph.best_circle
                   for transition in parent.abc.posture_graph.best_circle.slice(0,-3)   #leave out the extra data in each circle array
@@ -164,23 +174,8 @@
               c = physics.ui.activation2color(a);
               parent.svg_nodes[number].style("fill", c);
             } else {
-              switch (subManifoldId) {
-                case 1:
-                  c = [255, 150, 0];
-                  break;
-                case 2:
-                  c = [0, 195, 80];
-                  break;
-                case 3:
-                  c = [0, 173, 244];
-                  break;
-                case 4:
-                  c = [197, 0, 169];
-                  break;
-                default:
-                  c = [0, 0, 0];
-              }
-              parent.svg_nodes[number].style("fill", "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")");
+              c = physics.ui.getSubmanifoldColor(subManifoldId);
+              parent.svg_nodes[number].style("fill", c);
             }
           } else {
             a = "";
@@ -231,9 +226,9 @@
           }
           if (parent.svg_edges[edge.data.name] === void 0) {
             parent.svg_edges[edge.data.name] = parent.svg.append("svg:line");
-            parent.svg_edges[edge.data.name].attr("stroke-width", "1").attr("stroke", "#808080").attr("fill", "none");
+            parent.svg_edges[edge.data.name].attr("stroke-width", "1").attr("stroke", "#808080").attr("fill", "none").attr("marker-end", "url(#Arrow2Mend)");
           }
-          parent.svg_edges[edge.data.name].attr("x1", tail.x).attr("y1", tail.y).attr("x2", head.x).attr("y2", head.y).attr("marker-end", "url(#Arrow2Mend)");
+          parent.svg_edges[edge.data.name].attr("x1", tail.x).attr("y1", tail.y).attr("x2", head.x).attr("y2", head.y);
           if (edge.source.data.hovered) {
             parent.svg_edges[edge.data.name].attr("stroke", "orange");
           } else if (edge.target.data.hovered) {

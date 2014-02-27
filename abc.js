@@ -426,13 +426,15 @@
       this.arborGraph.prune();
       this.arborGraph.renderer.svg_nodes = {};
       this.arborGraph.renderer.svg_edges = {};
-      $("#viewport_svg svg g").remove();
+      $("#viewport_svg svg g").slice(1).remove();
       $("#viewport_svg svg rect").remove();
       $("#viewport_svg svg text").remove();
       $("#viewport_svg svg line").remove();
+      this.arborGraph.renderer.initManifoldBar();
       _ref2 = this.nodes;
       for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
         n = _ref2[_k];
+        physics.abc.drawManifoldStripe(n);
         _ref3 = n.edges_out;
         for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
           e = _ref3[_l];
@@ -555,13 +557,15 @@
       this.arborGraph.prune();
       this.arborGraph.renderer.svg_nodes = {};
       this.arborGraph.renderer.svg_edges = {};
-      $("#viewport_svg svg g").remove();
+      $("#viewport_svg svg g").slice(1).remove();
       $("#viewport_svg svg rect").remove();
       $("#viewport_svg svg text").remove();
       $("#viewport_svg svg line").remove();
+      this.arborGraph.renderer.initManifoldBar();
       _ref4 = this.nodes;
       for (_o = 0, _len5 = _ref4.length; _o < _len5; _o++) {
         n = _ref4[_o];
+        physics.abc.drawManifoldStripe(n);
         _ref5 = n.edges_out;
         for (_p = 0, _len6 = _ref5.length; _p < _len6; _p++) {
           e = _ref5[_p];
@@ -778,13 +782,15 @@
 
       this.limitCSL = __bind(this.limitCSL, this);
 
-      this.newCSLMode = __bind(this.newCSLMode, this);
+      this.drawManifoldStripe = __bind(this.drawManifoldStripe, this);
 
       this.set_heuristic_keep_joint = __bind(this.set_heuristic_keep_joint, this);
 
       this.set_heuristic_keep_dir = __bind(this.set_heuristic_keep_dir, this);
 
       this.set_heuristic = __bind(this.set_heuristic, this);
+
+      this.newCSLMode = __bind(this.newCSLMode, this);
 
       this.compareModes = __bind(this.compareModes, this);
 
@@ -866,7 +872,7 @@
     };
 
     abc.prototype.wrapAngleManifold = function(bodyangle) {
-      while (bodyangle < -1.75 * Math.PI) {
+      while (bodyangle < -1.74 * Math.PI) {
         bodyangle += 2 * Math.PI;
       }
       while (bodyangle > 0.77 * Math.PI) {
@@ -895,11 +901,11 @@
       this.trajectory.push([p_body, p_hip, p_knee]);
       if (this.trajectory.length > 200 && (Date.now() - time) > 2000) {
         last = this.trajectory.slice(-50);
-        eps = 0.020;
+        eps = 0.01;
         d = this.searchSubarray(last, this.trajectory, function(a, i, b, j) {
           return Math.abs(a[i][0] - b[j][0]) < eps && Math.abs(a[i][1] - b[j][1]) < eps && Math.abs(a[i][2] - b[j][2]) < eps;
         });
-        if (d.length > 3) {
+        if (d.length > 2) {
           configuration = this.trajectory.pop();
           action(configuration, this);
           this.trajectory = [];
@@ -1055,6 +1061,7 @@
           node_name = this.posture_graph.addPosture(this.last_detected);
           console.log("connecting new posture " + node_name + " with previous posture " + this.last_posture.name);
           this.connectLastPosture(this.last_detected);
+          this.drawManifoldStripe(p);
           this.graph.renderer.redraw();
           this.switch_to_random_release_after_position(uj);
           this.switch_to_random_release_after_position(lj);
@@ -1131,6 +1138,7 @@
       this.previous_posture = this.last_posture;
       this.last_posture = p;
       this.newCSLMode();
+      this.drawManifoldStripe(p);
       this.graph.renderer.redraw();
       if (this.save_periodically) {
         this.posture_graph.saveGaphToFile();
@@ -1146,18 +1154,6 @@
         return false;
       }
       return a[0] === b[0] && a[1] === b[1];
-    };
-
-    abc.prototype.set_heuristic = function(heuristic) {
-      return this.heuristic = heuristic;
-    };
-
-    abc.prototype.set_heuristic_keep_dir = function(value) {
-      return this.heuristic_keep_dir = value;
-    };
-
-    abc.prototype.set_heuristic_keep_joint = function(value) {
-      return this.heuristic_keep_joint = value;
     };
 
     abc.prototype.newCSLMode = function() {
@@ -1408,6 +1404,39 @@
         return 1;
       }
     };
+
+    /* ui helpers
+    */
+
+
+    abc.prototype.set_heuristic = function(heuristic) {
+      return this.heuristic = heuristic;
+    };
+
+    abc.prototype.set_heuristic_keep_dir = function(value) {
+      return this.heuristic_keep_dir = value;
+    };
+
+    abc.prototype.set_heuristic_keep_joint = function(value) {
+      return this.heuristic_keep_joint = value;
+    };
+
+    abc.prototype.drawManifoldStripe = function(p) {
+      var m, selection, w;
+      m = this.graph.renderer;
+      m.mt_count++;
+      w = m.mt_width / m.mt_count;
+      selection = m.manifold_over_time.selectAll("rect").each(function(d, i) {
+        if (i > 0) {
+          return d3.select(this).attr("width", w).attr("x", m.mt_x + (w * (i - 1)));
+        }
+      });
+      return m.manifold_over_time.append("rect").attr("width", w).attr("height", m.mt_height).attr("x", m.mt_x + (w * (m.mt_count - 1))).attr("y", m.mt_y).attr("fill", ui.getSubmanifoldColor(p.subManifoldId));
+    };
+
+    /* end ui helpers
+    */
+
 
     abc.prototype.limitCSL = function(upper_joint, lower_joint) {
       var limit, mc;

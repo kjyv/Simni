@@ -346,7 +346,6 @@ class ui
     p.createSemni(x0,y0)
 
   set_csl_mode_upper: (hipCSL, change_select=true) =>
-    #set ABC learning modes for exploration
     release_bias_hip = 0.04
     release_gf = 0
     release_gi = 0
@@ -517,6 +516,15 @@ class ui
     color = new Color(l, c, h, ColorMode.CIELCh)
     color.getHex()
 
+  getSubmanifoldColor: (id) =>
+    switch id
+      when 1 then c = [255,150,0]
+      when 2 then c = [0,195,80]
+      when 3 then c = [0,173,244]
+      when 4 then c = [197,0,169]
+      else c = [0,0,0]
+    return "rgb("+c[0]+","+c[1]+","+c[2]+")"
+
   set_realtime: (value) =>
     @realtime = value
 
@@ -545,10 +553,6 @@ class ui
 
   set_pause_drawing: (value) =>
     physics.abc.graph.renderer.pause_drawing = value
-    if value
-      console.log "pause explore at "+new Date
-    else
-      console.log "unpause explore at "+new Date
 
   set_pause_layouting: (value) =>
     physics.abc.graph.renderer.pause_layout = value
@@ -556,6 +560,14 @@ class ui
       physics.abc.graph.stop()
     else
       physics.abc.graph.start(true)
+
+  set_pause_explore: =>
+    physics.run = !physics.run
+    physics.update()
+    if physics.run
+      console.log "unpause explore at "+new Date
+    else
+      console.log "pause explore at "+new Date
 
   set_render_manifold: (value) =>
     manifoldRenderer.do_render = value

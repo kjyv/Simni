@@ -15,7 +15,6 @@ class RendererSVG
     @click_time = MAX_UNIX_TIME
     @graph = parent
     @abc = abc
-    $("canvas#viewport").hide()
 
     @draw_graph_animated = true
     @draw_color_activation = false
@@ -27,22 +26,7 @@ class RendererSVG
 
     @previous_hover = null
 
-    arrowLength = 6 + 1
-    arrowWidth = 2 + 1
-
-    #pre-create arrow tip marker
-    @svg.append("svg:defs").append("svg:marker")
-        .attr("id", "arrowtip")
-        .attr("viewBox", "-10 -5 10 10")
-        .attr("refX", 0)
-        .attr("refY", 0)
-        .attr("markerWidth", 10)
-        .attr("markerHeight", 10)
-        .attr("orient", "auto")
-        .attr("stroke", "gray")
-      .append("svg:path")
-        .attr("d", "M-7,3L0,0L-7,-3L-5.6,0")
-
+    #pre-create arrow tip marker (svg borrowed from inkscape)
     @svg.append("svg:defs").append("svg:marker")
         .attr("id", "Arrow2Mend")
         .style("overflow", "visible")
@@ -53,6 +37,24 @@ class RendererSVG
       .append("svg:path")
         .attr("style", "font-size:12.0;fill-rule:evenodd;stroke-width:0.62500000;stroke-linejoin:round;")
         .attr("d", "M-7,3L0,0L-7,-3L-5.6,0")
+
+    @initManifoldBar()
+
+  initManifoldBar: =>
+    @mt_width = 400
+    @mt_height = 20
+    @mt_x = 980
+    @mt_y = 30
+    @mt_count = 0
+    @manifold_over_time = @svg.append("g")
+    @manifold_over_time.append("rect")
+      .attr("x", @mt_x)
+      .attr("y", @mt_y)
+      .attr("width", @mt_width)
+      .attr("height", @mt_height)
+      .style("stroke", "gray")
+      .style("stroke-width", "1px")
+      .style("fill", "none")
 
   init: (system) =>
     # the particle system will call the init function once, right before the
@@ -66,7 +68,7 @@ class RendererSVG
     # if the canvas is ever resized, screenSize should be called again with
     # the new dimensions
     @particleSystem.screenSize @width, @height
-    @particleSystem.screenPadding 90 # leave an extra 90px of whitespace per side
+    @particleSystem.screenPadding 90 # leave extra whitespace per side
 
     # set up some event handlers to allow for node-dragging
     @initMouseHandling()
@@ -106,7 +108,7 @@ class RendererSVG
     @intersect_line_line(p1, p2, tl, tr) or @intersect_line_line(p1, p2, tr, br) or @intersect_line_line(p1, p2, br, bl) or @intersect_line_line(p1, p2, bl, tl) or false
 
   draw_once: ->
-    #draw at least once without touch animated settings
+    #draw once without touching settings
     if @draw_graph_animated
       @redraw()
     else if not @draw_graph_animated
@@ -154,6 +156,7 @@ class RendererSVG
       if not node.data.semni and positions and positions.length and configuration
         #put new svg elements with nodes posture if not existent
         node.data.semni = ui.getSemniOutlineSVG(positions[0], configuration[0], configuration[1], configuration[2], parent.svg)
+        node.data.semni_crect = node.data.semni[0][0].getBBox() #getBoundingClientRect()
 
       if not parent.draw_semni and node.data.semni
         node.data.semni.remove()
@@ -161,17 +164,16 @@ class RendererSVG
 
       if node.data.semni
         #move to current nodes position
-        crect = node.data.semni[0][0].getBBox() #getBoundingClientRect()
-        node.data.semni.attr("transform", "translate(" + (pt.x - crect.width - crect.x + 20) + "," + (pt.y - crect.height - crect.y - 10) + ")")
-        if hovered
-          node.data.semni.attr("stroke", "orange")
-        else
-          node.data.semni.attr("stroke", "gray")
-
+        node.data.semni.attr("transform", "translate(" + (pt.x - node.data.semni_crect.width - node.data.semni_crect.x + 20) + "," + (pt.y - node.data.semni_crect.height - node.data.semni_crect.y - 10) + ")")
+        if hovered then node.data.semni.attr("stroke", "orange") else node.data.semni.attr("stroke", "gray")
 
       # draw a rectangle centered at pt
       if parent.svg_nodes[number] == undefined
         parent.svg_nodes[number] = parent.svg.append("svg:rect")
+        parent.svg_nodes[number]
+          .attr("width", w)
+          .attr("height", w)
+          .style("fill", "none")
 
       #draw last node highlit
       if graph.current_node is node
@@ -187,9 +189,6 @@ class RendererSVG
       parent.svg_nodes[number]
              .attr("x", pt.x - w2)
              .attr("y", pt.y - w2)
-             .attr("width", w)
-             .attr("height", w)
-             .style("fill", "none")
              .style("stroke", strokeStyle)
              .style("stroke-width", strokeWidth)
 
@@ -211,13 +210,8 @@ class RendererSVG
             parent.svg_nodes[number].style("fill", c)
           else
             #parent.svg_nodes[number].style("fill", "none")
-            switch subManifoldId
-              when 1 then c = [255,150,0]
-              when 2 then c = [0,195,80]
-              when 3 then c = [0,173,244]
-              when 4 then c = [197,0,169]
-              else c = [0,0,0]
-            parent.svg_nodes[number].style("fill","rgb("+c[0]+","+c[1]+","+c[2]+")")
+            c = physics.ui.getSubmanifoldColor(subManifoldId)
+            parent.svg_nodes[number].style("fill", c)
         else
           a = ""
         if node.data.label_svg == undefined
@@ -306,14 +300,14 @@ class RendererSVG
         if parent.svg_edges[edge.data.name] == undefined
           parent.svg_edges[edge.data.name] = parent.svg.append("svg:line")
           parent.svg_edges[edge.data.name]
-                .attr("stroke-width", "1")
-                .attr("stroke", "#808080")
-                .attr("fill", "none")
+            .attr("stroke-width", "1")
+            .attr("stroke", "#808080")
+            .attr("fill", "none")
+            .attr("marker-end", "url(#Arrow2Mend)")
 
         #refresh coordinates
         parent.svg_edges[edge.data.name].attr("x1", tail.x).attr("y1", tail.y)
                                         .attr("x2", head.x).attr("y2", head.y)
-                                        .attr("marker-end", "url(#Arrow2Mend)")
 
         if edge.source.data.hovered
           parent.svg_edges[edge.data.name].attr("stroke", "orange")
@@ -338,9 +332,6 @@ class RendererSVG
           if edge.data.label_svg
             edge.data.label_svg.remove()
             edge.data.label_svg = undefined
-
-        #if distance and Math.abs(distance) > 0.05
-        #draw distance label
 
     #timeout for drawing graph
     if @pause_drawing and (Date.now() - @click_time) > 5000
