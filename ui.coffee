@@ -511,8 +511,19 @@ class ui
     if value > 1.0
       value = 1.0
     l = 80                          #lightness
-    c = 210                         #chroma
-    h = 40+((1-value) *(140-40))    #hue angle
+    c = 200                         #chroma
+    h = 40+((1-value) *(140-40))    #hue angle (color)
+    color = new Color(l, c, h, ColorMode.CIELCh)
+    color.getHex()
+
+  visits2color: (value) =>
+    #get a color gradient for a value from 1 to max (and everything above)
+    max = 15
+    if value >= max
+      value = max
+    l = 85-value*(60/max)           #lightness
+    c = 100                         #chroma
+    h = 270+((100/max)*value)              #hue angle (color)
     color = new Color(l, c, h, ColorMode.CIELCh)
     color.getHex()
 
@@ -520,7 +531,7 @@ class ui
     switch id
       when 1 then c = [255,150,0]
       when 2 then c = [0,195,80]
-      when 3 then c = [0,173,244]
+      when 3 then c = [0,190,255]
       when 4 then c = [197,0,169]
       else c = [0,0,0]
     return "rgb("+c[0]+","+c[1]+","+c[2]+")"
@@ -541,6 +552,12 @@ class ui
 
   set_color_activation: (value) =>
     physics.abc.graph.renderer.draw_color_activation = value
+    physics.abc.graph.renderer.redraw()
+    if value is true
+      $("#graph_color_visits").click()
+
+  set_color_visits: (value) =>
+    physics.abc.graph.renderer.draw_color_visits = value
     physics.abc.graph.renderer.redraw()
 
   set_activation: (value) =>

@@ -263,7 +263,8 @@
         activation: p.activation,
         configuration: p.configuration,
         positions: p.positions,
-        subManifoldId: p.subManifoldId
+        subManifoldId: p.subManifoldId,
+        visits: p.mean_n
       };
       this.arborGraph.addNode(p.name, data);
       return node_name;
@@ -406,6 +407,7 @@
         nn.positions = n.positions;
         nn.configuration = n.configuration;
         nn.subManifoldId = nn.getSubmanifold();
+        nn.visits = n.mean_n;
         this.nodes.push(nn);
       }
       _ref1 = t.edges;
@@ -452,7 +454,8 @@
             activation: n.activation,
             configuration: n.configuration,
             positions: n.positions,
-            subManifoldId: n.subManifoldId
+            subManifoldId: n.subManifoldId,
+            visits: n.mean_n
           };
           target_node.data = {
             label: nn.csl_mode,
@@ -460,7 +463,8 @@
             activation: nn.activation,
             configuration: nn.configuration,
             positions: nn.positions,
-            subManifoldId: nn.subManifoldId
+            subManifoldId: nn.subManifoldId,
+            visits: nn.mean_n
           };
         }
       }
@@ -583,7 +587,8 @@
             activation: n.activation,
             configuration: n.configuration,
             positions: n.positions,
-            subManifoldId: n.subManifoldId
+            subManifoldId: n.subManifoldId,
+            visits: n.mean_n
           };
           target_node.data = {
             label: nn.csl_mode,
@@ -591,7 +596,8 @@
             activation: nn.activation,
             configuration: nn.configuration,
             positions: nn.positions,
-            subManifoldId: nn.subManifoldId
+            subManifoldId: nn.subManifoldId,
+            visits: nn.mean_n
           };
         }
       }
@@ -966,6 +972,7 @@
           init_node.data.positions = start_node.positions;
           init_node.data.configuration = start_node.configuration;
           init_node.data.subManifoldId = start_node.subManifoldId;
+          init_node.data.visits = start_node.mean_n;
         }
         source_node = this.graph.getNode(n0);
         this.graph.current_node = current_node = this.graph.getNode(n1);
@@ -975,6 +982,7 @@
         current_node.data.configuration = target_node.configuration;
         current_node.data.activation = target_node.activation;
         current_node.data.subManifoldId = target_node.subManifoldId;
+        current_node.data.visits = target_node.mean_n;
         source_node.data.activation = start_node.activation;
         this.graph.start(true);
         return this.graph.renderer.click_time = Date.now();
@@ -1072,7 +1080,7 @@
         }
       }
       expected_node = void 0;
-      if ((this.last_posture != null) && (this.last_dir_index != null) && this.last_posture.exit_directions[this.last_dir_index] !== 0) {
+      if ((this.last_posture != null) && (this.last_dir_index != null) && this.last_posture.exit_directions[this.last_dir_index] > 0) {
         expected_node = this.posture_graph.getNodeByName(this.last_posture.exit_directions[this.last_dir_index]);
       }
       if (!found) {
@@ -1160,18 +1168,18 @@
       /* helpers
       */
 
-      var current_mode, dir, dir_from_index, dir_index_for_dir_and_joint, dir_index_for_modes, direction, e, go_this_edge, joint, joint_from_dir_index, joint_index, next_dir_index, next_mode, next_mode_for_direction, other_dir, other_joint, previous_mode, set_random_mode, stall_index_for_mode, trial_level, try_dir_index, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+      var current_mode, dir, dir_from_index, dir_index_for_dir_and_joint, dir_index_for_modes, direction, e, go_this_edge, joint, joint_from_dir_index, joint_index, new_mode, next_dir_index, next_mode, next_mode_for_direction, other_dir, other_joint, previous_mode, set_random_mode, stall_index_for_mode, trial_level, try_dir_index, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
       set_random_mode = function(current_mode) {
-        var mode, which;
+        var mode, new_mode, which;
         which = Math.floor(Math.random() * 2);
-        if (which) {
+        if (which === 0) {
           while (true) {
             mode = ["r+", "r-", "c"][Math.floor(Math.random() * 2.99)];
             if (current_mode[0] !== mode) {
               break;
             }
           }
-          return ui.set_csl_mode_upper(mode);
+          ui.set_csl_mode_upper(mode);
         } else {
           while (true) {
             mode = ["r+", "r-", "c"][Math.floor(Math.random() * 2.99)];
@@ -1179,8 +1187,11 @@
               break;
             }
           }
-          return ui.set_csl_mode_lower(mode);
+          ui.set_csl_mode_lower(mode);
         }
+        new_mode = current_mode.clone();
+        new_mode[which] = mode;
+        return new_mode;
       };
       next_mode_for_direction = function(old_mode, direction) {
         if (direction === 0) {
@@ -1398,7 +1409,8 @@
         this.transition_mode[joint_index] = next_mode;
         return this.graph.renderer.redraw();
       } else if (this.heuristic === "random") {
-        return set_random_mode(current_mode);
+        new_mode = set_random_mode(current_mode);
+        return this.last_dir_index = dir_index_for_modes(current_mode, new_mode);
       } else if (this.heuristic === "manual") {
         this.manual_noop = true;
         return 1;

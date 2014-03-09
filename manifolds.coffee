@@ -14,7 +14,7 @@ class manifoldRenderer
       switch i[1]
         when 1 then c.setRGB(255/255,150/255,0)
         when 2 then c.setRGB(0, 195/255, 80/255)
-        when 3 then c.setRGB(0,173/255,244/255)
+        when 3 then c.setRGB(0,190/255,255/255)
         when 4 then c.setRGB(197/255,0,169/255)
       geom.colors.push( c )
     return

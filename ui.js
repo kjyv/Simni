@@ -22,6 +22,8 @@
 
       this.set_activation = __bind(this.set_activation, this);
 
+      this.set_color_visits = __bind(this.set_color_visits, this);
+
       this.set_color_activation = __bind(this.set_color_activation, this);
 
       this.set_graph_animated = __bind(this.set_graph_animated, this);
@@ -29,6 +31,8 @@
       this.set_realtime = __bind(this.set_realtime, this);
 
       this.getSubmanifoldColor = __bind(this.getSubmanifoldColor, this);
+
+      this.visits2color = __bind(this.visits2color, this);
 
       this.activation2color = __bind(this.activation2color, this);
 
@@ -532,8 +536,21 @@
         value = 1.0;
       }
       l = 80;
-      c = 210;
+      c = 200;
       h = 40 + ((1 - value) * (140 - 40));
+      color = new Color(l, c, h, ColorMode.CIELCh);
+      return color.getHex();
+    };
+
+    ui.prototype.visits2color = function(value) {
+      var c, color, h, l, max;
+      max = 15;
+      if (value >= max) {
+        value = max;
+      }
+      l = 85 - value * (60 / max);
+      c = 100;
+      h = 270 + ((100 / max) * value);
       color = new Color(l, c, h, ColorMode.CIELCh);
       return color.getHex();
     };
@@ -548,7 +565,7 @@
           c = [0, 195, 80];
           break;
         case 3:
-          c = [0, 173, 244];
+          c = [0, 190, 255];
           break;
         case 4:
           c = [197, 0, 169];
@@ -576,6 +593,14 @@
 
     ui.prototype.set_color_activation = function(value) {
       physics.abc.graph.renderer.draw_color_activation = value;
+      physics.abc.graph.renderer.redraw();
+      if (value === true) {
+        return $("#graph_color_visits").click();
+      }
+    };
+
+    ui.prototype.set_color_visits = function(value) {
+      physics.abc.graph.renderer.draw_color_visits = value;
       return physics.abc.graph.renderer.redraw();
     };
 

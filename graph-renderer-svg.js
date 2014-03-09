@@ -26,6 +26,7 @@
       this.abc = abc;
       this.draw_graph_animated = true;
       this.draw_color_activation = false;
+      this.draw_color_visits = false;
       this.draw_edge_labels = false;
       this.draw_activation = false;
       this.draw_semni = true;
@@ -43,7 +44,7 @@
       this.mt_y = 30;
       this.mt_count = 0;
       this.manifold_over_time = this.svg.append("g");
-      return this.manifold_over_time.append("rect").attr("x", this.mt_x).attr("y", this.mt_y).attr("width", this.mt_width).attr("height", this.mt_height).style("stroke", "gray").style("stroke-width", "1px").style("fill", "none");
+      return this.manifold_over_time.append("rect").attr("x", this.mt_x).attr("y", this.mt_y).attr("width", this.mt_width).attr("height", this.mt_height).style("stroke", "gray").style("stroke-width", "1px").style("fill", "none").attr("rx", 2).attr("ry", 2);
     };
 
     RendererSVG.prototype.init = function(system) {
@@ -112,7 +113,7 @@
       parent = this;
       graph = this.graph;
       this.particleSystem.eachNode(function(node, pt) {
-        var a, activation, c, configuration, fill, font_family, font_size, hovered, image, label, number, positions, strokeStyle, strokeWidth, subManifoldId, text_anchor, w, w2;
+        var a, activation, c, configuration, fill, font_family, font_size, hovered, image, label, number, positions, strokeStyle, strokeWidth, subManifoldId, text_anchor, visits, w, w2;
         label = node.data.label;
         number = node.data.number;
         image = node.data.imageData;
@@ -120,6 +121,7 @@
         configuration = node.data.configuration;
         activation = node.data.activation;
         subManifoldId = node.data.subManifoldId;
+        visits = node.data.visits;
         hovered = node.data.hovered;
         if (label) {
           w = 26;
@@ -146,7 +148,7 @@
         }
         if (parent.svg_nodes[number] === void 0) {
           parent.svg_nodes[number] = parent.svg.append("svg:rect");
-          parent.svg_nodes[number].attr("width", w).attr("height", w).style("fill", "none");
+          parent.svg_nodes[number].attr("width", w).attr("height", w).style("fill", "none").attr("rx", 2).attr("ry", 2);
         }
         if (graph.current_node === node) {
           strokeStyle = "red";
@@ -172,6 +174,9 @@
             a = activation.toFixed(2);
             if (parent.draw_color_activation) {
               c = physics.ui.activation2color(a);
+              parent.svg_nodes[number].style("fill", c);
+            } else if (parent.draw_color_visits) {
+              c = physics.ui.visits2color(visits);
               parent.svg_nodes[number].style("fill", c);
             } else {
               c = physics.ui.getSubmanifoldColor(subManifoldId);

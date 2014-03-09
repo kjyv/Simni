@@ -18,6 +18,7 @@ class RendererSVG
 
     @draw_graph_animated = true
     @draw_color_activation = false
+    @draw_color_visits = false
     @draw_edge_labels = false
     @draw_activation = false
     @draw_semni = true
@@ -55,6 +56,8 @@ class RendererSVG
       .style("stroke", "gray")
       .style("stroke-width", "1px")
       .style("fill", "none")
+      .attr("rx", 2)
+      .attr("ry", 2)
 
   init: (system) =>
     # the particle system will call the init function once, right before the
@@ -143,6 +146,8 @@ class RendererSVG
       configuration = node.data.configuration
       activation = node.data.activation
       subManifoldId = node.data.subManifoldId
+      visits = node.data.visits
+
       hovered = node.data.hovered
 
       if label
@@ -174,6 +179,8 @@ class RendererSVG
           .attr("width", w)
           .attr("height", w)
           .style("fill", "none")
+          .attr("rx", 2)
+          .attr("ry", 2)
 
       #draw last node highlit
       if graph.current_node is node
@@ -208,8 +215,10 @@ class RendererSVG
           if parent.draw_color_activation
             c = physics.ui.activation2color a
             parent.svg_nodes[number].style("fill", c)
+          else if parent.draw_color_visits
+            c = physics.ui.visits2color visits
+            parent.svg_nodes[number].style("fill", c)
           else
-            #parent.svg_nodes[number].style("fill", "none")
             c = physics.ui.getSubmanifoldColor(subManifoldId)
             parent.svg_nodes[number].style("fill", c)
         else

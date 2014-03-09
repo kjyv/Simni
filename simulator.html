@@ -35,7 +35,6 @@ Neurorobotics Research Laboratory, Berlin
         <script src="libs/arbor-start-stop-fixed/src/physics/physics.js"></script>
         <script src="libs/arbor-start-stop-fixed/src/physics/system.js"></script>
         <script src="libs/arbor-start-stop-fixed/src/dev.js"></script>
-        <script src="libs/FileSaver.js"></script>
         <script src="libs/Color.js"></script>
         <script src="graph-renderer-svg.js"></script>
         <script src="data/semni.data.js"></script>
@@ -360,41 +359,54 @@ Neurorobotics Research Laboratory, Berlin
             </div>
             <div id="graph_controls" class="box">
                 <h1>Graph properties</h1>
-                <input id="graph_repulsion" type="range" min="100" max="2000"
-                        value="600" step="1" onchange="physics.abc.graph.parameters({'repulsion': parseInt(this.value)})" />
+                <input id="graph_repulsion" type="range" min="100" max="2000" value="600" step="1"
+                onchange="physics.abc.graph.parameters({'repulsion': parseInt(this.value)})" />
                 <label for="graph_repulsion">Repulsion</label></br>
 
-                <input id="graph_stiffness" type="range" min="10" max="200"
-                        value="150" step="1" onchange="physics.abc.graph.parameters({'stiffness': parseInt(this.value)})" />
+                <input id="graph_stiffness" type="range" min="10" max="200" value="150" step="1"
+                onchange="physics.abc.graph.parameters({'stiffness': parseInt(this.value)})" />
                 <label for="graph_stiffness">Stiffness</label><br/>
 
-                <input type="checkbox" id="graph_animated" value="yes" checked onchange="ui.set_graph_animated(this.checked)"/>
+                <input type="checkbox" id="graph_animated" value="yes" checked
+                onchange="ui.set_graph_animated(this.checked)"/>
                 <label for="graph_animated">Animate graph (slow) [a]</label></br>
 
-                <input type="checkbox" id="graph_pause_drawing" value="yes" checked onchange="ui.set_pause_drawing(this.checked)"/>
+                <input type="checkbox" id="graph_pause_drawing" value="yes" checked
+                onchange="ui.set_pause_drawing(this.checked)"/>
                 <label for="graph_pause_drawing">Pause graph layouting between new poses</label></br>
 
-                <input type="checkbox" id="graph_pause_layouting" value="no" onchange="ui.set_pause_layouting(this.checked)"/>
+                <input type="checkbox" id="graph_pause_layouting" value="no"
+                onchange="ui.set_pause_layouting(this.checked)"/>
                 <label for="graph_pause_layouting">Pause graph layouting</label></br>
 
-                <input type="checkbox" id="graph_activation" value="no" onchange="ui.set_activation(this.checked)"/>
+                <input type="checkbox" id="graph_activation" value="no"
+                onchange="ui.set_activation(this.checked)"/>
                 <label for="graph_activation">Show node activation</label></br>
 
-                <input type="checkbox" id="graph_color_activation" value="no" onchange="ui.set_color_activation(this.checked)"/>
+                <input type="checkbox" id="graph_color_activation" value="no"
+                onchange="ui.set_color_activation(this.checked)"/>
                 <label for="graph_color_activation">Show node activation colors (manifold colors
-                    otherwise)</label>
-                </br>
+                    otherwise)</label> </br>
 
-                <input type="checkbox" id="graph_draw_semnis" value="yes" checked onchange="ui.set_draw_semni(this.checked)"/>
+                <input type="checkbox" id="graph_color_visits" value="no"
+                onchange="ui.set_color_visits(this.checked)"/>
+                <label for="graph_color_visits">Show node visit count colors</label></br>
+
+                <input type="checkbox" id="graph_draw_semnis" value="yes" checked
+                onchange="ui.set_draw_semni(this.checked)"/>
                 <label for="graph_draw_semnis">Show semni postures</label></br>
 
-                <input type="checkbox" id="graph_draw_edge_labels" value="no" onchange="ui.set_draw_edge_labels(this.checked)"/>
+                <input type="checkbox" id="graph_draw_edge_labels" value="no"
+                onchange="ui.set_draw_edge_labels(this.checked)"/>
                 <label for="graph_draw_edge_labels">Show transition labels</label></br>
 
-                <input type="checkbox" id="graph_save_periodically" value="no" onchange="ui.set_save_periodically(this.checked)"/>
+                <input type="checkbox" id="graph_save_periodically" value="no"
+                onchange="ui.set_save_periodically(this.checked)"/>
                 <label for="graph_save_periodically">Save graph with each new posture</label></br>
                 <hr/>
-                <input type="checkbox" id="render_manifold" value="yes" checked onchange="ui.set_render_manifold(this.checked)"/>
+
+                <input type="checkbox" id="render_manifold" value="yes" checked
+                onchange="ui.set_render_manifold(this.checked)"/>
                 <label for="render_manifold">Update current state in manifold view [m]</label></br>
             </div>
             <div id="manifold_view" class="box">
