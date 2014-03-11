@@ -553,7 +553,7 @@ class ui
   set_color_activation: (value) =>
     physics.abc.graph.renderer.draw_color_activation = value
     physics.abc.graph.renderer.redraw()
-    if value is true
+    if value is true and physics.abc.graph.renderer.draw_color_visits
       $("#graph_color_visits").click()
 
   set_color_visits: (value) =>

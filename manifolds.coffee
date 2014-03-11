@@ -130,3 +130,4 @@ $(document).ready ->
   manifoldRenderer.init()
   manifoldRenderer.initCurrentState()
   manifoldRenderer.animate()
+  window.manifoldRenderer = manifoldRenderer
