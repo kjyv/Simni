@@ -35,7 +35,7 @@ class manifoldRenderer
       # render the scene
       @controls.update()
 
-      if physics.body? and not window.stopStateUpdate
+      if physics? and physics.body? and not window.stopStateUpdate
         @updateCurrentState @internalToManifold [
           physics.body.GetAngle()
           physics.upper_joint.GetJointAngle()
@@ -58,17 +58,10 @@ class manifoldRenderer
     @renderer = new THREE.WebGLRenderer({canvas:canvas[0]})
     @renderer.setClearColor( 0xffffff, 1)
 
-    geom = new THREE.Geometry()
-    @createGeometry geom,
-      data: semni_manifold #.slice(0,8)
-
-    #line_material = new THREE.LineBasicMaterial(
-    #      color: 0x00FF00
-    #)
-
-    mesh_material = new THREE.MeshBasicMaterial(
-      color: 0xFF0000
-      wireframe: true
+    line_material = new THREE.LineBasicMaterial(
+      #linewidth: 1
+      #opacity: 1
+      vertexColors: THREE.VertexColors
     )
 
     particle_material = new THREE.ParticleSystemMaterial(
@@ -80,24 +73,68 @@ class manifoldRenderer
     if navigator.appVersion.indexOf("Win") isnt -1
       particle_material.size = 0.3
 
-    #mesh = new THREE.Mesh(geom, mesh_material)
-    #scene.add mesh
-    ps = new THREE.ParticleSystem(geom, particle_material)
-    @scene.add ps
+    #draw mesh using particle system
 
-#  semni_manifold.sort (a,b) -> b[1] - a[1]
-#
-#  i = 0
-#  grp = 0
-#  while i < 5000 #semni_manifold.length
-#    geometry = new THREE.Geometry()
-#    geometry.vertices.push(new THREE.Vector3(semni_manifold[i][8]*scale, semni_manifold[i][7]*scale, semni_manifold[i][6]*scale))
-#    if grp == semni_manifold[i+1][1]
-#      geometry.vertices.push(new THREE.Vector3(semni_manifold[i+1][8]*scale, semni_manifold[i+1][7]*scale, semni_manifold[i+1][6]*scale))
-#    line = new THREE.Line(geometry, line_material)
-#    scene.add line
-#    grp = semni_manifold[i][1]
-#    i+=2
+    #geom = new THREE.Geometry()
+    #@createGeometry geom,
+    #  data: semni_manifold #.slice(0,8)
+
+    #ps = new THREE.ParticleSystem(geom, particle_material)
+    #@scene.add ps
+
+    #draw using line geometry with the indexes of the neighbors from file
+    geometry = new THREE.Geometry()
+    for i in [0..semni_manifold.length-1]
+      hipp = semni_manifold[i][3]-1
+      kneep = semni_manifold[i][5]-1
+      grp = semni_manifold[i][1]
+
+      if(hipp > 0)
+        p1 = new THREE.Vector3(semni_manifold[i][8]*@scale
+                    semni_manifold[i][6]*@scale-@y_offset
+                    semni_manifold[i][7]*@scale)
+        geometry.vertices.push( p1 )
+
+
+        p2 = new THREE.Vector3(semni_manifold[hipp][8]*@scale
+                    semni_manifold[hipp][6]*@scale-@y_offset
+                    semni_manifold[hipp][7]*@scale)
+        geometry.vertices.push( p2 )
+
+        #set color for this line (both vertices should have same grp)
+        c = new THREE.Color( 0xff0000 )
+        #switch Math.round(Math.random()*4)
+        switch grp
+          when 1 then c.setRGB(255/255,150/255,0)
+          when 2 then c.setRGB(0, 195/255, 80/255)
+          when 3 then c.setRGB(0,190/255,255/255)
+          when 4 then c.setRGB(197/255,0,169/255)
+        geometry.colors.push( c )
+        geometry.colors.push( c )
+
+      if(kneep > 0)
+        p1 = new THREE.Vector3(semni_manifold[i][8]*@scale
+                    semni_manifold[i][6]*@scale-@y_offset
+                    semni_manifold[i][7]*@scale)
+        geometry.vertices.push( p1 )
+
+        p2 = new THREE.Vector3(semni_manifold[kneep][8]*@scale
+                    semni_manifold[kneep][6]*@scale-@y_offset
+                    semni_manifold[kneep][7]*@scale)
+        geometry.vertices.push( p2 )
+
+        #set color for this line (both vertices should have same grp)
+        c = new THREE.Color( 0xff0000 )
+        switch grp
+          when 1 then c.setRGB(255/255,150/255,0)
+          when 2 then c.setRGB(0, 195/255, 80/255)
+          when 3 then c.setRGB(0,190/255,255/255)
+          when 4 then c.setRGB(197/255,0,169/255)
+        geometry.colors.push( c )
+        geometry.colors.push( c )
+
+    line = new THREE.Line(geometry, line_material, THREE.LinePieces)
+    @scene.add line
 
     @controls = new THREE.OrbitControls(@camera, @renderer.domElement)
 
@@ -123,11 +160,15 @@ class manifoldRenderer
 
 # end class manifoldRenderer
 
+if not window.simni?
+  window.simni = {}
+
 window.simni.ManifoldRenderer = manifoldRenderer
 
 $(document).ready ->
   manifoldRenderer = new manifoldRenderer
   manifoldRenderer.init()
-  manifoldRenderer.initCurrentState()
+  if physics?
+    manifoldRenderer.initCurrentState()
   manifoldRenderer.animate()
   window.manifoldRenderer = manifoldRenderer

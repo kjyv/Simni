@@ -53,7 +53,7 @@
       if (this.do_render) {
         requestAnimationFrame(this.animate);
         this.controls.update();
-        if ((physics.body != null) && !window.stopStateUpdate) {
+        if ((typeof physics !== "undefined" && physics !== null) && (physics.body != null) && !window.stopStateUpdate) {
           this.updateCurrentState(this.internalToManifold([physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()]));
         }
         return this.renderer.render(this.scene, this.camera);
@@ -61,7 +61,7 @@
     };
 
     manifoldRenderer.prototype.init = function() {
-      var canvas, geom, height, mesh_material, particle_material, ps, width;
+      var c, canvas, geometry, grp, height, hipp, i, kneep, line, line_material, p1, p2, particle_material, width, _i, _ref;
       canvas = $("#webglCanvas");
       width = canvas[0].width;
       height = canvas[0].height;
@@ -74,13 +74,8 @@
         canvas: canvas[0]
       });
       this.renderer.setClearColor(0xffffff, 1);
-      geom = new THREE.Geometry();
-      this.createGeometry(geom, {
-        data: semni_manifold
-      });
-      mesh_material = new THREE.MeshBasicMaterial({
-        color: 0xFF0000,
-        wireframe: true
+      line_material = new THREE.LineBasicMaterial({
+        vertexColors: THREE.VertexColors
       });
       particle_material = new THREE.ParticleSystemMaterial({
         size: 0.05,
@@ -90,8 +85,58 @@
       if (navigator.appVersion.indexOf("Win") !== -1) {
         particle_material.size = 0.3;
       }
-      ps = new THREE.ParticleSystem(geom, particle_material);
-      this.scene.add(ps);
+      geometry = new THREE.Geometry();
+      for (i = _i = 0, _ref = semni_manifold.length - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
+        hipp = semni_manifold[i][3] - 1;
+        kneep = semni_manifold[i][5] - 1;
+        grp = semni_manifold[i][1];
+        if (hipp > 0) {
+          p1 = new THREE.Vector3(semni_manifold[i][8] * this.scale, semni_manifold[i][6] * this.scale - this.y_offset, semni_manifold[i][7] * this.scale);
+          geometry.vertices.push(p1);
+          p2 = new THREE.Vector3(semni_manifold[hipp][8] * this.scale, semni_manifold[hipp][6] * this.scale - this.y_offset, semni_manifold[hipp][7] * this.scale);
+          geometry.vertices.push(p2);
+          c = new THREE.Color(0xff0000);
+          switch (grp) {
+            case 1:
+              c.setRGB(255 / 255, 150 / 255, 0);
+              break;
+            case 2:
+              c.setRGB(0, 195 / 255, 80 / 255);
+              break;
+            case 3:
+              c.setRGB(0, 190 / 255, 255 / 255);
+              break;
+            case 4:
+              c.setRGB(197 / 255, 0, 169 / 255);
+          }
+          geometry.colors.push(c);
+          geometry.colors.push(c);
+        }
+        if (kneep > 0) {
+          p1 = new THREE.Vector3(semni_manifold[i][8] * this.scale, semni_manifold[i][6] * this.scale - this.y_offset, semni_manifold[i][7] * this.scale);
+          geometry.vertices.push(p1);
+          p2 = new THREE.Vector3(semni_manifold[kneep][8] * this.scale, semni_manifold[kneep][6] * this.scale - this.y_offset, semni_manifold[kneep][7] * this.scale);
+          geometry.vertices.push(p2);
+          c = new THREE.Color(0xff0000);
+          switch (grp) {
+            case 1:
+              c.setRGB(255 / 255, 150 / 255, 0);
+              break;
+            case 2:
+              c.setRGB(0, 195 / 255, 80 / 255);
+              break;
+            case 3:
+              c.setRGB(0, 190 / 255, 255 / 255);
+              break;
+            case 4:
+              c.setRGB(197 / 255, 0, 169 / 255);
+          }
+          geometry.colors.push(c);
+          geometry.colors.push(c);
+        }
+      }
+      line = new THREE.Line(geometry, line_material, THREE.LinePieces);
+      this.scene.add(line);
       return this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
     };
 
@@ -123,12 +168,18 @@
 
   })();
 
+  if (window.simni == null) {
+    window.simni = {};
+  }
+
   window.simni.ManifoldRenderer = manifoldRenderer;
 
   $(document).ready(function() {
     manifoldRenderer = new manifoldRenderer;
     manifoldRenderer.init();
-    manifoldRenderer.initCurrentState();
+    if (typeof physics !== "undefined" && physics !== null) {
+      manifoldRenderer.initCurrentState();
+    }
     manifoldRenderer.animate();
     return window.manifoldRenderer = manifoldRenderer;
   });
