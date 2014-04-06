@@ -43,6 +43,7 @@ Neurorobotics Research Laboratory, Berlin
         <script src="libs/three.OrbitControls.js"></script>
         <script src="physics.js"></script>
         <script src="abc.js"></script>
+        <script src="libs/FileSaver.js"></script>
         <script src="logging.js"></script>
         <script src="ui.js"></script>
         <script src="manifolds.js"></script>
@@ -223,8 +224,8 @@ Neurorobotics Research Laboratory, Berlin
                 <br/>
 
                 <div style="display: none;">
-                <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.2" value="0.045" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
-                <span id="friction_val">0.045</span><br/>
+                <label for="friction_param">friction</label> <input id="friction_param" type="range" min="0" max="0.2" value="0.04" step="0.001" onchange="ui.set_friction(parseFloat(this.value))" />
+                <span id="friction_val">0.040</span><br/>
                 </div>
 
                 <label for="gi_param_upper">g<sub>i</sub></label> <input id="gi_param_upper" type="text" value="30" style="width:60px;"/>

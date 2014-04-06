@@ -71,7 +71,7 @@ class physics
     @step = false         #if we display the next step
     @pend_style = 0       #what pendulum / robot / etc. model is currently simulated
     @beta = 0             #sticky and dry friction coefficient (still comes from html file)
-    @gamma = 0.1         #fluid friction coefficient
+    @gamma = 0.1          #fluid friction coefficient
 
     @abc = new simni.Abc()
 
