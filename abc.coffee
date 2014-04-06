@@ -1202,6 +1202,12 @@ class abc
   set_heuristic: (heuristic) =>
     @heuristic = heuristic
 
+    if heuristic is "unseen"
+      $("#unseen_options").show()
+    else
+      $("#unseen_options").hide()
+
+
   set_heuristic_keep_dir: (value) =>
     @heuristic_keep_dir = value
 

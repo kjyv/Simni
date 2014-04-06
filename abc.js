@@ -1372,7 +1372,12 @@
     /* ui helpers */
 
     abc.prototype.set_heuristic = function(heuristic) {
-      return this.heuristic = heuristic;
+      this.heuristic = heuristic;
+      if (heuristic === "unseen") {
+        return $("#unseen_options").show();
+      } else {
+        return $("#unseen_options").hide();
+      }
     };
 
     abc.prototype.set_heuristic_keep_dir = function(value) {
