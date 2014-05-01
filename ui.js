@@ -347,12 +347,12 @@
       if (change_select == null) {
         change_select = true;
       }
-      release_bias_hip = 0.04;
+      release_bias_hip = 0.02;
       release_gf = 0;
       release_gi = 0;
       contract_gf_hip = 1.01;
-      contract_gi = 8;
-      stall_gb = 0.2;
+      contract_gi = 3;
+      stall_gb = 0.3;
       stall_gf = 0;
       if (hipCSL === "r+") {
         gf = release_gf;
@@ -398,11 +398,11 @@
       if (change_select == null) {
         change_select = true;
       }
-      release_bias_knee = 0.04;
+      release_bias_knee = 0.02;
       release_gf = 0;
       release_gi = 0;
-      contract_gf_knee = 1.03;
-      contract_gi = 32;
+      contract_gf_knee = 1.01;
+      contract_gi = 3;
       stall_gb = 0.2;
       stall_gf = 0;
       if (kneeCSL === "r+") {

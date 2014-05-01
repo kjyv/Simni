@@ -294,6 +294,7 @@
       md.center.Set(simni.contourCenter.x, simni.contourCenter.y);
       md.I = this.body.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y);
       this.body.SetMassData(md);
+      this.body.SetAngularDamping(15);
       bodyDef2 = new b2BodyDef;
       bodyDef2.type = b2Body.b2_dynamicBody;
       this.body2 = this.world.CreateBody(bodyDef2);

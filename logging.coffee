@@ -37,6 +37,8 @@ class logging
     #called repeatedly; save trajectory into sandbox-local file
     if @recordTrajectory
       parent = @
+      console.log(@physics.upper_joint.GetJointAngle()+" "+@physics.upper_joint.motor_control+" "+-@physics.upper_joint.GetJointSpeed())
+
       onInitFs = (fs) ->
         if parent.startLog
           fs.root.getFile parent.fileName, create: false, ((fileEntry) ->
@@ -58,9 +60,9 @@ class logging
             # Create a new Blob and write it to log.txt
             buffer = new ArrayBuffer(20) #4 bytes for 32 bit float * 5 = 20
             floatView = new Float32Array(buffer)
-            floatView[0] = -@physics.body.GetAngle()
-            floatView[1] = -@physics.upper_joint.GetJointAngle()
-            floatView[2] = -@physics.lower_joint.GetJointAngle()
+            floatView[0] = @physics.body.GetAngle()
+            floatView[1] = @physics.upper_joint.GetJointAngle()
+            floatView[2] = @physics.lower_joint.GetJointAngle()
             floatView[3] = @physics.upper_joint.motor_control
             floatView[4] = @physics.lower_joint.motor_control
             bb = new Blob([buffer], { type: "application/octet-stream" })
@@ -68,7 +70,7 @@ class logging
             fileWriter.write bb
           ), parent.errorHandler
         ), parent.errorHandler
-      window.requestFileSystem TEMPORARY, parent.fileSystemSize * 1024 * 1024, onInitFs, @errorHandler #100MB
+      #window.requestFileSystem TEMPORARY, parent.fileSystemSize * 1024 * 1024, onInitFs, @errorHandler #100MB
 
   logNewPosture: =>
     if @recordTrajectory

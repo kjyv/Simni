@@ -205,6 +205,9 @@
       this.populateGraphFromJSON = __bind(this.populateGraphFromJSON, this);
       this.saveGaphToFile = __bind(this.saveGaphToFile, this);
       this.findDuplicates = __bind(this.findDuplicates, this);
+      this.minVisits = __bind(this.minVisits, this);
+      this.maxVisits = __bind(this.maxVisits, this);
+      this.meanVisits = __bind(this.meanVisits, this);
       this.meanActivation = __bind(this.meanActivation, this);
       this.length = __bind(this.length, this);
       this.getNodeByName = __bind(this.getNodeByName, this);
@@ -315,6 +318,45 @@
         }
       }
       return act / this.length();
+    };
+
+    postureGraph.prototype.meanVisits = function() {
+      var n, visits, _i, _len, _ref;
+      visits = 0;
+      _ref = this.nodes;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        n = _ref[_i];
+        if (n != null) {
+          visits += n.mean_n;
+        }
+      }
+      return visits / this.length();
+    };
+
+    postureGraph.prototype.maxVisits = function() {
+      var n, visits, _i, _len, _ref;
+      visits = 0;
+      _ref = this.nodes;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        n = _ref[_i];
+        if (n != null) {
+          visits = n.mean_n > visits ? n.mean_n : visits;
+        }
+      }
+      return visits;
+    };
+
+    postureGraph.prototype.minVisits = function() {
+      var n, visits, _i, _len, _ref;
+      visits = 99999;
+      _ref = this.nodes;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        n = _ref[_i];
+        if (n != null) {
+          visits = n.mean_n < visits ? n.mean_n : visits;
+        }
+      }
+      return visits;
     };
 
     postureGraph.prototype.findDuplicates = function() {

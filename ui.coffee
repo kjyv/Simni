@@ -346,12 +346,12 @@ class ui
     p.createSemni(x0,y0)
 
   set_csl_mode_upper: (hipCSL, change_select=true) =>
-    release_bias_hip = 0.04
+    release_bias_hip = 0.02
     release_gf = 0
     release_gi = 0
     contract_gf_hip = 1.01 #1.0025 #1.006
-    contract_gi = 8 #30 #27 #50
-    stall_gb = 0.2
+    contract_gi = 3 #30 #27 #50
+    stall_gb = 0.3
     stall_gf = 0 #0.8
 
     if hipCSL is "r+"
@@ -399,11 +399,11 @@ class ui
     @physics.abc.manual_noop = false
 
   set_csl_mode_lower: (kneeCSL, change_select=true) =>
-    release_bias_knee = 0.04
+    release_bias_knee = 0.02
     release_gf = 0
     release_gi = 0
-    contract_gf_knee = 1.03 #1.0015 #1.006
-    contract_gi = 32 #25 #35 #26 #50
+    contract_gf_knee = 1.01 #1.0015 #1.006
+    contract_gi = 3 #25 #35 #26 #50
     stall_gb = 0.2
     stall_gf = 0 #0.8
 

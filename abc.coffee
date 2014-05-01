@@ -210,6 +210,28 @@ class postureGraph
 
     return act / @length()
 
+  meanVisits: =>
+    visits = 0
+    for n in @nodes
+      if n?
+        visits += n.mean_n
+
+    return visits / @length()
+
+  maxVisits: =>
+    visits = 0
+    for n in @nodes
+      if n?
+        visits = if n.mean_n > visits then n.mean_n else visits
+    return visits
+
+  minVisits: =>
+    visits = 99999
+    for n in @nodes
+      if n?
+        visits = if n.mean_n < visits then n.mean_n else visits
+    return visits
+
   findDuplicates: =>
     for n in @nodes
       if n?

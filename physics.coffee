@@ -260,7 +260,8 @@ class physics
     #weight of one dynamixel: 72g
     #arm at body: 135 g (63+72)
     #second arm: 177 g (105+72)
-    #min/max angle of lower arm: -3.2421 and 1.90816
+    #min/max angle of lower arm: -3.2421 and 1.90816 (knee)
+    #min/max angle of upper arm: -0.9422 and 2.7175 (hip)
 
     bodyDensity = 3.96
     bodyFriction = 0.5
@@ -320,6 +321,9 @@ class physics
     md.center.Set(simni.contourCenter.x, simni.contourCenter.y)
     md.I = @body.GetInertia() + md.mass * (md.center.x * md.center.x + md.center.y * md.center.y)
     @body.SetMassData(md)
+
+    #imitate rolling friction (will however also slow donw rotation when falling!)
+    @body.SetAngularDamping(15)
 
     #show center of mass
     #@fixDef.density = 0.00001

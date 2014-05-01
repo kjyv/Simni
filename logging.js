@@ -53,7 +53,8 @@
       var onInitFs, parent;
       if (this.recordTrajectory) {
         parent = this;
-        onInitFs = function(fs) {
+        console.log(this.physics.upper_joint.GetJointAngle() + " " + this.physics.upper_joint.motor_control + " " + -this.physics.upper_joint.GetJointSpeed());
+        return onInitFs = function(fs) {
           if (parent.startLog) {
             fs.root.getFile(parent.fileName, {
               create: false
@@ -75,9 +76,9 @@
               fileWriter.seek(fileWriter.length);
               buffer = new ArrayBuffer(20);
               floatView = new Float32Array(buffer);
-              floatView[0] = -this.physics.body.GetAngle();
-              floatView[1] = -this.physics.upper_joint.GetJointAngle();
-              floatView[2] = -this.physics.lower_joint.GetJointAngle();
+              floatView[0] = this.physics.body.GetAngle();
+              floatView[1] = this.physics.upper_joint.GetJointAngle();
+              floatView[2] = this.physics.lower_joint.GetJointAngle();
               floatView[3] = this.physics.upper_joint.motor_control;
               floatView[4] = this.physics.lower_joint.motor_control;
               bb = new Blob([buffer], {
@@ -87,7 +88,6 @@
             }), parent.errorHandler);
           }), parent.errorHandler);
         };
-        return window.requestFileSystem(TEMPORARY, parent.fileSystemSize * 1024 * 1024, onInitFs, this.errorHandler);
       }
     };
 
