@@ -174,7 +174,7 @@ class ui
     #request first frame from browser to start update cycle (depends on realtime option)
     @set_realtime @realtime
 
-    # stuff to handle mouse manipulation
+    # stuff to handle mouse manipulation (drag and drop)
     window.mouseX = undefined
     window.mouseY = undefined
     window.mousePVec = undefined
@@ -518,12 +518,12 @@ class ui
 
   visits2color: (value) =>
     #get a color gradient for a value from 1 to max (and everything above)
-    max = 15
+    max = 15   #physics.posture_graph.maxVisits()
     if value >= max
       value = max
     l = 85-value*(60/max)           #lightness
     c = 100                         #chroma
-    h = 270+((100/max)*value)              #hue angle (color)
+    h = 270+((100/max)*value)       #hue angle (color)
     color = new Color(l, c, h, ColorMode.CIELCh)
     color.getHex()
 

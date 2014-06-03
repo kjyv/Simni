@@ -41,7 +41,7 @@
   window.b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
 
   physics = (function() {
-    var R, R_inv, U_in, angle, fg, kb, km, max_V, pos_i, pos_p, v, was_static;
+    var R, R_inv, U_in, angle, fg, kb, km, max_V, old_c, pos_i, pos_p, steps_done, v, was_static;
 
     function physics() {
       this.update = __bind(this.update, this);
@@ -612,8 +612,12 @@
 
     was_static = false;
 
+    steps_done = 0;
+
+    old_c = [0, 0, 0];
+
     physics.prototype.update = function() {
-      var body, i, md;
+      var body, c, dist, i, md, test_p;
       if (!this.run && !this.step) {
         return;
       }
@@ -668,6 +672,19 @@
           this.abc.update(this.body, this.upper_joint, this.lower_joint);
         }
         window.logging.logTrajectoryData();
+        steps_done++;
+        if (this.abc.explore_active && steps_done >= 5) {
+          c = [this.abc.wrapAngle(this.body.GetAngle()), this.upper_joint.GetJointAngle(), this.lower_joint.GetJointAngle()];
+          test_p = new simni.Posture(c, [], 0, 0);
+          dist = test_p.euclidDistance({
+            configuration: old_c
+          });
+          if (dist > 0.0005) {
+            window.manifoldRenderer.addTrajectoryPoint(manifoldRenderer.internalToManifold(c));
+            old_c = c.clone();
+          }
+          steps_done = 0;
+        }
         i = steps_per_frame;
         while (i > 0) {
           if (this.pend_style === 3) {

@@ -64,16 +64,15 @@ class manifoldRenderer
       vertexColors: THREE.VertexColors
     )
 
-    particle_material = new THREE.ParticleSystemMaterial(
-      size: 0.05
-      fog: true
-      vertexColors: THREE.VertexColors
-    )
-
-    if navigator.appVersion.indexOf("Win") isnt -1
-      particle_material.size = 0.3
-
     #draw mesh using particle system
+    #particle_material = new THREE.ParticleSystemMaterial(
+    #  size: 0.05
+    #  fog: true
+    #  vertexColors: THREE.VertexColors
+    #)
+
+    #if navigator.appVersion.indexOf("Win") isnt -1
+    #  particle_material.size = 0.3
 
     #geom = new THREE.Geometry()
     #@createGeometry geom,
@@ -134,6 +133,7 @@ class manifoldRenderer
         geometry.colors.push( c )
 
     line = new THREE.Line(geometry, line_material, THREE.LinePieces)
+    #line.matrixAutoUpdate = false   #should speed up things a little?
     @scene.add line
 
     @controls = new THREE.OrbitControls(@camera, @renderer.domElement)
@@ -150,13 +150,63 @@ class manifoldRenderer
     @scene.add @current_state
 
   updateCurrentState: (state) =>
-    @current_state.position.x = state.x
-    @current_state.position.y = state.y
-    @current_state.position.z = state.z
-    @camera.lookAt(state)
-    @controls.target.x = state.x
-    @controls.target.y = state.y
-    @controls.target.z = state.z
+    if @do_render
+      @current_state.position.x = state.x
+      @current_state.position.y = state.y
+      @current_state.position.z = state.z
+      @camera.lookAt(state)
+      @controls.target.x = state.x
+      @controls.target.y = state.y
+      @controls.target.z = state.z
+
+# draw trajectories into manifold
+  initFixpoints: =>
+    @fp_material = new THREE.ParticleSystemMaterial(
+      size: 1.5
+      fog: true
+      vertexColors: THREE.VertexColors
+    )
+
+    #if navigator.appVersion.indexOf("Win") isnt -1
+    #  fp_material.size = 0.3
+    @fixpoints = []
+
+  addFixpoint: (point) =>
+    @fixpoints.push new THREE.Vector3(point.x, point.y, point.z)
+    if @do_render
+      @scene.remove @fpps
+      delete @fpps
+
+      geom = new THREE.Geometry()
+      for p in @fixpoints
+        geom.vertices.push p
+
+      @fpps = new THREE.ParticleSystem geom, @fp_material
+      @scene.add @fpps
+
+  initTrajectoryPoints: =>
+    @traj_material = new THREE.ParticleSystemMaterial(
+      size: 0.5
+      fog: true
+      vertexColors: THREE.VertexColors
+    )
+    @trajectory = []
+
+  addTrajectoryPoint: (point) =>
+    @trajectory.push new THREE.Vector3(point.x, point.y, point.z)
+    if @do_render
+      delete @traj_geom
+      @scene.remove @traj_ps
+      delete @traj_ps
+
+      @traj_geom = new THREE.Geometry()
+      for p in @trajectory
+        @traj_geom.vertices.push p
+        c = new THREE.Color( 0x7f7f7f )
+        @traj_geom.colors.push(c)
+
+      @traj_ps = new THREE.ParticleSystem @traj_geom, @traj_material
+      @scene.add @traj_ps
 
 # end class manifoldRenderer
 
@@ -170,5 +220,7 @@ $(document).ready ->
   manifoldRenderer.init()
   if physics?
     manifoldRenderer.initCurrentState()
+    manifoldRenderer.initTrajectoryPoints()
+    manifoldRenderer.initFixpoints()
   manifoldRenderer.animate()
   window.manifoldRenderer = manifoldRenderer

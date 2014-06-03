@@ -339,12 +339,12 @@ Neurorobotics Research Laboratory, Berlin
                 <span id="unseen_options">
                     <label for="csl_heuristic">heuristic</label><br/>
 
-                    <input type="checkbox" id="heuristic_keep_dir" value="yes" checked
+                    <input type="checkbox" id="heuristic_keep_dir" value="no"
                     onchange="physics.abc.set_heuristic_keep_dir(this.checked)"/>
                     <label for="heuristic_keep_dir">Keep direction if possible (or always try to change)
                     </label></br>
 
-                    <input type="checkbox" id="heuristic_keep_joint" value="no"
+                    <input type="checkbox" id="heuristic_keep_joint" value="yes" checked
                     onchange="physics.abc.set_heuristic_keep_joint(this.checked)"/>
                     <label for="heuristic_keep_joint">Keep joint if possible (or always try to change)</label></br>
                 </span>
@@ -411,10 +411,11 @@ Neurorobotics Research Laboratory, Berlin
 
                 <input type="checkbox" id="render_manifold" value="yes" checked
                 onchange="ui.set_render_manifold(this.checked)"/>
-                <label for="render_manifold">Update current state in manifold view [m]</label></br>
+                <label for="render_manifold">Update manifold view [m]</label></br>
             </div>
             <div id="manifold_view" class="box">
                 <canvas id="webglCanvas" width=300 height=256></canvas>
+                <!-- <canvas id="webglCanvas" width=800 height=600></canvas> -->
             </div>
             <!--<div id="semni_svg" style="width: 300px; height: 300px; float: left;"></div>-->
             <div id="posture-graph">

@@ -7,6 +7,7 @@
     function RendererSVG(container, parent, abc) {
       this.initMouseHandling = __bind(this.initMouseHandling, this);
       this.init = __bind(this.init, this);
+      this.initVisitCountLegend = __bind(this.initVisitCountLegend, this);
       this.initManifoldBar = __bind(this.initManifoldBar, this);
       var MAX_UNIX_TIME;
       this.width = 1400;
@@ -41,6 +42,22 @@
       this.mt_count = 0;
       this.manifold_over_time = this.svg.append("g");
       return this.manifold_over_time.append("rect").attr("x", this.mt_x).attr("y", this.mt_y).attr("width", this.mt_width).attr("height", this.mt_height).style("stroke", "gray").style("stroke-width", "1px").style("fill", "none").attr("rx", 2).attr("ry", 2);
+    };
+
+    RendererSVG.prototype.initVisitCountLegend = function() {
+      var i, max, _i, _results;
+      this.vc_width = 400;
+      this.vc_height = 20;
+      this.vc_x = 980;
+      this.vc_y = 70;
+      this.visitslegend = this.svg.append("g");
+      this.visitslegend.append("rect").attr("x", this.vc_x).attr("y", this.vc_y).attr("width", this.vc_width).attr("height", this.vc_height).style("stroke", "gray").style("stroke-width", "1px").style("fill", "none").attr("rx", 2).attr("ry", 2);
+      max = 15;
+      _results = [];
+      for (i = _i = 0; 0 <= max ? _i <= max : _i >= max; i = 0 <= max ? ++_i : --_i) {
+        _results.push(this.visitslegend.append("rect").attr("width", this.vc_width / max).attr("height", this.vc_height).attr("x", this.vc_x + (i * (this.vc_width / max) - 1)).attr("y", this.vc_y).attr("fill", physics.ui.visits2color(i)));
+      }
+      return _results;
     };
 
     RendererSVG.prototype.init = function(system) {
@@ -185,7 +202,7 @@
             font_size = "7pt";
             font_family = "Verdana";
             text_anchor = "middle";
-            fill = "#333333";
+            fill = '#000000';
             node.data.label_svg = parent.svg.append("svg:text");
             node.data.label_svg[0][0].textContent = number.toString();
             node.data.label_svg.style("font-size", font_size).style("font-family", font_family).style("text-anchor", text_anchor).style("fill", fill);

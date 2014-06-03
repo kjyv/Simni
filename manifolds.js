@@ -5,6 +5,10 @@
 
   manifoldRenderer = (function() {
     function manifoldRenderer() {
+      this.addTrajectoryPoint = __bind(this.addTrajectoryPoint, this);
+      this.initTrajectoryPoints = __bind(this.initTrajectoryPoints, this);
+      this.addFixpoint = __bind(this.addFixpoint, this);
+      this.initFixpoints = __bind(this.initFixpoints, this);
       this.updateCurrentState = __bind(this.updateCurrentState, this);
       this.initCurrentState = __bind(this.initCurrentState, this);
       this.init = __bind(this.init, this);
@@ -61,7 +65,7 @@
     };
 
     manifoldRenderer.prototype.init = function() {
-      var c, canvas, geometry, grp, height, hipp, i, kneep, line, line_material, p1, p2, particle_material, width, _i, _ref;
+      var c, canvas, geometry, grp, height, hipp, i, kneep, line, line_material, p1, p2, width, _i, _ref;
       canvas = $("#webglCanvas");
       width = canvas[0].width;
       height = canvas[0].height;
@@ -77,14 +81,6 @@
       line_material = new THREE.LineBasicMaterial({
         vertexColors: THREE.VertexColors
       });
-      particle_material = new THREE.ParticleSystemMaterial({
-        size: 0.05,
-        fog: true,
-        vertexColors: THREE.VertexColors
-      });
-      if (navigator.appVersion.indexOf("Win") !== -1) {
-        particle_material.size = 0.3;
-      }
       geometry = new THREE.Geometry();
       for (i = _i = 0, _ref = semni_manifold.length - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
         hipp = semni_manifold[i][3] - 1;
@@ -155,13 +151,70 @@
     };
 
     manifoldRenderer.prototype.updateCurrentState = function(state) {
-      this.current_state.position.x = state.x;
-      this.current_state.position.y = state.y;
-      this.current_state.position.z = state.z;
-      this.camera.lookAt(state);
-      this.controls.target.x = state.x;
-      this.controls.target.y = state.y;
-      return this.controls.target.z = state.z;
+      if (this.do_render) {
+        this.current_state.position.x = state.x;
+        this.current_state.position.y = state.y;
+        this.current_state.position.z = state.z;
+        this.camera.lookAt(state);
+        this.controls.target.x = state.x;
+        this.controls.target.y = state.y;
+        return this.controls.target.z = state.z;
+      }
+    };
+
+    manifoldRenderer.prototype.initFixpoints = function() {
+      this.fp_material = new THREE.ParticleSystemMaterial({
+        size: 1.5,
+        fog: true,
+        vertexColors: THREE.VertexColors
+      });
+      return this.fixpoints = [];
+    };
+
+    manifoldRenderer.prototype.addFixpoint = function(point) {
+      var geom, p, _i, _len, _ref;
+      this.fixpoints.push(new THREE.Vector3(point.x, point.y, point.z));
+      if (this.do_render) {
+        this.scene.remove(this.fpps);
+        delete this.fpps;
+        geom = new THREE.Geometry();
+        _ref = this.fixpoints;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          p = _ref[_i];
+          geom.vertices.push(p);
+        }
+        this.fpps = new THREE.ParticleSystem(geom, this.fp_material);
+        return this.scene.add(this.fpps);
+      }
+    };
+
+    manifoldRenderer.prototype.initTrajectoryPoints = function() {
+      this.traj_material = new THREE.ParticleSystemMaterial({
+        size: 0.5,
+        fog: true,
+        vertexColors: THREE.VertexColors
+      });
+      return this.trajectory = [];
+    };
+
+    manifoldRenderer.prototype.addTrajectoryPoint = function(point) {
+      var c, p, _i, _len, _ref;
+      this.trajectory.push(new THREE.Vector3(point.x, point.y, point.z));
+      if (this.do_render) {
+        delete this.traj_geom;
+        this.scene.remove(this.traj_ps);
+        delete this.traj_ps;
+        this.traj_geom = new THREE.Geometry();
+        _ref = this.trajectory;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          p = _ref[_i];
+          this.traj_geom.vertices.push(p);
+          c = new THREE.Color(0x7f7f7f);
+          this.traj_geom.colors.push(c);
+        }
+        this.traj_ps = new THREE.ParticleSystem(this.traj_geom, this.traj_material);
+        return this.scene.add(this.traj_ps);
+      }
     };
 
     return manifoldRenderer;
@@ -179,6 +232,8 @@
     manifoldRenderer.init();
     if (typeof physics !== "undefined" && physics !== null) {
       manifoldRenderer.initCurrentState();
+      manifoldRenderer.initTrajectoryPoints();
+      manifoldRenderer.initFixpoints();
     }
     manifoldRenderer.animate();
     return window.manifoldRenderer = manifoldRenderer;

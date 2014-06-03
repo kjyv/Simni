@@ -140,6 +140,7 @@ class postureGraph
     node_name = @addNode p
     console.log("found new posture: " + p.configuration + " (posture " + node_name + ")")
     window.logging.logNewPosture()
+    manifoldRenderer.addFixpoint(manifoldRenderer.internalToManifold(p.configuration))
 
     #add an arbor node as well (not connected yet)
     data =
@@ -216,7 +217,16 @@ class postureGraph
       if n?
         visits += n.mean_n
 
-    return visits / @length()
+    e = visits / @length()
+
+    #standard deviation
+    sigma = 0
+    for n in @nodes
+      if n?
+        sigma += (n.mean_n - e)*(n.mean_n - e)
+
+    console.log("sigma: " + Math.sqrt(sigma/@length()))
+    return e
 
   maxVisits: =>
     visits = 0
@@ -279,6 +289,7 @@ class postureGraph
       nn.subManifoldId = nn.getSubmanifold()
       nn.visits = n.mean_n
       @nodes.push nn
+      manifoldRenderer.addFixpoint(manifoldRenderer.internalToManifold(nn.configuration))
 
     #put in edges
     for e in t.edges
@@ -304,6 +315,7 @@ class postureGraph
     $("#viewport_svg svg text").remove()
     $("#viewport_svg svg line").remove()
     @arborGraph.renderer.initManifoldBar()
+    @arborGraph.renderer.initVisitCountLegend()
 
     for n in @nodes
       physics.abc.drawManifoldStripe(n)
@@ -400,6 +412,7 @@ class postureGraph
       nn.configuration = [((((vals[3][0])-250)/1023)*2*Math.PI), ((vals[3][1]-361)/1023)*0.818*2*Math.PI, ((vals[3][2]-640)/1023)*0.818*2*Math.PI]
       nn.subManifoldId = nn.getSubmanifold()
       @nodes.push nn
+      manifoldRenderer.addFixpoint(manifoldRenderer.internalToManifold(nn.configuration))
 
     #put in edges
     for l in data
@@ -628,8 +641,8 @@ class abc
 
     #defaults
     @heuristic = "unseen"
-    @heuristic_keep_dir = true
-    @heuristic_keep_joint = false
+    @heuristic_keep_dir = false
+    @heuristic_keep_joint = true
 
     @explore_active = false
     @save_periodically = false
@@ -1138,23 +1151,23 @@ class abc
         trial_level = 0
         while not next_dir_index?     #we can't simply go back again, look for possible new edges
           #depending on heuristic options, try indexes in certain order
-          if          @heuristic_keep_dir and     @heuristic_keep_joint   #1
+          if          @heuristic_keep_dir and     @heuristic_keep_joint   #1+2
             #go through various alternatives if options directly don't result in edge we haven't gone before
             switch trial_level
               when 0 then try_dir_index = @last_dir_index
               when 1 then try_dir_index = @last_dir + 2*other_joint(@last_joint_index)
               when 2 then try_dir_index = other_dir(@last_dir) + 2*@last_joint_index
-          else if     @heuristic_keep_dir and not @heuristic_keep_joint   #2
+          else if     @heuristic_keep_dir and not @heuristic_keep_joint   #1+4
             switch trial_level
               when 0 then try_dir_index = @last_dir + 2*other_joint(@last_joint_index)
               when 1 then try_dir_index = other_dir(@last_dir) + 2*other_joint(@last_joint_index)
               when 2 then try_dir_index = @last_dir + 2*@last_joint_index
-          else if not @heuristic_keep_dir and     @heuristic_keep_joint   #3
+          else if not @heuristic_keep_dir and     @heuristic_keep_joint   #2+3
             switch trial_level
               when 0 then try_dir_index = other_dir(@last_dir) + 2*@last_joint_index
               when 1 then try_dir_index = @last_dir + 2*@last_joint_index
               when 2 then try_dir_index = other_dir(@last_dir) + 2*other_joint(@last_joint_index)
-          else if not @heuristic_keep_dir and not @heuristic_keep_joint   #4
+          else if not @heuristic_keep_dir and not @heuristic_keep_joint   #3+4
             switch trial_level
               when 0 then try_dir_index = other_dir(@last_dir) + 2*other_joint(@last_joint_index)
               when 1 then try_dir_index = @last_dir + 2*other_joint(@last_joint_index)
@@ -1216,8 +1229,9 @@ class abc
 
     else if @heuristic is "manual"
       #don't do anything
-      @manual_noop = true
-      1
+      @manual_noop = true   #will be reset to false (so next posture is saved) once a new mode is set from ui
+      if previous_mode
+        @last_dir_index = dir_index_for_modes previous_mode, current_mode
 
 
   ### ui helpers ###
@@ -1323,3 +1337,4 @@ class abc
 
 
 window.simni.Abc = abc
+window.simni.Posture = posture

@@ -232,6 +232,7 @@
       node_name = this.addNode(p);
       console.log("found new posture: " + p.configuration + " (posture " + node_name + ")");
       window.logging.logNewPosture();
+      manifoldRenderer.addFixpoint(manifoldRenderer.internalToManifold(p.configuration));
       data = {
         label: p.csl_mode,
         number: p.name,
@@ -321,7 +322,7 @@
     };
 
     postureGraph.prototype.meanVisits = function() {
-      var n, visits, _i, _len, _ref;
+      var e, n, sigma, visits, _i, _j, _len, _len1, _ref, _ref1;
       visits = 0;
       _ref = this.nodes;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -330,7 +331,17 @@
           visits += n.mean_n;
         }
       }
-      return visits / this.length();
+      e = visits / this.length();
+      sigma = 0;
+      _ref1 = this.nodes;
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        n = _ref1[_j];
+        if (n != null) {
+          sigma += (n.mean_n - e) * (n.mean_n - e);
+        }
+      }
+      console.log("sigma: " + Math.sqrt(sigma / this.length()));
+      return e;
     };
 
     postureGraph.prototype.maxVisits = function() {
@@ -423,6 +434,7 @@
         nn.subManifoldId = nn.getSubmanifold();
         nn.visits = n.mean_n;
         this.nodes.push(nn);
+        manifoldRenderer.addFixpoint(manifoldRenderer.internalToManifold(nn.configuration));
       }
       _ref1 = t.edges;
       for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
@@ -447,6 +459,7 @@
       $("#viewport_svg svg text").remove();
       $("#viewport_svg svg line").remove();
       this.arborGraph.renderer.initManifoldBar();
+      this.arborGraph.renderer.initVisitCountLegend();
       _ref2 = this.nodes;
       for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
         n = _ref2[_k];
@@ -546,6 +559,7 @@
         nn.configuration = [((vals[3][0] - 250) / 1023) * 2 * Math.PI, ((vals[3][1] - 361) / 1023) * 0.818 * 2 * Math.PI, ((vals[3][2] - 640) / 1023) * 0.818 * 2 * Math.PI];
         nn.subManifoldId = nn.getSubmanifold();
         this.nodes.push(nn);
+        manifoldRenderer.addFixpoint(manifoldRenderer.internalToManifold(nn.configuration));
       }
       for (_l = 0, _len2 = data.length; _l < _len2; _l++) {
         l = data[_l];
@@ -829,8 +843,8 @@
       this.previous_posture = null;
       this.trajectory = [];
       this.heuristic = "unseen";
-      this.heuristic_keep_dir = true;
-      this.heuristic_keep_joint = false;
+      this.heuristic_keep_dir = false;
+      this.heuristic_keep_joint = true;
       this.explore_active = false;
       this.save_periodically = false;
     }
@@ -1406,7 +1420,9 @@
         return this.last_dir_index = dir_index_for_modes(current_mode, new_mode);
       } else if (this.heuristic === "manual") {
         this.manual_noop = true;
-        return 1;
+        if (previous_mode) {
+          return this.last_dir_index = dir_index_for_modes(previous_mode, current_mode);
+        }
       }
     };
 
@@ -1513,6 +1529,8 @@
   })();
 
   window.simni.Abc = abc;
+
+  window.simni.Posture = posture;
 
 }).call(this);
 

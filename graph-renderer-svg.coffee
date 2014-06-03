@@ -59,6 +59,32 @@ class RendererSVG
       .attr("rx", 2)
       .attr("ry", 2)
 
+  initVisitCountLegend: =>
+    @vc_width = 400
+    @vc_height = 20
+    @vc_x = 980
+    @vc_y = 70
+    @visitslegend = @svg.append("g")
+    @visitslegend.append("rect")
+      .attr("x", @vc_x)
+      .attr("y", @vc_y)
+      .attr("width", @vc_width)
+      .attr("height", @vc_height)
+      .style("stroke", "gray")
+      .style("stroke-width", "1px")
+      .style("fill", "none")
+      .attr("rx", 2)
+      .attr("ry", 2)
+
+    max = 15
+    for i in [0..max]
+      @visitslegend.append("rect")
+          .attr("width", @vc_width/max)
+          .attr("height", @vc_height)
+          .attr("x", @vc_x+((i*(@vc_width/max)-1)))
+          .attr("y", @vc_y)
+          .attr("fill", physics.ui.visits2color(i))
+
   init: (system) =>
     # the particle system will call the init function once, right before the
     # first frame is to be drawn. it's a good place to set up the canvas and
@@ -207,7 +233,6 @@ class RendererSVG
               break
       ###
 
-
       if label
         if activation?
           a = activation.toFixed(2)
@@ -227,7 +252,8 @@ class RendererSVG
           font_size = "7pt"
           font_family = "Verdana"
           text_anchor = "middle"
-          fill = "#333333"
+          #fill = "#333333"
+          fill = '#000000'
 
           #id
           node.data.label_svg = parent.svg.append("svg:text")

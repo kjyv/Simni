@@ -681,6 +681,8 @@ class physics
 
   ##### update simulation and display loop #####
   was_static = false
+  steps_done = 0
+  old_c = [0,0,0]
   update: =>
     if not @run and not @step
       return
@@ -735,8 +737,23 @@ class physics
       else if @pend_style is 3   #semni
         @abc.update @body, @upper_joint, @lower_joint
 
-      #log data every 16th physics time step, delay is 62.5 ms
+      #log data, time frame is 62.5 ms long (60 hz)
       window.logging.logTrajectoryData()
+
+      #draw trajectory after some steps and distance (60 => once per second)
+      steps_done++
+      if @abc.explore_active and steps_done >= 5
+        c = [
+          @abc.wrapAngle(@body.GetAngle()),
+          @upper_joint.GetJointAngle(),
+          @lower_joint.GetJointAngle()]
+        test_p = new simni.Posture(c, [], 0, 0)
+        dist = test_p.euclidDistance({configuration: old_c})
+        if dist > 0.0005
+          window.manifoldRenderer.addTrajectoryPoint(
+            manifoldRenderer.internalToManifold(c))
+          old_c = c.clone()
+        steps_done = 0
 
       #recalc quick stuff, 60 Hz * 16 = 960 Hz loop
       i = steps_per_frame
