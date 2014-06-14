@@ -41,7 +41,7 @@ class posture   #i.e. node
         new_edges.push e.target_node.name
       new_edges
 
-    JSON.stringify {"name": @name, "csl_mode":@csl_mode, "configuration":@configuration, "mean_n":@mean_n, "positions":@positions, "body_x": @body_x, "timestamp": @timestamp, "exit_directions": @exit_directions, "activation": @activation, "edges_out": replacer(@edges_out)}, null, 4
+    JSON.stringify {"name":@name, "csl_mode":@csl_mode, "configuration":@configuration, "mean_n":@mean_n, "positions":@positions, "body_x":@body_x, "timestamp":@timestamp, "exit_directions":@exit_directions, "activation":@activation, "edges_out": replacer(@edges_out)}, null, 4
 
   getEdgeTo: (target) =>
     for edge in @edges_out

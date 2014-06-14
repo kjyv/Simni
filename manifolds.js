@@ -19,6 +19,7 @@
       this.y_offset = 7;
       this.stopStateUpdate = false;
       this.do_render = true;
+      this.halftime = true;
     }
 
     manifoldRenderer.prototype.createGeometry = function(geom, data) {
@@ -56,11 +57,16 @@
     manifoldRenderer.prototype.animate = function() {
       if (this.do_render) {
         requestAnimationFrame(this.animate);
-        this.controls.update();
-        if ((typeof physics !== "undefined" && physics !== null) && (physics.body != null) && !window.stopStateUpdate) {
-          this.updateCurrentState(this.internalToManifold([physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()]));
+        if (this.halftime) {
+          this.controls.update();
+          if ((typeof physics !== "undefined" && physics !== null) && (physics.body != null) && !window.stopStateUpdate) {
+            this.updateCurrentState(this.internalToManifold([physics.body.GetAngle(), physics.upper_joint.GetJointAngle(), physics.lower_joint.GetJointAngle()]));
+          }
+          this.renderer.render(this.scene, this.camera);
+          return this.halftime = false;
+        } else {
+          return this.halftime = true;
         }
-        return this.renderer.render(this.scene, this.camera);
       }
     };
 

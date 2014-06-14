@@ -121,7 +121,7 @@ input[type="range"] {
 #manifold_view {
     float:left;
     padding: 0px 0px 10px 0px;
-    width: 303px;
+    width: 302px;
 }
 
 #simulation canvas {

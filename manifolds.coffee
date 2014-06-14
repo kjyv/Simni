@@ -5,6 +5,7 @@ class manifoldRenderer
     @y_offset = 7
     @stopStateUpdate = false
     @do_render = true
+    @halftime = true
 
   createGeometry: (geom, data) =>
     for i in data.data
@@ -32,16 +33,20 @@ class manifoldRenderer
     if @do_render
       requestAnimationFrame(@animate)
 
-      # render the scene
-      @controls.update()
+      if @halftime
+        # render the scene
+        @controls.update()
 
-      if physics? and physics.body? and not window.stopStateUpdate
-        @updateCurrentState @internalToManifold [
-          physics.body.GetAngle()
-          physics.upper_joint.GetJointAngle()
-          physics.lower_joint.GetJointAngle()
-        ]
-      @renderer.render(@scene, @camera)
+        if physics? and physics.body? and not window.stopStateUpdate
+          @updateCurrentState @internalToManifold [
+            physics.body.GetAngle()
+            physics.upper_joint.GetJointAngle()
+            physics.lower_joint.GetJointAngle()
+          ]
+        @renderer.render(@scene, @camera)
+        @halftime = false
+      else
+        @halftime = true
 
   init: =>
     canvas = $("#webglCanvas")
