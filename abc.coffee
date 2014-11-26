@@ -14,8 +14,8 @@ if (typeof String::startsWith != 'function')
 squared = (val) ->
   val*val
 
-thresholdDistance = 0.15       #the euclidian distance that is considered to be small enough to say two postures are the same
-thresholdExplore = 0.45        #distance for finding possibly equal postures, has to be verified with position control though
+thresholdDistance = 0.15  #the euclidian distance that is considered to be small enough to say two postures are the same
+thresholdExplore = 0.45   #distance for finding possibly equal postures, has to be verified with position control though
 
 class posture   #i.e. node
   constructor: (configuration, csl_mode=[], x_pos=0, timestamp=Date.now()) ->
