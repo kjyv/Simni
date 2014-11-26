@@ -1165,8 +1165,8 @@ class abc
           else if not @heuristic_keep_dir and     @heuristic_keep_joint   #2+3
             switch trial_level
               when 0 then try_dir_index = other_dir(@last_dir) + 2*@last_joint_index
-              when 1 then try_dir_index = @last_dir + 2*@last_joint_index
-              when 2 then try_dir_index = other_dir(@last_dir) + 2*other_joint(@last_joint_index)
+              when 1 then try_dir_index = other_dir(@last_dir) + 2*other_joint(@last_joint_index)
+              when 2 then try_dir_index = @last_dir + 2*@last_joint_index
           else if not @heuristic_keep_dir and not @heuristic_keep_joint   #3+4
             switch trial_level
               when 0 then try_dir_index = other_dir(@last_dir) + 2*other_joint(@last_joint_index)

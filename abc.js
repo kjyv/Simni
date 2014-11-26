@@ -1351,10 +1351,10 @@
                   try_dir_index = other_dir(this.last_dir) + 2 * this.last_joint_index;
                   break;
                 case 1:
-                  try_dir_index = this.last_dir + 2 * this.last_joint_index;
+                  try_dir_index = other_dir(this.last_dir) + 2 * other_joint(this.last_joint_index);
                   break;
                 case 2:
-                  try_dir_index = other_dir(this.last_dir) + 2 * other_joint(this.last_joint_index);
+                  try_dir_index = this.last_dir + 2 * this.last_joint_index;
               }
             } else if (!this.heuristic_keep_dir && !this.heuristic_keep_joint) {
               switch (trial_level) {
