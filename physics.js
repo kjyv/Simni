@@ -472,7 +472,7 @@
       vel = gi * angle_diff;
       sum = vel + bodyJoint.last_integrated;
       bodyJoint.last_integrated = this.clip(gf * sum, 1);
-      return ((bodyJoint.last_integrated * gain) + gb) * 12;
+      return (sum * gain + gb) * 12;
     };
 
     physics.prototype.Bounce = function(vs, angle_diff, bodyJoint) {

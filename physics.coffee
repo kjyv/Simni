@@ -532,7 +532,7 @@ class physics
     vel = gi * angle_diff
     sum = vel + bodyJoint.last_integrated
     bodyJoint.last_integrated = @clip(gf * sum, 1)
-    return ((bodyJoint.last_integrated * gain) + gb)*12
+    return (sum * gain + gb)*12
 
   Bounce: (vs, angle_diff, bodyJoint) =>
     #constant velocity controller that moves until angle limit is hit
